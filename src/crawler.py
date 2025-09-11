@@ -1,11 +1,13 @@
 import logging
 from typing import Optional, Set
+from urllib.parse import urlparse
 from collections import deque
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from playwright.sync_api import sync_playwright, Page
 
-from .common.utils.url import is_valid_url, make_absolute_url, normalize_url
+from common.utils.url import is_valid_url, make_absolute_url, normalize_url
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,7 +21,7 @@ DEFAULT_HEADERS = {
 }
 
 DEFAULT_MAX_PAGES = 100
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 20 * 1000 # as this is in ms
 
 
 class Crawler:
@@ -36,6 +38,7 @@ class Crawler:
         if not is_valid_url(self.base_url):
             raise ValueError(f"Invalid base URL: {base_url}")
 
+        self.base_domain = urlparse(self.base_url).netloc
         self.timeout = timeout
         self.headers = headers
         self.max_pages = max_pages
@@ -46,19 +49,12 @@ class Crawler:
         self.headers = headers or DEFAULT_HEADERS.copy()
         self.session.headers.update(self.headers)
 
-    def _get_page_content(
-        self, url: str, timeout: Optional[int] = None
-    ) -> Optional[BeautifulSoup]:
-        if not is_valid_url(url):
-            logger.warning("Skipping invalid URL: %s", url)
-            return None
-
+    def _get_page_content(self, page: Page, url: str) -> Optional[BeautifulSoup]:
         try:
-            response = self.session.get(url, timeout=timeout or self.timeout)
-            response.raise_for_status()
+            page.goto(url, timeout=self.timeout)
             logger.info("Fetched: %s", url)
-            return BeautifulSoup(response.text, "html.parser")
-        except requests.exceptions.RequestException as e:
+            return BeautifulSoup(page.content(), "html.parser")
+        except Exception as e:
             logger.error("Failed to fetch %s: %s", url, e)
             return None
 
@@ -75,26 +71,34 @@ class Crawler:
             for h in href_values:
                 if isinstance(h, str):
                     absolute_url = make_absolute_url(self.base_url, h.strip())
-                    links.append(absolute_url)
+                    if urlparse(absolute_url).netloc == self.base_domain:
+                        links.append(absolute_url)
 
         return links
 
     def run(self) -> list[str]:
-        while self.queue and len(self.visited_urls) < self.max_pages:
-            url = self.queue.pop()
-            if url in self.visited_urls:
-                continue
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            page = browser.new_page()
 
-            logger.info(
-                "Visiting (%d/%d): %s", len(self.visited_urls) + 1, self.max_pages, url
-            )
-            self.visited_urls.add(url)
-            soup = self._get_page_content(url)
-            if not soup:
-                continue
+            while self.queue and len(self.visited_urls) < self.max_pages:
+                url = self.queue.pop()
+                if url in self.visited_urls:
+                    continue
 
-            for link in self._extract_links(soup):
-                if link not in self.visited_urls:
-                    self.queue.append(link)
+                logger.info(
+                    "Visiting (%d/%d): %s",
+                    len(self.visited_urls) + 1,
+                    self.max_pages,
+                    url,
+                )
+                self.visited_urls.add(url)
+                soup = self._get_page_content(page, url)
+                if not soup:
+                    continue
 
-        return list(self.visited_urls)
+                for link in self._extract_links(soup):
+                    if link not in self.visited_urls:
+                        self.queue.append(link)
+
+            return list(self.visited_urls)
