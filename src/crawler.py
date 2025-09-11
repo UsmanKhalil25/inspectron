@@ -5,7 +5,7 @@ from collections import deque
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from utils.url import is_valid_url, make_absolute_url, normalize_url
+from .common.utils.url import is_valid_url, make_absolute_url, normalize_url
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -85,7 +85,9 @@ class Crawler:
             if url in self.visited_urls:
                 continue
 
-            logger.info("Visiting (%d/%d): %s", len(self.visited_urls) + 1, self.max_pages, url)
+            logger.info(
+                "Visiting (%d/%d): %s", len(self.visited_urls) + 1, self.max_pages, url
+            )
             self.visited_urls.add(url)
             soup = self._get_page_content(url)
             if not soup:

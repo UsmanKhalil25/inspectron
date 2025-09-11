@@ -1,6 +1,6 @@
 import argparse
 
-from crawler import Crawler
+from .crawler import Crawler
 
 
 def parse_arguments() -> argparse.Namespace:
