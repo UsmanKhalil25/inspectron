@@ -21,6 +21,10 @@ python /app/src/main.py https://example.com
 
 Notes:
 - The image sets `PYTHONPATH=/app/src`, so imports like `from crawler import Crawler` work inside the container.
+- If you encounter browser launch errors (e.g., missing display or sandbox issues), set Playwright to run in headless mode:
+```
+browser = p.chromium.launch(headless=True)
+```
 
 ### Local development (without Docker)
 
@@ -36,5 +40,5 @@ PYTHONPATH=src python src/main.py https://example.com
 
 ```bash
 docker image rm -f inspectron-crawler:latest || true
-docker image prune -f
+docker image prune -af
 ```

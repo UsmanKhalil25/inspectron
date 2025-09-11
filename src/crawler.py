@@ -78,7 +78,7 @@ class Crawler:
 
     def run(self) -> list[str]:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
             while self.queue and len(self.visited_urls) < self.max_pages:
