@@ -1,11 +1,11 @@
 import logging
-from typing import Optional, Set
+from typing import Optional, Set, List, Deque
 from urllib.parse import urlparse
 from collections import deque
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from playwright.sync_api import sync_playwright, Page
+from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeoutError
 
 from common.utils.url import is_valid_url, make_absolute_url, normalize_url
 
@@ -21,44 +21,61 @@ DEFAULT_HEADERS = {
 }
 
 DEFAULT_MAX_PAGES = 100
-DEFAULT_TIMEOUT = 20 * 1000 # as this is in ms
+DEFAULT_TIMEOUT_MS = 20 * 1000  # 20 seconds in milliseconds
 
 
 class Crawler:
     def __init__(
         self,
         base_url: str,
-        timeout: int = DEFAULT_TIMEOUT,
+        timeout_ms: int = DEFAULT_TIMEOUT_MS,
         max_pages: int = DEFAULT_MAX_PAGES,
         headers: Optional[dict] = None,
     ) -> None:
-
         self.base_url = normalize_url(base_url)
 
         if not is_valid_url(self.base_url):
             raise ValueError(f"Invalid base URL: {base_url}")
-
-        self.base_domain = urlparse(self.base_url).netloc
-        self.timeout = timeout
-        self.headers = headers
+        parsed_url = urlparse(self.base_url)
+        self.base_domain = parsed_url.netloc
+        self.timeout_ms = timeout_ms
         self.max_pages = max_pages
-        self.session = requests.Session()
-        self.queue = deque([self.base_url])
-        self.visited_urls: Set[str] = set()
-
         self.headers = headers or DEFAULT_HEADERS.copy()
-        self.session.headers.update(self.headers)
+
+        self.queue: Deque[str] = deque([self.base_url])
+        self.visited_urls: Set[str] = set()
+        self.failed_urls: Set[str] = set()
+
+    def _should_crawl_url(self, url: str) -> bool:
+        if not url:
+            return False
+
+        normalized_url = normalize_url(url)
+        if not is_valid_url(normalized_url):
+            return False
+
+        if urlparse(normalized_url).netloc != self.base_domain:
+            return False
+
+        if (normalized_url in self.visited_urls or 
+            normalized_url in self.failed_urls or
+            normalized_url in self.queue):
+            return False
+
+        return True
 
     def _get_page_content(self, page: Page, url: str) -> Optional[BeautifulSoup]:
         try:
-            page.goto(url, timeout=self.timeout)
-            logger.info("Fetched: %s", url)
-            return BeautifulSoup(page.content(), "html.parser")
-        except Exception as e:
-            logger.error("Failed to fetch %s: %s", url, e)
-            return None
+            page.goto(url, timeout=self.timeout_ms, wait_until="domcontentloaded")
+            page_content = page.content()
+            logger.info("Successfully fetched: %s", url)
+            return BeautifulSoup(page_content, "html.parser")
+        except PlaywrightTimeoutError:
+            logger.warning("Timeout while fetching %s", url)
+            self.failed_urls.add(url)
+        return None
 
-    def _extract_links(self, soup: BeautifulSoup) -> list[str]:
+    def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         links: list[str] = []
 
         for link in soup.find_all("a", href=True):
@@ -70,35 +87,51 @@ class Crawler:
 
             for h in href_values:
                 if isinstance(h, str):
-                    absolute_url = make_absolute_url(self.base_url, h.strip())
+                    absolute_url = make_absolute_url(base_url, h.strip())
                     if urlparse(absolute_url).netloc == self.base_domain:
                         links.append(absolute_url)
 
         return links
 
-    def run(self) -> list[str]:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+    def _crawl_with_playwright(self) -> List[str]:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
 
-            while self.queue and len(self.visited_urls) < self.max_pages:
-                url = self.queue.pop()
-                if url in self.visited_urls:
-                    continue
+            try:
+                while self.queue and len(self.visited_urls) < self.max_pages:
+                    current_url = self.queue.popleft()
+                    if current_url in self.visited_urls:
+                        continue
+                    logger.info(
+                        "Crawling (%d/%d): %s",
+                        len(self.visited_urls) + 1,
+                        self.max_pages,
+                        current_url,
+                    )
+                    soup = self._get_page_content(page, current_url)
+                    if soup:
+                        self.visited_urls.add(current_url)
+                        new_links = self._extract_links(soup, current_url)
+                        for link in new_links:
+                            if (link not in self.visited_urls and 
+                                link not in self.queue and 
+                                link not in self.failed_urls):
+                                self.queue.append(link)
+                    else:
+                        self.failed_urls.add(current_url)
+            finally:
+                page.close()
+                browser.close()
+        return list(self.visited_urls)
 
-                logger.info(
-                    "Visiting (%d/%d): %s",
-                    len(self.visited_urls) + 1,
-                    self.max_pages,
-                    url,
-                )
-                self.visited_urls.add(url)
-                soup = self._get_page_content(page, url)
-                if not soup:
-                    continue
+    def run(self) -> List[str]:
+        result = self._crawl_with_playwright()
+        logger.info(
+            "Crawl completed. Visited: %d, Failed: %d, Queued: %d",
+            len(self.visited_urls),
+            len(self.failed_urls),
+            len(self.queue),
+        )
+        return result
 
-                for link in self._extract_links(soup):
-                    if link not in self.visited_urls:
-                        self.queue.append(link)
-
-            return list(self.visited_urls)
