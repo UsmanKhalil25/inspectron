@@ -6,13 +6,11 @@ from collections import deque
 from bs4 import BeautifulSoup, Tag
 from playwright.sync_api import sync_playwright
 
-from .constants import DEFAULT_TIMEOUT_MS, DEFAULT_MAX_PAGES, DEFAULT_HEADERS
-
 from common.utils.url import is_valid_url, make_absolute_url, normalize_url
 from common.utils.page_fetcher import PageFetcher
+from common.constants import DEFAULT_TIMEOUT_MS, DEFAULT_MAX_PAGES, DEFAULT_HEADERS
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -79,7 +77,8 @@ class Crawler:
 
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page()
+            context = browser.new_context(extra_http_headers=self.headers)
+            page = context.new_page()
 
             try:
                 while self.queue and len(self.visited_urls) < self.max_pages:
@@ -105,6 +104,7 @@ class Crawler:
                         self.failed_urls.add(current_url)
             finally:
                 page.close()
+                context.close()
                 browser.close()
         return list(self.visited_urls)
 

@@ -5,13 +5,11 @@ from bs4 import BeautifulSoup, Tag
 from playwright.sync_api import sync_playwright
 
 from .models.scraped_url import ScrapedUrl
-from .constants import DEFAULT_TIMEOUT_MS, DEFAULT_HEADERS
-
 
 from common.utils.page_fetcher import PageFetcher
+from common.constants import DEFAULT_TIMEOUT_MS, DEFAULT_HEADERS
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +44,8 @@ class Scraper:
 
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page()
+            context = browser.new_context(extra_http_headers=self.headers)
+            page = context.new_page()
             try:
                 for url in urls:
                     soup = fetcher.get_page(page, url, logger)
@@ -62,10 +61,10 @@ class Scraper:
                     results.append(scraped)
             finally:
                 page.close()
+                context.close()
                 browser.close()
 
         return results
 
     def run(self, urls: Iterable[str]) -> list[ScrapedUrl]:
         return self._scrape_with_playwright(urls)
-
