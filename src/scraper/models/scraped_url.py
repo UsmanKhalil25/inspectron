@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 
@@ -8,3 +8,6 @@ class ScrapedUrl:
     title: Optional[str] = None
     meta_description: Optional[str] = None
     html: Optional[str] = None
+
+    def dict(self) -> dict:
+        return asdict(self)
