@@ -3,25 +3,17 @@ from typing import Optional, Set, List, Deque
 from urllib.parse import urlparse
 from collections import deque
 
-import requests
 from bs4 import BeautifulSoup, Tag
-from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
+
+from .constants import DEFAULT_TIMEOUT_MS, DEFAULT_MAX_PAGES, DEFAULT_HEADERS
 
 from common.utils.url import is_valid_url, make_absolute_url, normalize_url
+from common.utils.page_fetcher import PageFetcher
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-DEFAULT_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/91.0.4472.124 Safari/537.36"
-    )
-}
-
-DEFAULT_MAX_PAGES = 100
-DEFAULT_TIMEOUT_MS = 20 * 1000  # 20 seconds in milliseconds
 
 
 class Crawler:
@@ -57,23 +49,13 @@ class Crawler:
         if urlparse(normalized_url).netloc != self.base_domain:
             return False
 
-        if (normalized_url in self.visited_urls or 
-            normalized_url in self.failed_urls or
-            normalized_url in self.queue):
+        if normalized_url in self.visited_urls or normalized_url in self.queue:
             return False
 
         return True
 
-    def _get_page_content(self, page: Page, url: str) -> Optional[BeautifulSoup]:
-        try:
-            page.goto(url, timeout=self.timeout_ms, wait_until="domcontentloaded")
-            page_content = page.content()
-            logger.info("Successfully fetched: %s", url)
-            return BeautifulSoup(page_content, "html.parser")
-        except PlaywrightTimeoutError:
-            logger.warning("Timeout while fetching %s", url)
-            self.failed_urls.add(url)
-        return None
+    def _is_same_domain(self, url: str) -> bool:
+        return urlparse(url).netloc == self.base_domain
 
     def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         links: list[str] = []
@@ -88,12 +70,13 @@ class Crawler:
             for h in href_values:
                 if isinstance(h, str):
                     absolute_url = make_absolute_url(base_url, h.strip())
-                    if urlparse(absolute_url).netloc == self.base_domain:
+                    if self._is_same_domain(absolute_url):
                         links.append(absolute_url)
-
         return links
 
     def _crawl_with_playwright(self) -> List[str]:
+        fetcher = PageFetcher(self.timeout_ms, self.headers)
+
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
@@ -109,14 +92,14 @@ class Crawler:
                         self.max_pages,
                         current_url,
                     )
-                    soup = self._get_page_content(page, current_url)
+
+                    soup = fetcher.get_page(page, current_url, logger)
+
+                    self.visited_urls.add(current_url)
                     if soup:
-                        self.visited_urls.add(current_url)
                         new_links = self._extract_links(soup, current_url)
                         for link in new_links:
-                            if (link not in self.visited_urls and 
-                                link not in self.queue and 
-                                link not in self.failed_urls):
+                            if link not in self.visited_urls and link not in self.queue:
                                 self.queue.append(link)
                     else:
                         self.failed_urls.add(current_url)
@@ -126,6 +109,7 @@ class Crawler:
         return list(self.visited_urls)
 
     def run(self) -> List[str]:
+
         result = self._crawl_with_playwright()
         logger.info(
             "Crawl completed. Visited: %d, Failed: %d, Queued: %d",
@@ -134,4 +118,3 @@ class Crawler:
             len(self.queue),
         )
         return result
-

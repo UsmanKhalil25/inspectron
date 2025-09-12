@@ -1,6 +1,7 @@
 import argparse
 
 from crawler import Crawler
+from scraper import Scraper
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -14,8 +15,9 @@ def main():
 
     crawler = Crawler(args.url)
     links = crawler.run()
-    print(links)
-
+    scraper = Scraper()
+    results = scraper.run(links)
+    print(results)
 
 if __name__ == "__main__":
     main()
