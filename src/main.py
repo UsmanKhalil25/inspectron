@@ -4,6 +4,8 @@ import os
 
 from crawler import Crawler
 from scraper import Scraper
+from src.vulnerability_scanner.models import vulnerability
+from vulnerability_scanner import VulnerabilityScanner
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -37,10 +39,14 @@ def main():
         if args.max_pages is None
         else Crawler(args.url, max_pages=args.max_pages)
     )
-    links = crawler.run()
-    scraper = Scraper()
-    results = scraper.run(links)
-    print(results)
+    #     links = crawler.run()
+    #     scraper =Scraper()
+    #     results = scraper.run(links)
+    #     print(results)
+    scanner = VulnerabilityScanner(args.url)
+    vulnerabilities = scanner.run()
+    for vulnerability in vulnerabilities:
+        print(dict(vulnerability))
 
 
 if __name__ == "__main__":
