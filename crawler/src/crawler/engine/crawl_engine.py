@@ -1,4 +1,3 @@
-# crawl_engine.py
 from typing import Optional
 from playwright.async_api import Page
 from crawler.core import StateManager, PageLoader, ElementDetector
