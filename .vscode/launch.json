@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Crawl with URL",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "https://verdant-soft.com/"
+            ],
+            "python": "${workspaceFolder}/crawler/.venv/bin/python"
+        }
+    ]
+}
