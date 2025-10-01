@@ -3,6 +3,7 @@ from playwright.async_api import Page, ElementHandle
 
 
 class ElementDetector:
+
     async def find_links(self, page: Page) -> List[ElementHandle]:
         return await page.query_selector_all("a")
 

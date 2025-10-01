@@ -1,20 +1,28 @@
 from collections import deque
 from typing import Set, Optional
 
+from crawler.utils import NormalizedURL
+
 
 class StateManager:
     def __init__(self):
-        self.visited_urls: Set[str] = set()
-        self.url_queue: deque[str] = deque()
+        self.visited_urls: Set[NormalizedURL] = set()
+        self.url_queue: deque[NormalizedURL] = deque()
 
-    def add_url(self, url: str) -> None:
-        if url not in self.visited_urls and url not in self.url_queue:
+    def can_enqueue(self, url: NormalizedURL) -> bool:
+        return url not in self.visited_urls and url not in self.url_queue
+
+    def add_url(self, url: NormalizedURL) -> None:
+        if self.can_enqueue(url):
             self.url_queue.append(url)
 
-    def get_next_url(self) -> Optional[str]:
-        return self.url_queue.popleft() if self.url_queue else None
+    def get_next_url(self) -> Optional[NormalizedURL]:
+        if not self.url_queue:
+            return None
+        next_url = self.url_queue.popleft()
+        return next_url
 
-    def mark_visited(self, url: str) -> None:
+    def mark_visited(self, url: NormalizedURL) -> None:
         self.visited_urls.add(url)
 
     def has_unvisited_urls(self) -> bool:
