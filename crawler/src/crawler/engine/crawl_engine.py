@@ -13,9 +13,9 @@ class CrawlEngine:
         self.element_detector = ElementDetector()
         self.page_loader = PageLoader(headless=headless)
 
-        self._url_count: int = 0
         self._start_time: float | None = None
         self._end_time: float | None = None
+        self._url_count: int = 0
 
     async def start(self) -> None:
         self.logger.info("Starting crawl engine")
@@ -50,19 +50,26 @@ class CrawlEngine:
 
     async def _extract_and_enqueue_links(self, base_url: NormalizedURL, links) -> None:
         builder = URLBuilder(base_url, same_domain_only=True)
+
         for link in links:
             href = await link.get_attribute("href")
-            if href:
-                built_url = builder.build(href)
-                if built_url:
-                    self.state_manager.add_url(built_url)
+            if not href:
+                continue
+
+            built_url = builder.build(href)
+            if not built_url:
+                continue
+
+            self.state_manager.add_url(built_url)
 
     async def close(self) -> None:
         self.logger.info("Shutting down crawl engine")
         await self.page_loader.close()
 
         self._end_time = time.perf_counter()
-        if self._start_time is not None:
+        if self._start_time:
             elapsed = self._end_time - self._start_time
             self.logger.info("Crawl engine ran for %.2f seconds", elapsed)
+
         self.logger.info("URL count %s", self._url_count)
+
