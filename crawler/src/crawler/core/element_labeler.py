@@ -51,5 +51,5 @@ class ElementLabeler:
             if not color:
                 continue
             await self._apply_outline(element, color)
-            await self._add_number_label(page, element, color,count)
+            await self._add_number_label(page, element, color, count)
             count += 1

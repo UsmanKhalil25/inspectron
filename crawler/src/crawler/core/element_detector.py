@@ -19,7 +19,6 @@ class ElementDetector:
     async def find_selects(self, page: Page) -> List[ElementHandle]:
         return await page.query_selector_all("select")
 
-
     async def get_standalone_buttons(self, page: Page) -> List[ElementHandle]:
         buttons = await self.find_buttons(page)
         filtered = []
@@ -33,9 +32,8 @@ class ElementDetector:
                     }
                     return false;
                 }""",
-                button
+                button,
             )
             if not is_child_of_link:
                 filtered.append(button)
         return filtered
-
