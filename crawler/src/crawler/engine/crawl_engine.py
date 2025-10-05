@@ -1,8 +1,14 @@
 import logging
 import time
+import asyncio
 from playwright.async_api import Page
 
-from crawler.core import StateManager, PageLoader, ElementDetector
+from crawler.core import (
+    StateManager,
+    PageLoader,
+    ElementDetector,
+    ElementLabeler,
+)
 from crawler.utils import NormalizedURL, URLBuilder
 
 
@@ -11,6 +17,7 @@ class CrawlEngine:
         self.logger = logging.getLogger(__name__)
         self.state_manager = StateManager()
         self.element_detector = ElementDetector()
+        self.element_labeler = ElementLabeler()
         self.page_loader = PageLoader(headless=headless)
 
         self._start_time: float | None = None
@@ -37,7 +44,12 @@ class CrawlEngine:
                 continue
 
             self.state_manager.mark_visited(next_url)
-            links = await self.element_detector.find_links(page)
+            buttons, links = await asyncio.gather(
+                self.element_detector.get_standalone_buttons(page),
+                self.element_detector.find_links(page),
+            )
+
+            await self.element_labeler.label(page, buttons)
             await self._extract_and_enqueue_links(next_url, links)
 
     async def _load_page(self, url: NormalizedURL) -> Page | None:
@@ -72,4 +84,3 @@ class CrawlEngine:
             self.logger.info("Crawl engine ran for %.2f seconds", elapsed)
 
         self.logger.info("URL count %s", self._url_count)
-
