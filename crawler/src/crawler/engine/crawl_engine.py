@@ -1,24 +1,31 @@
 import logging
 import time
 import asyncio
+
 from playwright.async_api import Page
+from dotenv import load_dotenv
 
 from crawler.core import (
     StateManager,
     PageLoader,
     ElementDetector,
     ElementLabeler,
+    OllamaClient
 )
 from crawler.utils import NormalizedURL, URLBuilder
+from crawler.prompts import crawler_decision_prompt
 
 
 class CrawlEngine:
     def __init__(self, headless: bool = False):
+        load_dotenv()
+
         self.logger = logging.getLogger(__name__)
         self.state_manager = StateManager()
         self.element_detector = ElementDetector()
         self.element_labeler = ElementLabeler()
         self.page_loader = PageLoader(headless=headless)
+        self.ollama_client = OllamaClient()
 
         self._start_time: float | None = None
         self._end_time: float | None = None
@@ -50,6 +57,11 @@ class CrawlEngine:
             )
 
             await self.element_labeler.label(page, buttons)
+            await page.screenshot(path="page.png")
+
+            await self.ollama_client.generate(crawler_decision_prompt(await page.content(), "page.png"))
+
+
             await self._extract_and_enqueue_links(next_url, links)
 
     async def _load_page(self, url: NormalizedURL) -> Page | None:
