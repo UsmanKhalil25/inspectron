@@ -1,6 +1,5 @@
 import logging
 import time
-import asyncio
 
 from playwright.async_api import Page
 from dotenv import load_dotenv
@@ -10,10 +9,10 @@ from crawler.core import (
     PageLoader,
     ElementDetector,
     ElementLabeler,
-    OllamaClient
+    OllamaClient,
 )
 from crawler.utils import NormalizedURL, URLBuilder
-from crawler.prompts import crawler_decision_prompt
+from crawler.schemas import InteractableElement
 
 
 class CrawlEngine:
@@ -51,16 +50,31 @@ class CrawlEngine:
                 continue
 
             self.state_manager.mark_visited(next_url)
-            buttons, links = await asyncio.gather(
-                self.element_detector.get_standalone_buttons(page),
-                self.element_detector.find_links(page),
-            )
 
-            await self.element_labeler.label(page, buttons)
-            await page.screenshot(path="page.png")
+            links = await self.element_detector.find_links(page)
 
-            await self.ollama_client.generate(crawler_decision_prompt(await page.content(), "page.png"))
+            for link in links:
+                info = await self.element_labeler.label(page, link)
+                if info is None:
+                    continue
 
+                tag = await link.evaluate("(el) => el.tagName.toLowerCase()")
+                text_content = await link.text_content()
+                href = await link.get_attribute("href")
+
+                if tag is None or text_content is None:
+                    continue
+
+                item = InteractableElement(
+                    element_id=f"link-{self._url_count}-{info['label_number']}",
+                    element=link,
+                    tag_name=tag,
+                    label_number=info["label_number"],
+                    url=next_url.url,
+                    text_content=text_content,
+                )
+
+                self.state_manager.add_interactable_element(item)
 
             await self._extract_and_enqueue_links(next_url, links)
 

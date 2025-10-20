@@ -1,13 +1,15 @@
 from collections import deque
-from typing import Set, Optional
+from typing import Set, Optional, List
 
 from crawler.utils import NormalizedURL
+from crawler.schemas import InteractableElement
 
 
 class StateManager:
     def __init__(self):
         self.visited_urls: Set[NormalizedURL] = set()
         self.url_queue: deque[NormalizedURL] = deque()
+        self.interactable_elements: List[InteractableElement] = []
 
     def can_enqueue(self, url: NormalizedURL) -> bool:
         return url not in self.visited_urls and url not in self.url_queue
@@ -27,3 +29,9 @@ class StateManager:
 
     def has_unvisited_urls(self) -> bool:
         return bool(self.url_queue)
+
+    def add_interactable_element(self, items: InteractableElement) -> None:
+        self.interactable_elements.append(items)
+
+    def get_interactables_for_url(self) -> List[InteractableElement]:
+        return self.interactable_elements

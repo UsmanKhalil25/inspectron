@@ -3,5 +3,13 @@ from .page_loader import PageLoader
 from .element_detector import ElementDetector
 from .element_labeler import ElementLabeler
 from .ollama_client import OllamaClient
+from .browser_controller import BrowserController
 
-__all__ = ["StateManager", "PageLoader", "ElementDetector", "ElementLabeler", " OllamaClient"]
+__all__ = [
+    "StateManager",
+    "PageLoader",
+    "ElementDetector",
+    "ElementLabeler",
+    "OllamaClient",
+    "BrowserController",
+]
