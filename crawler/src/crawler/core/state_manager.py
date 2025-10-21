@@ -17,7 +17,7 @@ class StateManager:
     def add_url(self, url: NormalizedURL) -> None:
         if self.can_enqueue(url):
             self.url_queue.append(url)
-    
+
     def get_next_url(self) -> Optional[NormalizedURL]:
         if not self.url_queue:
             return None
@@ -33,7 +33,7 @@ class StateManager:
 
     def get_visited_urls(self) -> List[NormalizedURL]:
         return self.visited_urls
-        
+
     def add_interactable_element(self, items: InteractableElement) -> None:
         self.interactable_elements.append(items)
 

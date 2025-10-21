@@ -4,6 +4,7 @@ from playwright.async_api import async_playwright, Browser, Page, Playwright
 
 PAGE_LOAD_TIMEOUT_SECONDS = 40
 
+
 class PageLoader:
     def __init__(self, headless: bool = True):
         self.logger = logging.getLogger(__name__)
@@ -34,4 +35,3 @@ class PageLoader:
         if self.playwright:
             await self.playwright.stop()
             self.playwright = None
-

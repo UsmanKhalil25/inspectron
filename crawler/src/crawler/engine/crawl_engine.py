@@ -53,7 +53,10 @@ class CrawlEngine:
 
             await self._extract_and_enqueue_links(next_url, links)
 
-        return [visited_url.url for visited_url in self.state_manager.get_visited_urls()]
+        return [
+            visited_url.url for visited_url in self.state_manager.get_visited_urls()
+        ]
+
     async def _load_page(self, url: NormalizedURL) -> Page | None:
         self.logger.info("Visiting URL %s", url)
         try:
