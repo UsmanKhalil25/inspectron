@@ -17,10 +17,11 @@ class StateManager:
     def add_url(self, url: NormalizedURL) -> None:
         if self.can_enqueue(url):
             self.url_queue.append(url)
-
+    
     def get_next_url(self) -> Optional[NormalizedURL]:
         if not self.url_queue:
             return None
+
         next_url = self.url_queue.popleft()
         return next_url
 
@@ -30,6 +31,9 @@ class StateManager:
     def has_unvisited_urls(self) -> bool:
         return bool(self.url_queue)
 
+    def get_visited_urls(self) -> List[NormalizedURL]:
+        return self.visited_urls
+        
     def add_interactable_element(self, items: InteractableElement) -> None:
         self.interactable_elements.append(items)
 

@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import List
 
 from playwright.async_api import Page
 from dotenv import load_dotenv
@@ -32,7 +33,7 @@ class CrawlEngine:
         self._start_time = time.perf_counter()
         await self.page_loader.start()
 
-    async def crawl(self, url: str) -> None:
+    async def crawl(self, url: str) -> List[str]:
         normalized_url = NormalizedURL(url)
         self.state_manager.add_url(normalized_url)
 
@@ -52,6 +53,7 @@ class CrawlEngine:
 
             await self._extract_and_enqueue_links(next_url, links)
 
+        return [visited_url.url for visited_url in self.state_manager.get_visited_urls()]
     async def _load_page(self, url: NormalizedURL) -> Page | None:
         self.logger.info("Visiting URL %s", url)
         try:
