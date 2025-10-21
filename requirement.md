@@ -1,0 +1,8 @@
+- we need to make a web interface for this.
+- use fastapi
+    - make a new folder for this. we can call it api or app for now
+- we need to be able to take website domain and crawl it.
+- make a clean web page of this using tailwind and simple design
+- lets not use any frontend library for now
+- I would also want to show the output of the logs in the ui just like we have in the terminal we can make a terminal window in the ui
+- if not feasible use next js for ui 
