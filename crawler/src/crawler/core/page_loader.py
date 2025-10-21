@@ -1,10 +1,8 @@
 import logging
-import asyncio
 from typing import Optional
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 
-PAGE_DELAY_SECONDS = 1
-
+PAGE_LOAD_TIMEOUT_SECONDS = 40
 
 class PageLoader:
     def __init__(self, headless: bool = True):
@@ -23,8 +21,8 @@ class PageLoader:
     async def load(self, url: str) -> Page:
         if not self.page:
             raise RuntimeError("PageLoader not started. Call start() first.")
-        await self.page.goto(url)
-        await asyncio.sleep(PAGE_DELAY_SECONDS)
+
+        await self.page.goto(url, timeout=PAGE_LOAD_TIMEOUT_SECONDS * 1000)
         return self.page
 
     async def close(self) -> None:
@@ -36,3 +34,4 @@ class PageLoader:
         if self.playwright:
             await self.playwright.stop()
             self.playwright = None
+
