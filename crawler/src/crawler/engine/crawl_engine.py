@@ -15,10 +15,10 @@ from crawler.utils import NormalizedURL, URLBuilder
 
 
 class CrawlEngine:
-    def __init__(self, headless: bool = False):
+    def __init__(self, headless: bool = False, logger: logging.Logger = None):
         load_dotenv()
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger(__name__)
         self.state_manager = StateManager()
         self.element_detector = ElementDetector()
         self.element_labeler = ElementLabeler()

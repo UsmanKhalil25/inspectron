@@ -66,8 +66,8 @@ class JobManager:
             job.status = JobStatus.RUNNING
             logger.info(f"Starting crawl for {url}")
 
-            # Initialize crawl engine
-            crawl_engine = CrawlEngine(headless=True)
+            # Initialize crawl engine with job logger
+            crawl_engine = CrawlEngine(headless=True, logger=logger)
             await crawl_engine.start()
 
             try:
@@ -76,6 +76,7 @@ class JobManager:
                 job.urls = urls
                 job.status = JobStatus.COMPLETED
                 logger.info(f"Crawl completed. Found {len(urls)} URLs.")
+                log_streamer.mark_job_completed(job_id)
 
             finally:
                 await crawl_engine.close()
@@ -121,8 +122,8 @@ class JobManager:
             job.status = JobStatus.RUNNING
             logger.info(f"Starting vulnerability scan on {len(crawl_job.urls)} URLs")
 
-            # Initialize scan engine
-            scan_engine = ScanEngine(headless=True)
+            # Initialize scan engine with job logger
+            scan_engine = ScanEngine(headless=True, logger=logger)
             await scan_engine.start()
 
             try:
@@ -147,6 +148,7 @@ class JobManager:
                 logger.info(
                     f"Scan completed. Found {len(vulnerabilities)} vulnerabilities."
                 )
+                log_streamer.mark_job_completed(job_id)
 
             finally:
                 await scan_engine.close()

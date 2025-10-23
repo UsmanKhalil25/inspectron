@@ -60,6 +60,8 @@ class LogStreamer:
             return
 
         log_queue = self.job_queues[job_id]
+        consecutive_empty_checks = 0
+        max_empty_checks = 60  # Stop after 30 seconds of no activity (60 * 0.5s)
 
         while True:
             try:
@@ -67,13 +69,26 @@ class LogStreamer:
                 try:
                     msg = log_queue.get_nowait()
                     yield f"data: {msg}\n\n"
+                    consecutive_empty_checks = 0  # Reset counter when we get a message
                 except Empty:
+                    consecutive_empty_checks += 1
                     # No logs available, yield a keep-alive ping
                     await asyncio.sleep(0.5)
                     yield ": ping\n\n"
+                    
+                    # Stop streaming if no activity for too long
+                    if consecutive_empty_checks >= max_empty_checks:
+                        yield f"data: Job {job_id} completed or inactive\n\n"
+                        break
             except Exception as e:
                 yield f"data: Error streaming logs: {str(e)}\n\n"
                 break
+
+    def mark_job_completed(self, job_id: str):
+        """Mark a job as completed by adding a completion message to the queue."""
+        if job_id in self.job_queues:
+            log_queue = self.job_queues[job_id]
+            log_queue.put("Job completed successfully.")
 
     def cleanup_job(self, job_id: str):
         """Clean up resources for a completed job."""
