@@ -13,12 +13,12 @@ export class PageLoader {
         this.page = await this.browser.newPage();
     }
 
-    async load(url: string): Promise<void> {
+    async load(url: string): Promise<Page> {
         if (!this.page) {
             throw new Error("Page not initialized. Call start() first.");
         }
         await this.page.goto(url);
-        console.log(`Loaded URL: ${url}`);
+        return this.page
     }
 
     async close(): Promise<void> {

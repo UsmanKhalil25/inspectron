@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 import { isValidUrl } from "./utils/url";
-import { CrawlEngine } from "./crawl-engine"
+import { CrawlEngine } from "./core";
 
 const program = new Command();
 program.argument("<url>", "URL given by user").action(async (url) => {
