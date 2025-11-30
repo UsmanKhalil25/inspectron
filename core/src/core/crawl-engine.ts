@@ -1,60 +1,69 @@
 import { StateManager } from "./state-manager";
 import { PageLoader } from "./page-loader";
 import { Scraper } from "./scraper";
+import { ElementLabeler } from "./element-labeler";
+
 import { parseAndNormalize } from "../utils/url";
 
 type CrawlConfig = {
-    headless?: boolean;
+  headless?: boolean;
 };
 
 export class CrawlEngine {
-    private readonly stateManager = new StateManager();
-    private readonly pageLoader: PageLoader;
-    private readonly baseHostname: string;
+  private readonly stateManager = new StateManager();
+  private readonly pageLoader: PageLoader;
+  private readonly baseHostname: string;
 
-    constructor(
-        private readonly baseUrl: string,
-        { headless = true }: CrawlConfig = {}
-    ) {
-        this.pageLoader = new PageLoader(headless);
-        this.baseHostname = new URL(baseUrl).hostname.toLowerCase();
-    }
+  constructor(
+    private readonly baseUrl: string,
+    { headless = true }: CrawlConfig = {},
+  ) {
+    this.pageLoader = new PageLoader(headless);
+    this.baseHostname = new URL(baseUrl).hostname.toLowerCase();
+  }
 
-    async run() {
-        await this.pageLoader.start();
+  async run() {
+    await this.pageLoader.start();
 
-        this.stateManager.addUrl(parseAndNormalize(this.baseUrl));
+    this.stateManager.addUrl(parseAndNormalize(this.baseUrl));
 
-        while (!this.stateManager.isEmpty()) {
-            const url = this.stateManager.getNextUrl();
-            if (!url) break;
+    while (!this.stateManager.isEmpty()) {
+      const url = this.stateManager.getNextUrl();
+      if (!url) break;
 
-            try {
-                const page = await this.pageLoader.load(url);
-                console.log(`Visited: ${url}`);
-                this.stateManager.markVisited(parseAndNormalize(url));
+      try {
+        const page = await this.pageLoader.load(url);
+        console.log(`Visited: ${url}`);
+        this.stateManager.markVisited(parseAndNormalize(url));
 
-                const linkElements = await Scraper.findLinks(page);
-                for (const el of linkElements) {
-                    const hrefHandle = await el.getAttribute("href");
-                    if (!hrefHandle) continue;
+        const linkElements = await Scraper.findLinks(page);
 
-                    const absoluteUrl = new URL(hrefHandle, url).toString();
+        const labeledElements = await ElementLabeler.labelElements(
+          page,
+          linkElements,
+        );
+        console.log({ labeledElements });
 
-                    if (new URL(absoluteUrl).hostname.toLowerCase() !== this.baseHostname) {
-                        continue;
-                    }
+        for (const el of linkElements) {
+          const hrefHandle = await el.getAttribute("href");
+          if (!hrefHandle) continue;
 
-                    this.stateManager.addUrl(parseAndNormalize(absoluteUrl));
-                }
+          const absoluteUrl = new URL(hrefHandle, url).toString();
 
-            } catch (err) {
-                console.error(`Failed to load ${url}:`, err);
-            }
+          if (
+            new URL(absoluteUrl).hostname.toLowerCase() !== this.baseHostname
+          ) {
+            continue;
+          }
+
+          this.stateManager.addUrl(parseAndNormalize(absoluteUrl));
         }
-
-        await this.pageLoader.close();
-        console.log("Crawling finished!");
+      } catch (err) {
+        console.error(`Failed to load ${url}:`, err);
+      }
     }
-}
 
+    await this.pageLoader.close();
+    console.log("Crawling finished!");
+  }
+}

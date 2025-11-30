@@ -2,7 +2,7 @@
   "name": "core",
   "version": "1.0.0",
   "description": "",
-  "type": "CommonJs",
+  "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

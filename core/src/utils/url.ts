@@ -1,20 +1,20 @@
 export function isValidUrl(url: string): boolean {
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
-    }
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function parseAndNormalize(url: string): string {
-    if (!url.includes("://")) {
-        url = "http://" + url;
-    }
+  if (!url.includes("://")) {
+    url = "http://" + url;
+  }
 
-    const parsed = new URL(url);
+  const parsed = new URL(url);
 
-    parsed.hostname = parsed.hostname.toLowerCase();
-    parsed.pathname = parsed.pathname.replace(/\/+$/, "");
-    return parsed.toString()
+  parsed.hostname = parsed.hostname.toLowerCase();
+  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+  return parsed.toString();
 }
