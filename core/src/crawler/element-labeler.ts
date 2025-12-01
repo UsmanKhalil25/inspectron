@@ -8,6 +8,25 @@ export interface LabeledElement {
   ariaLabel: string;
 }
 
+interface Bounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+interface ElementMetadata {
+  element: Element;
+  isInteractive: boolean;
+  area: number;
+  bounds: Bounds[];
+  text: string;
+  type: string;
+  ariaLabel: string;
+}
+
 export class ElementLabeler {
   static async labelElements(
     page: Page,
@@ -110,7 +129,7 @@ export class ElementLabeler {
             );
         },
 
-        calculateTotalArea(bounds: any[]) {
+        calculateTotalArea(bounds: Bounds[]) {
           return bounds.reduce(
             (total, bound) => total + bound.width * bound.height,
             0,
@@ -138,14 +157,14 @@ export class ElementLabeler {
           };
         },
 
-        filterByInteractivityAndSize(elements: any[]) {
+        filterByInteractivityAndSize(elements: ElementMetadata[]) {
           const minAreaThreshold = 20;
           return elements.filter(
             (el) => el.isInteractive && el.area >= minAreaThreshold,
           );
         },
 
-        removeNestedElements(elements: any[]) {
+        removeNestedElements(elements: ElementMetadata[]) {
           return elements.filter(
             (current) =>
               !elements.some(
@@ -156,7 +175,7 @@ export class ElementLabeler {
         },
 
         createLabelOverlay(
-          bounds: any,
+          bounds: Bounds,
           labelText: string,
           color: string,
         ): HTMLElement {
@@ -196,7 +215,7 @@ export class ElementLabeler {
           interactiveElements = this.removeNestedElements(interactiveElements);
 
           interactiveElements.forEach((element, index) => {
-            element.bounds.forEach((bounds: any) => {
+            element.bounds.forEach((bounds: Bounds) => {
               const color = this.generateRandomColor();
               const overlay = this.createLabelOverlay(
                 bounds,
@@ -208,7 +227,7 @@ export class ElementLabeler {
           });
 
           return interactiveElements.flatMap((element) =>
-            element.bounds.map((bounds: any) => ({
+            element.bounds.map((bounds: Bounds) => ({
               x: (bounds.left + bounds.right) / 2,
               y: (bounds.top + bounds.bottom) / 2,
               type: element.type,
