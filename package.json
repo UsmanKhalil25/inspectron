@@ -1,0 +1,16 @@
+{
+  "name": "inspectron",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "app",
+    "core"
+  ],
+  "scripts": {
+    "build:core": "npm run build --workspace=core",
+    "dev:app": "npm run dev --workspace=app",
+    "build:app": "npm run build --workspace=app",
+    "lint": "npm run lint --workspaces",
+    "install:all": "npm install"
+  }
+}
