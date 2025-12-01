@@ -1,7 +1,6 @@
 import { StateManager } from "./state-manager";
 import { PageLoader } from "./page-loader";
 import { Scraper } from "./scraper";
-import { ElementLabeler } from "./element-labeler";
 
 import { parseAndNormalize } from "../utils/url";
 
