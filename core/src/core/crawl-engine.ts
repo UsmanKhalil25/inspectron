@@ -37,12 +37,6 @@ export class CrawlEngine {
 
         const linkElements = await Scraper.findLinks(page);
 
-        const labeledElements = await ElementLabeler.labelElements(
-          page,
-          linkElements,
-        );
-        console.log({ labeledElements });
-
         for (const el of linkElements) {
           const hrefHandle = await el.getAttribute("href");
           if (!hrefHandle) continue;
