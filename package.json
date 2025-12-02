@@ -4,12 +4,10 @@
   "private": true,
   "workspaces": [
     "ui",
-    "core"
+    "core",
+    "api"
   ],
   "scripts": {
-    "build:core": "npm run build --workspace=core",
-    "dev:ui": "npm run dev --workspace=ui",
-    "build:ui": "npm run build --workspace=ui",
     "lint": "npm run lint --workspaces",
     "install:all": "npm install"
   }
