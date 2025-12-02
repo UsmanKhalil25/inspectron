@@ -1,40 +1,49 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import { Bot, User, Send, Sparkles } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import type { AiMessage, CrawlStatus } from "../types"
+import { useState, useRef, useEffect } from "react";
+import { Bot, User, Send, Sparkles } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { AiMessage, CrawlStatus } from "../types";
 
 interface AiChatPanelProps {
-  messages: AiMessage[]
-  pendingQuestion: string | null
-  onResponse: (response: string) => void
-  crawlStatus: CrawlStatus
+  messages: AiMessage[];
+  pendingQuestion: string | null;
+  onResponse: (response: string) => void;
+  crawlStatus: CrawlStatus;
 }
 
-export function AiChatPanel({ messages, pendingQuestion, onResponse, crawlStatus }: AiChatPanelProps) {
-  const [input, setInput] = useState("")
-  const scrollRef = useRef<HTMLDivElement>(null)
+export function AiChatPanel({
+  messages,
+  pendingQuestion,
+  onResponse,
+  crawlStatus,
+}: AiChatPanelProps) {
+  const [input, setInput] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-    onResponse(input)
-    setInput("")
-  }
+    e.preventDefault();
+    if (!input.trim()) return;
+    onResponse(input);
+    setInput("");
+  };
 
-  const quickResponses = ["Skip this section", "Continue with defaults", "Show more details"]
+  const quickResponses = [
+    "Skip this section",
+    "Continue with defaults",
+    "Show more details",
+  ];
 
   return (
     <div className="flex h-full flex-col">
@@ -61,11 +70,19 @@ export function AiChatPanel({ messages, pendingQuestion, onResponse, crawlStatus
         ) : (
           <div className="space-y-4">
             {messages.map((message) => (
-              <div key={message.id} className={cn("flex gap-3", message.role === "user" && "flex-row-reverse")}>
+              <div
+                key={message.id}
+                className={cn(
+                  "flex gap-3",
+                  message.role === "user" && "flex-row-reverse",
+                )}
+              >
                 <div
                   className={cn(
                     "flex size-8 shrink-0 items-center justify-center rounded-full",
-                    message.role === "assistant" ? "bg-primary/20" : "bg-secondary",
+                    message.role === "assistant"
+                      ? "bg-primary/20"
+                      : "bg-secondary",
                   )}
                 >
                   {message.role === "assistant" ? (
@@ -77,7 +94,9 @@ export function AiChatPanel({ messages, pendingQuestion, onResponse, crawlStatus
                 <div
                   className={cn(
                     "flex-1 rounded-lg px-3 py-2 text-sm",
-                    message.role === "assistant" ? "bg-secondary" : "bg-primary text-primary-foreground",
+                    message.role === "assistant"
+                      ? "bg-secondary"
+                      : "bg-primary text-primary-foreground",
                   )}
                 >
                   {message.content}
@@ -112,18 +131,27 @@ export function AiChatPanel({ messages, pendingQuestion, onResponse, crawlStatus
       <form onSubmit={handleSubmit} className="border-t border-border p-4">
         <div className="flex gap-2">
           <Input
-            placeholder={crawlStatus === "idle" ? "Start a crawl to chat..." : "Type your response..."}
+            placeholder={
+              crawlStatus === "idle"
+                ? "Start a crawl to chat..."
+                : "Type your response..."
+            }
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={crawlStatus === "idle"}
             className="bg-secondary/50 border-border focus:bg-secondary"
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || crawlStatus === "idle"} className="shrink-0">
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || crawlStatus === "idle"}
+            className="shrink-0"
+          >
             <Send className="size-4" />
             <span className="sr-only">Send message</span>
           </Button>
         </div>
       </form>
     </div>
-  )
+  );
 }

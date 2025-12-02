@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { ExternalLink, Loader2, Monitor } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { CrawlStatus } from "../types"
+import { ExternalLink, Loader2, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { CrawlStatus } from "../types";
 
 interface LivePreviewPanelProps {
-  url: string | null
-  crawlStatus: CrawlStatus
+  url: string | null;
+  crawlStatus: CrawlStatus;
 }
 
 export function LivePreviewPanel({ url, crawlStatus }: LivePreviewPanelProps) {
-  const isCrawling = crawlStatus === "crawling"
+  const isCrawling = crawlStatus === "crawling";
 
   if (!url) {
     return (
@@ -20,10 +20,11 @@ export function LivePreviewPanel({ url, crawlStatus }: LivePreviewPanelProps) {
         </div>
         <h3 className="text-lg font-medium mb-2">No Preview Available</h3>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Enter a URL and start crawling to see a live preview of the pages being analyzed.
+          Enter a URL and start crawling to see a live preview of the pages
+          being analyzed.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -31,10 +32,19 @@ export function LivePreviewPanel({ url, crawlStatus }: LivePreviewPanelProps) {
       {/* Preview Header */}
       <div className="flex h-12 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          {isCrawling && <Loader2 className="size-4 animate-spin text-primary shrink-0" />}
-          <span className="text-sm text-muted-foreground truncate font-mono">{url}</span>
+          {isCrawling && (
+            <Loader2 className="size-4 animate-spin text-primary shrink-0" />
+          )}
+          <span className="text-sm text-muted-foreground truncate font-mono">
+            {url}
+          </span>
         </div>
-        <Button variant="ghost" size="sm" className="shrink-0" onClick={() => window.open(url, "_blank")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
+          onClick={() => window.open(url, "_blank")}
+        >
           <ExternalLink className="size-4" />
           <span className="sr-only">Open in new tab</span>
         </Button>
@@ -48,7 +58,9 @@ export function LivePreviewPanel({ url, crawlStatus }: LivePreviewPanelProps) {
               <div className="relative">
                 <div className="size-12 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
               </div>
-              <span className="text-sm text-muted-foreground">Analyzing page...</span>
+              <span className="text-sm text-muted-foreground">
+                Analyzing page...
+              </span>
             </div>
           </div>
         )}
@@ -60,5 +72,5 @@ export function LivePreviewPanel({ url, crawlStatus }: LivePreviewPanelProps) {
         />
       </div>
     </div>
-  )
+  );
 }

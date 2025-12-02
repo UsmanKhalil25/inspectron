@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "lint": "npm run lint --workspaces",
+    "format": "npm run format --workspaces",
+    "format:check": "npm run format:check --workspaces",
     "install:all": "npm install"
   }
 }

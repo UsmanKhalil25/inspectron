@@ -1,26 +1,35 @@
-"use client"
+"use client";
 
-import { Link2, Play, Square, RotateCcw } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import type { CrawlStatus } from "../types"
+import { Link2, Play, Square, RotateCcw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import type { CrawlStatus } from "../types";
 
 interface UrlInputPanelProps {
-  url: string
-  setUrl: (url: string) => void
-  crawlStatus: CrawlStatus
-  onStartCrawl: () => void
-  onStopCrawl: () => void
+  url: string;
+  setUrl: (url: string) => void;
+  crawlStatus: CrawlStatus;
+  onStartCrawl: () => void;
+  onStopCrawl: () => void;
 }
 
-export function UrlInputPanel({ url, setUrl, crawlStatus, onStartCrawl, onStopCrawl }: UrlInputPanelProps) {
-  const isCrawling = crawlStatus === "crawling"
+export function UrlInputPanel({
+  url,
+  setUrl,
+  crawlStatus,
+  onStartCrawl,
+  onStopCrawl,
+}: UrlInputPanelProps) {
+  const isCrawling = crawlStatus === "crawling";
 
   return (
     <div className="border-b border-border p-4 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="url-input" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <Label
+          htmlFor="url-input"
+          className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+        >
           Target URL
         </Label>
         <div className="relative">
@@ -39,7 +48,11 @@ export function UrlInputPanel({ url, setUrl, crawlStatus, onStartCrawl, onStopCr
 
       <div className="flex gap-2">
         {isCrawling ? (
-          <Button onClick={onStopCrawl} variant="destructive" className="flex-1">
+          <Button
+            onClick={onStopCrawl}
+            variant="destructive"
+            className="flex-1"
+          >
             <Square className="mr-2 size-4" />
             Stop Crawl
           </Button>
@@ -64,5 +77,5 @@ export function UrlInputPanel({ url, setUrl, crawlStatus, onStartCrawl, onStopCr
         )}
       </div>
     </div>
-  )
+  );
 }
