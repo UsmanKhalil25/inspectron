@@ -5,7 +5,8 @@
   "workspaces": [
     "ui",
     "core",
-    "api"
+    "api",
+    "shared"
   ],
   "scripts": {
     "lint": "npm run lint --workspaces",
