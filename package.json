@@ -9,6 +9,7 @@
     "shared"
   ],
   "scripts": {
+    "build:all": "npm run build --workspace=shared && npm run build --workspace=core && npm run build --workspace=api",
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
     "format:check": "npm run format:check --workspaces",

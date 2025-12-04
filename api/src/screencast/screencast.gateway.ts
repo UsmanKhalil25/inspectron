@@ -9,7 +9,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { Logger } from "@nestjs/common";
-import { ScreencastManager } from "core/dist/crawler/screencast-manager";
+import { ScreencastManager } from "core/dist/crawler";
 import {
   WSMessageType,
   type StartScreencastMessage,
