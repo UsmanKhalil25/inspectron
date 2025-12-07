@@ -1,11 +1,12 @@
 import { Browser, BrowserContext, Page, chromium } from "playwright";
+import { InteractiveElement } from "./types";
 
 export class BrowserService {
   private browser!: Browser;
   private context!: BrowserContext;
   private page!: Page;
 
-  private getPage(): Page {
+  getPage(): Page {
     if (!this.page) {
       throw new Error("Browser not launched. Call launch() first.");
     }
@@ -28,14 +29,12 @@ export class BrowserService {
 
   async navigate(url: string) {
     const page = this.getPage();
-
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await this.wait();
   }
 
   async wait(timeoutMs = 500) {
     const page = this.getPage();
-
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(timeoutMs);
   }
@@ -45,7 +44,7 @@ export class BrowserService {
     return page.screenshot({ fullPage: true });
   }
 
-  async getInteractiveElements() {
+  async getInteractiveElements(): Promise<InteractiveElement[]> {
     const page = this.getPage();
 
     return page.evaluate(() => {
@@ -62,12 +61,13 @@ export class BrowserService {
       const elements = document.querySelectorAll(
         interactiveSelectors.join(","),
       );
-      const result: any[] = [];
+      const result: InteractiveElement[] = [];
 
-      elements.forEach((el) => {
+      elements.forEach((el, index) => {
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
           result.push({
+            id: index + 1,
             tag: el.tagName.toLowerCase(),
             text: (el as HTMLElement).innerText?.trim() || null,
             boundingBox: {

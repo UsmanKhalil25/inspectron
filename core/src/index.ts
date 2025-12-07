@@ -2,8 +2,8 @@
 
 import { Command } from "commander";
 import { isValidUrl } from "./utils/url";
-import { CrawlEngine } from "./crawler";
-import { ScannerEngine } from "./scanner";
+
+import { BrowserService, LabelingService } from "./services";
 
 const program = new Command();
 
@@ -17,50 +17,38 @@ program
       console.error("Invalid URL. Please enter a valid URL.");
       process.exit(1);
     }
-    const engine = new CrawlEngine(url, { headless: options.headless });
-    await engine.run();
-  });
 
-program
-  .command("scan")
-  .description("Scan a website for vulnerabilities")
-  .argument("<url>", "URL to scan")
-  .option("--headless", "Run browser in headless mode", true)
-  .action(async (url, options) => {
-    if (!isValidUrl(url)) {
-      console.error("Invalid URL. Please enter a valid URL.");
-      process.exit(1);
+    const browser = new BrowserService();
+
+    try {
+      console.log("Launching browser...");
+      await browser.launch();
+
+      console.log(`Navigating to ${url}...`);
+      await browser.navigate(url);
+
+      console.log("Extracting interactive elements...");
+      const elements = await browser.getInteractiveElements();
+
+      const interactive = await browser.getInteractiveElements();
+      await LabelingService.labelElements(browser.getPage(), interactive);
+
+      console.log(`Found ${elements.length} interactive elements`);
+      console.log(elements);
+
+      console.log("Capturing screenshot...");
+      const buffer = await browser.screenshot();
+
+      // Save screenshot
+      const fs = await import("fs");
+      fs.writeFileSync("screenshot.png", buffer);
+      console.log("Screenshot saved as screenshot.png");
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      console.log("Closing browser...");
+      await browser.close();
     }
-    const scanner = new ScannerEngine(url, { headless: options.headless });
-    const result = await scanner.scan();
-
-    console.log("\n========== SCAN RESULTS ==========");
-    console.log(`URL: ${result.url}`);
-    console.log(`Scanned at: ${result.scannedAt.toISOString()}`);
-    console.log(`Duration: ${result.duration}ms`);
-    console.log(
-      `Total vulnerabilities found: ${result.vulnerabilities.length}`,
-    );
-
-    if (result.vulnerabilities.length > 0) {
-      console.log("\n========== VULNERABILITIES ==========");
-      result.vulnerabilities.forEach((vuln, index) => {
-        console.log(`\n[${index + 1}] ${vuln.description}`);
-        console.log(`    Type: ${vuln.type}`);
-        console.log(`    Severity: ${vuln.severity}`);
-        console.log(`    URL: ${vuln.url}`);
-        if (vuln.evidence) {
-          console.log(`    Evidence: ${vuln.evidence}`);
-        }
-        if (vuln.recommendation) {
-          console.log(`    Recommendation: ${vuln.recommendation}`);
-        }
-      });
-    } else {
-      console.log("\nNo vulnerabilities detected.");
-    }
-
-    console.log("\n========== END OF REPORT ==========");
   });
 
 program.parse(process.argv);
