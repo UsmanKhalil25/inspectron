@@ -10,9 +10,10 @@ export class StateManager {
     return this.urlQueue.includes(url);
   }
 
-  addUrl(url: string): void {
-    if (this.isVisited(url) || this.isEnqueued(url)) return;
+  addUrl(url: string): boolean {
+    if (this.isVisited(url) || this.isEnqueued(url)) return false;
     this.urlQueue.push(url);
+    return true;
   }
 
   markVisited(url: string): void {
@@ -25,5 +26,17 @@ export class StateManager {
 
   isEmpty(): boolean {
     return !this.urlQueue.length;
+  }
+
+  getTotalDiscovered(): number {
+    return this.visitedUrls.size + this.urlQueue.length;
+  }
+
+  getQueueDepth(): number {
+    return this.urlQueue.length;
+  }
+
+  getVisitedCount(): number {
+    return this.visitedUrls.size;
   }
 }

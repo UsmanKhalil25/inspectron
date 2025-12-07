@@ -31,6 +31,10 @@ export type ScreencastFrameData = {
 
 export type ScreencastFrameHandler = (frame: ScreencastFrameData) => void;
 
+export type ScreencastManagerConfig = {
+  externalPage?: Page;
+};
+
 export class ScreencastManager {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
@@ -38,8 +42,22 @@ export class ScreencastManager {
   private cdpSession: CDPSession | null = null;
   private frameHandler: ScreencastFrameHandler | null = null;
   private isScreencasting = false;
+  private readonly usingExternalPage: boolean;
+
+  constructor(config: ScreencastManagerConfig = {}) {
+    if (config.externalPage) {
+      this.page = config.externalPage;
+      this.usingExternalPage = true;
+    } else {
+      this.usingExternalPage = false;
+    }
+  }
 
   async launch(headless: boolean = false): Promise<void> {
+    if (this.usingExternalPage) {
+      return;
+    }
+
     this.browser = await chromium.launch({
       headless,
       args: ["--remote-debugging-port=9222"],
@@ -54,7 +72,9 @@ export class ScreencastManager {
     if (!this.page) {
       throw new Error("Browser not initialized. Call launch() first.");
     }
-    await this.page.goto(url);
+    if (!this.usingExternalPage) {
+      await this.page.goto(url);
+    }
   }
 
   async startScreencast(
@@ -139,7 +159,7 @@ export class ScreencastManager {
       this.cdpSession = null;
     }
 
-    if (this.browser) {
+    if (!this.usingExternalPage && this.browser) {
       await this.browser.close();
       this.browser = null;
       this.context = null;

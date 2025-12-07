@@ -3,13 +3,19 @@
 import { Globe, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { CrawlStatus } from "../types";
+import type { CrawlStats } from "shared";
 
 interface CrawlerHeaderProps {
   crawlStatus: CrawlStatus;
-  pagesCount: number;
+  stats: CrawlStats | null;
+  sessionId: string | null;
 }
 
-export function CrawlerHeader({ crawlStatus, pagesCount }: CrawlerHeaderProps) {
+export function CrawlerHeader({
+  crawlStatus,
+  stats,
+  sessionId,
+}: CrawlerHeaderProps) {
   const getStatusBadge = () => {
     switch (crawlStatus) {
       case "crawling":
@@ -68,10 +74,23 @@ export function CrawlerHeader({ crawlStatus, pagesCount }: CrawlerHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {pagesCount > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {pagesCount} page{pagesCount !== 1 ? "s" : ""} discovered
-          </span>
+        {stats ? (
+          <div className="text-sm text-muted-foreground flex items-center gap-3">
+            <span>
+              {stats.visitedCount} / {stats.totalDiscovered} pages
+            </span>
+            {stats.crawlRate > 0 && (
+              <span className="text-xs">
+                {stats.crawlRate.toFixed(1)} pages/sec
+              </span>
+            )}
+          </div>
+        ) : (
+          crawlStatus !== "idle" && (
+            <span className="text-sm text-muted-foreground">
+              No active crawl
+            </span>
+          )
         )}
         {getStatusBadge()}
       </div>

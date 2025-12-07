@@ -43,7 +43,9 @@ export function useScreencast({
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socket = io("http://localhost:3001/screencast", {
+    const wsBaseUrl =
+      process.env.NEXT_PUBLIC_WS_BASE_URL || "http://localhost:3000";
+    const socket = io(`${wsBaseUrl}/screencast`, {
       transports: ["websocket"],
       reconnection: true,
       reconnectionDelay: 1000,
