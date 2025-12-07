@@ -5,7 +5,7 @@ export interface BoundingBox {
   height: number;
 }
 
-export interface InteractiveElement {
+export interface PageElement {
   id: number;
   tag: string;
   text: string | null;

@@ -1,9 +1,9 @@
 import { Page } from "playwright";
 
-import { InteractiveElement } from "./types";
+import { PageElement } from "../types";
 
 export class LabelingService {
-  static async labelElements(page: Page, elements: InteractiveElement[]) {
+  static async labelElements(page: Page, elements: PageElement[]) {
     await page.evaluate((items) => {
       items.forEach((el) => {
         const div = document.createElement("div");

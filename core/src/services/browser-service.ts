@@ -1,5 +1,6 @@
 import { Browser, BrowserContext, Page, chromium } from "playwright";
-import { InteractiveElement } from "./types";
+
+import { PageElement } from "../types";
 
 export class BrowserService {
   private browser!: Browser;
@@ -44,7 +45,7 @@ export class BrowserService {
     return page.screenshot({ fullPage: true });
   }
 
-  async getInteractiveElements(): Promise<InteractiveElement[]> {
+  async getInteractiveElements(): Promise<PageElement[]> {
     const page = this.getPage();
 
     return page.evaluate(() => {
@@ -61,7 +62,7 @@ export class BrowserService {
       const elements = document.querySelectorAll(
         interactiveSelectors.join(","),
       );
-      const result: InteractiveElement[] = [];
+      const result: PageElement[] = [];
 
       elements.forEach((el, index) => {
         const rect = el.getBoundingClientRect();
