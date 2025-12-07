@@ -40,7 +40,9 @@ Choose ONE element to click to continue exploring. Respond with ONLY the element
             { type: "text", text: prompt },
             {
               type: "image_url",
-              image_url: { url: `data:image/png;base64,${screenshot.toString("base64")}` },
+              image_url: {
+                url: `data:image/png;base64,${screenshot.toString("base64")}`,
+              },
             },
           ],
         },
