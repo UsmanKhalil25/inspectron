@@ -1,5 +1,6 @@
 import { createAgent } from "langchain";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { AIMessage } from "@langchain/core/messages";
 
 import { BrowserService } from "../../services/browser-service";
 import { PageElement } from "../../types";
@@ -31,7 +32,7 @@ export class CrawlAgent {
         "You are a web crawling agent. Analyze the screenshot and decide which element to interact with. The elements are labeled with numbers.",
     });
 
-    await agent.invoke({
+    const response = await agent.invoke({
       messages: [
         {
           role: "user",

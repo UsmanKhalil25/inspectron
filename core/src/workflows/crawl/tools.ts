@@ -10,6 +10,7 @@ export const clickTool = (
 ) =>
   tool(
     async ({ element_id }: { element_id: number }) => {
+      console.log(JSON.stringify({ tool: "click", args: { element_id } }));
       const element = elements.find((el) => el.id === element_id);
       if (!element) {
         return `Error: no element with id ${element_id}`;
@@ -72,6 +73,9 @@ export const scrollTool = (
       target: string | number;
       direction: string;
     }) => {
+      console.log(
+        JSON.stringify({ tool: "scroll", args: { target, direction } }),
+      );
       const page = browserService.getPage();
       if (typeof target === "string" && target.toUpperCase() === "WINDOW") {
         const scrollAmount = 500;
