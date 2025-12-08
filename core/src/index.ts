@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
+import { ChatOpenAI } from "@langchain/openai";
 import { Command } from "commander";
 import { config } from "dotenv";
+
+import { BrowserService } from "./services/browser-service";
+import { CrawlStateService } from "./services/crawl-state-service";
 import { isValidUrl } from "./utils/url";
-import { crawlWorkflow } from "./workflows";
+import { CrawlWorkflow } from "./workflows/crawl";
 
 config();
 
@@ -20,11 +24,25 @@ program
       process.exit(1);
     }
 
+    const llm = new ChatOpenAI({
+      modelName: "gpt-4o",
+      temperature: 0,
+    });
+
+    const browserService = new BrowserService();
+    await browserService.launch();
+
+    const crawlStateService = new CrawlStateService({ baseUrl: url });
+
+    const workflow = new CrawlWorkflow(llm, browserService, crawlStateService);
+
     try {
-      await crawlWorkflow(url, parseInt(options.maxPages));
+      await workflow.execute();
     } catch (err) {
       console.error("Error:", err);
       process.exit(1);
+    } finally {
+      await browserService.close();
     }
   });
 

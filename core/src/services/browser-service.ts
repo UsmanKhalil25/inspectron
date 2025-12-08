@@ -7,6 +7,36 @@ export class BrowserService {
   private context!: BrowserContext;
   private page!: Page;
 
+  private async getElementsBySelectors(
+    selectors: string[],
+  ): Promise<PageElement[]> {
+    const page = this.getPage();
+
+    return page.evaluate((selectors) => {
+      const elements = document.querySelectorAll(selectors.join(","));
+      const result: PageElement[] = [];
+
+      elements.forEach((el, index) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          result.push({
+            id: index + 1,
+            tag: el.tagName.toLowerCase(),
+            text: (el as HTMLElement).innerText?.trim() || null,
+            boundingBox: {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+            },
+          });
+        }
+      });
+
+      return result;
+    }, selectors);
+  }
+
   getPage(): Page {
     if (!this.page) {
       throw new Error("Browser not launched. Call launch() first.");
@@ -45,44 +75,16 @@ export class BrowserService {
     return page.screenshot({ fullPage: true });
   }
 
-  async getInteractiveElements(): Promise<PageElement[]> {
-    const page = this.getPage();
+  async getButtons(): Promise<PageElement[]> {
+    return this.getElementsBySelectors([
+      "button",
+      "[role=button]",
+      "[onclick]",
+    ]);
+  }
 
-    return page.evaluate(() => {
-      const interactiveSelectors = [
-        "a[href]",
-        "button",
-        "input:not([type=hidden])",
-        "textarea",
-        "select",
-        "[role=button]",
-        "[onclick]",
-      ];
-
-      const elements = document.querySelectorAll(
-        interactiveSelectors.join(","),
-      );
-      const result: PageElement[] = [];
-
-      elements.forEach((el, index) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          result.push({
-            id: index + 1,
-            tag: el.tagName.toLowerCase(),
-            text: (el as HTMLElement).innerText?.trim() || null,
-            boundingBox: {
-              x: rect.x,
-              y: rect.y,
-              width: rect.width,
-              height: rect.height,
-            },
-          });
-        }
-      });
-
-      return result;
-    });
+  async getLinks(): Promise<PageElement[]> {
+    return this.getElementsBySelectors(["a[href]"]);
   }
 
   async close() {
