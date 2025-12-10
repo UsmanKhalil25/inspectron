@@ -2,15 +2,26 @@
  * This file defines the tools available to the ReAct agent.
  * Tools are functions that the agent can use to interact with external systems or perform specific tasks.
  */
-import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 /**
- * Tavily search tool configuration
- * This tool allows the agent to perform web searches using the Tavily API.
+ * Simple chat tool configuration
+ * This tool allows the agent to process and respond to simple chat messages.
  */
-const searchTavily = new TavilySearchResults({
-  maxResults: 3,
-});
+const chatTool = tool(
+  async ({ message }: { message: string }) => {
+    // Simple chat tool that echoes the message with a response
+    return `Received message: "${message}". This is a simple chat tool responding to your message.`;
+  },
+  {
+    name: "chat",
+    description: "A simple chat tool for processing and responding to messages. Use this when you need to process or respond to user messages.",
+    schema: z.object({
+      message: z.string().describe("The message to process"),
+    }),
+  }
+);
 
 /**
  * Export an array of all available tools
@@ -20,4 +31,4 @@ const searchTavily = new TavilySearchResults({
  * and add them to this array.
  * See https://js.langchain.com/docs/how_to/custom_tools/#tool-function for more information.
  */
-export const TOOLS = [searchTavily];
+export const TOOLS = [chatTool];
