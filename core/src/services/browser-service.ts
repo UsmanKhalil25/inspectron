@@ -38,6 +38,16 @@ export class BrowserService {
     return this.currentPage.screenshot({ fullPage: true });
   }
 
+  async getPageContent(): Promise<{ title: string; url: string; text: string }> {
+    return this.currentPage.evaluate(() => {
+      return {
+        title: document.title,
+        url: window.location.href,
+        text: document.body.innerText,
+      };
+    });
+  }
+
   private async getElementsBySelectors(
     selectors: string[],
   ): Promise<PageElement[]> {
