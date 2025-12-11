@@ -3,6 +3,7 @@ import * as z from "zod";
 
 import { AgentStateType } from "./state.js";
 
+const DEFAULT_WAIT_MS = 500;
 export const click = (state: AgentStateType) =>
   tool(
     async ({ elementId }) => {
@@ -15,6 +16,7 @@ export const click = (state: AgentStateType) =>
       }
       const { x, y, width, height } = element.boundingBox;
       await page.mouse.click(x + width / 2, y + height / 2);
+      await page.waitForTimeout(DEFAULT_WAIT_MS);
       return `Clicked element ${elementId}`;
     },
     {
@@ -44,6 +46,7 @@ export const type = (state: AgentStateType) =>
       await page.keyboard.press("Backspace");
       await page.keyboard.type(text);
       await page.keyboard.press("Enter");
+      await page.waitForTimeout(DEFAULT_WAIT_MS);
       return `Typed "${text}" into element ${elementId} and submitted`;
     },
     {
@@ -81,6 +84,7 @@ export const scroll = (state: AgentStateType) =>
       }
 
       await page.mouse.wheel(deltaX, deltaY);
+      await page.waitForTimeout(DEFAULT_WAIT_MS);
       return `Scrolled ${direction} by ${amount} pixels`;
     },
     {
@@ -103,6 +107,7 @@ export const navigate = (state: AgentStateType) =>
     async ({ url }) => {
       const page = state.page;
       await page.goto(url, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(DEFAULT_WAIT_MS);
       return `Navigated to ${url}`;
     },
     {

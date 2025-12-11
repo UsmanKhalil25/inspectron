@@ -13,6 +13,11 @@ import { AgentStateType } from "./state.js";
 import { labelElements } from "../utils/label-elements.js";
 import { LlmFactory, BrowserFactory } from "./factory";
 import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
+import {
+  INITIAL_AGENT_PROMPT,
+  WEB_BROWSING_AGENT_PROMPT,
+  SCREENSHOT_OBSERVATION_TEXT,
+} from "./prompts.js";
 
 export async function getInteractiveElements(
   page: Page,
@@ -35,11 +40,23 @@ export async function getInteractiveElements(
 
     elements.forEach((el, index) => {
       const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
+      const htmlEl = el as HTMLElement;
+
+      // Check if element is visible
+      const style = window.getComputedStyle(htmlEl);
+      const isVisible =
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        style.opacity !== "0" &&
+        htmlEl.offsetParent !== null; // Element is not hidden via parent
+
+      if (isVisible) {
         result.push({
           id: index + 1,
           tag: el.tagName.toLowerCase(),
-          text: (el as HTMLElement).innerText?.trim() || null,
+          text: htmlEl.innerText?.trim() || null,
           boundingBox: {
             x: rect.x,
             y: rect.y,
@@ -74,6 +91,17 @@ export async function shouldContinue(state: AgentStateType) {
   return END;
 }
 
+export async function shouldInitializeBrowser(state: AgentStateType) {
+  const lastMessage = state.messages[state.messages.length - 1];
+  if (lastMessage == null || !AIMessage.isInstance(lastMessage)) return END;
+
+  if (lastMessage.tool_calls?.length) {
+    return "initialization";
+  }
+
+  return END;
+}
+
 export async function cleanupNode(state: AgentStateType) {
   await BrowserFactory.cleanup();
   return {
@@ -85,6 +113,7 @@ export async function cleanupNode(state: AgentStateType) {
 
 export async function labelElementsNode(state: AgentStateType) {
   const page = state.page;
+  await page.waitForLoadState("load", { timeout: 10000 });
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);
   return {
@@ -103,6 +132,20 @@ export async function captureScreenshotNode(state: AgentStateType) {
   };
 }
 
+export async function initialLLMCallNode(state: AgentStateType) {
+  const model = LlmFactory.getLLM();
+
+  const tools = [navigate(state)];
+  const modelWithTools = model.bindTools(tools);
+
+  const messages = [new SystemMessage(INITIAL_AGENT_PROMPT), ...state.messages];
+
+  return {
+    messages: await modelWithTools.invoke(messages),
+    llmCalls: (state.llmCalls ?? 0) + 1,
+  };
+}
+
 export async function llmCallNode(state: AgentStateType) {
   const model = LlmFactory.getLLM();
   const tools = [
@@ -116,9 +159,7 @@ export async function llmCallNode(state: AgentStateType) {
   const modelWithTools = model.bindTools(tools);
 
   const messages = [
-    new SystemMessage(
-      "You are an AI agent that interacts with web pages. Use the available tools to perform actions on the page based on the user's requests and the current state of the page. You will receive screenshots of the page with interactive elements labeled by ID numbers.",
-    ),
+    new SystemMessage(WEB_BROWSING_AGENT_PROMPT),
     ...state.messages,
   ];
 
@@ -134,7 +175,7 @@ export async function llmCallNode(state: AgentStateType) {
           },
           {
             type: "text",
-            text: "Here is the current state of the page with labeled interactive elements. Use the element IDs to interact with them.",
+            text: SCREENSHOT_OBSERVATION_TEXT,
           },
         ],
       }),
