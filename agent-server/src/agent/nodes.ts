@@ -42,7 +42,6 @@ export async function getInteractiveElements(
       const rect = el.getBoundingClientRect();
       const htmlEl = el as HTMLElement;
 
-      // Check if element is visible
       const style = window.getComputedStyle(htmlEl);
       const isVisible =
         rect.width > 0 &&
@@ -50,7 +49,7 @@ export async function getInteractiveElements(
         style.display !== "none" &&
         style.visibility !== "hidden" &&
         style.opacity !== "0" &&
-        htmlEl.offsetParent !== null; // Element is not hidden via parent
+        htmlEl.offsetParent !== null;
 
       if (isVisible) {
         result.push({
@@ -111,9 +110,21 @@ export async function cleanupNode(state: AgentStateType) {
   };
 }
 
+export async function ensurePageNode(state: AgentStateType) {
+  const page = state.page;
+
+  try {
+    await page.waitForLoadState("load", { timeout: 10000 });
+    await page.waitForLoadState("networkidle", { timeout: 5000 });
+  } catch (error) {
+    console.log("Page load timeout, continuing anyway");
+  }
+
+  return state;
+}
+
 export async function labelElementsNode(state: AgentStateType) {
   const page = state.page;
-  await page.waitForLoadState("load", { timeout: 10000 });
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);
   return {

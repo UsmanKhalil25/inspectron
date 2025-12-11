@@ -1,4 +1,4 @@
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 
 import {
   initialLLMCallNode,
@@ -6,19 +6,25 @@ import {
   captureScreenshotNode,
   initializationNode,
   labelElementsNode,
+  ensurePageNode,
   cleanupNode,
   toolNode,
   shouldContinue,
   shouldInitializeBrowser,
 } from "./nodes.js";
 import { AgentState } from "./state.js";
+import { captchaHandlerGraph } from "./subgraphs/captcha-handler.js";
+
+const checkpointer = new MemorySaver();
 
 const graph = new StateGraph(AgentState)
   .addNode("decide_browser_needed", initialLLMCallNode)
   .addNode("initialize_browser", initializationNode)
   .addNode("cleanup_browser", cleanupNode)
+  .addNode("ensure_page", ensurePageNode)
   .addNode("label_page_elements", labelElementsNode)
   .addNode("capture_page_screenshot", captureScreenshotNode)
+  .addNode("captcha_handler", captchaHandlerGraph)
   .addNode("agent_decision", llmCallNode)
   .addNode("execute_tools", toolNode)
   .addEdge(START, "decide_browser_needed")
@@ -27,15 +33,19 @@ const graph = new StateGraph(AgentState)
     [END]: END,
   })
   .addEdge("initialize_browser", "execute_tools")
-  .addEdge("execute_tools", "label_page_elements")
+  .addEdge("execute_tools", "ensure_page")
+  .addEdge("ensure_page", "label_page_elements")
   .addEdge("label_page_elements", "capture_page_screenshot")
-  .addEdge("capture_page_screenshot", "agent_decision")
+  .addEdge("capture_page_screenshot", "captcha_handler")
+  .addEdge("captcha_handler", "agent_decision")
   .addConditionalEdges("agent_decision", shouldContinue, {
     toolNode: "execute_tools",
     [END]: "cleanup_browser",
   })
   .addEdge("cleanup_browser", END)
-  .compile();
+  .compile({
+    checkpointer,
+  });
 
 graph.name = "Agent";
 

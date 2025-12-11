@@ -2,8 +2,10 @@ import { Page } from "playwright";
 import type { PageElement } from "../schemas/page-elements.js";
 
 export async function labelElements(page: Page, elements: PageElement[]) {
-  // Pass elements directly and inline all logic to avoid TypeScript helpers
   await page.evaluate((items) => {
+    const existingLabels = document.querySelectorAll("[data-playwright-label]");
+    existingLabels.forEach((el) => el.remove());
+
     for (let i = 0; i < items.length; i++) {
       const el = items[i];
 
@@ -13,33 +15,35 @@ export async function labelElements(page: Page, elements: PageElement[]) {
         borderColor += letters[Math.floor(Math.random() * 16)];
       }
 
-      const div = document.createElement("div");
-      div.style.position = "absolute";
-      div.style.left = `${el.boundingBox.x + window.scrollX}px`;
-      div.style.top = `${el.boundingBox.y + window.scrollY}px`;
-      div.style.width = `${el.boundingBox.width}px`;
-      div.style.height = `${el.boundingBox.height}px`;
-
-      div.style.outline = `2px dashed ${borderColor}`;
-      div.style.pointerEvents = "none";
-      div.style.zIndex = "2147483647";
-      div.style.boxSizing = "border-box";
+      const overlay = document.createElement("div");
+      overlay.setAttribute("data-playwright-label", "true");
+      overlay.style.position = "fixed";
+      overlay.style.left = `${el.boundingBox.x}px`;
+      overlay.style.top = `${el.boundingBox.y}px`;
+      overlay.style.width = `${el.boundingBox.width}px`;
+      overlay.style.height = `${el.boundingBox.height}px`;
+      overlay.style.border = `2px dashed ${borderColor}`;
+      overlay.style.pointerEvents = "none";
+      overlay.style.zIndex = "2147483647";
+      overlay.style.boxSizing = "border-box";
 
       const label = document.createElement("div");
       label.innerText = `${el.id}`;
       label.style.position = "absolute";
-      label.style.top = "-19px";
+      label.style.top = "-20px";
       label.style.left = "0";
-      label.style.padding = "2px 4px";
+      label.style.padding = "2px 6px";
       label.style.background = borderColor;
       label.style.color = "white";
-      label.style.fontSize = "12px";
+      label.style.fontSize = "11px";
       label.style.fontWeight = "bold";
       label.style.fontFamily = "monospace";
-      label.style.borderRadius = "2px";
+      label.style.borderRadius = "3px";
+      label.style.whiteSpace = "nowrap";
+      label.style.boxShadow = "0 1px 3px rgba(0,0,0,0.3)";
 
-      div.appendChild(label);
-      document.body.appendChild(div);
+      overlay.appendChild(label);
+      document.body.appendChild(overlay);
     }
   }, elements);
 }

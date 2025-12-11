@@ -14,6 +14,7 @@ export const click = (state: AgentStateType) =>
       if (!element) {
         return `Error: no element with id ${elementId}`;
       }
+
       const { x, y, width, height } = element.boundingBox;
       await page.mouse.click(x + width / 2, y + height / 2);
       await page.waitForTimeout(DEFAULT_WAIT_MS);
@@ -39,6 +40,7 @@ export const type = (state: AgentStateType) =>
       if (!element) {
         return `Error: no element with id ${elementId}`;
       }
+
       const { x, y, width, height } = element.boundingBox;
       await page.mouse.click(x + width / 2, y + height / 2);
       const selectAll = process.platform === "darwin" ? "Meta+A" : "Control+A";
