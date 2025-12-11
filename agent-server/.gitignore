@@ -17,6 +17,8 @@ dist
 .env
 .ipynb_checkpoints
 
+# Debug output
+debug/
 
 # LangGraph API
 .langgraph_api

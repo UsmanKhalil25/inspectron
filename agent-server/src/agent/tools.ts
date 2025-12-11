@@ -2,12 +2,15 @@ import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
 import { AgentStateType } from "./state.js";
+import { BrowserFactory } from "./factory/browser-factory.js";
 
 const DEFAULT_WAIT_MS = 500;
 export const click = (state: AgentStateType) =>
   tool(
     async ({ elementId }) => {
-      const page = state.page;
+      const page = state.page?.mouse
+        ? state.page
+        : await BrowserFactory.getPage();
       const interactiveElements = state.interactiveElements || [];
 
       const element = interactiveElements.find((el) => el.id === elementId);
@@ -34,7 +37,9 @@ export const click = (state: AgentStateType) =>
 export const type = (state: AgentStateType) =>
   tool(
     async ({ elementId, text }) => {
-      const page = state.page;
+      const page = state.page?.mouse
+        ? state.page
+        : await BrowserFactory.getPage();
       const interactiveElements = state.interactiveElements || [];
       const element = interactiveElements.find((el) => el.id === elementId);
       if (!element) {
@@ -47,9 +52,8 @@ export const type = (state: AgentStateType) =>
       await page.keyboard.press(selectAll);
       await page.keyboard.press("Backspace");
       await page.keyboard.type(text);
-      await page.keyboard.press("Enter");
       await page.waitForTimeout(DEFAULT_WAIT_MS);
-      return `Typed "${text}" into element ${elementId} and submitted`;
+      return `Typed "${text}" into element ${elementId}`;
     },
     {
       name: "type",
@@ -66,7 +70,9 @@ export const type = (state: AgentStateType) =>
 export const scroll = (state: AgentStateType) =>
   tool(
     async ({ direction, amount = 500 }) => {
-      const page = state.page;
+      const page = state.page?.mouse
+        ? state.page
+        : await BrowserFactory.getPage();
       let deltaX = 0;
       let deltaY = 0;
 
@@ -107,7 +113,9 @@ export const scroll = (state: AgentStateType) =>
 export const navigate = (state: AgentStateType) =>
   tool(
     async ({ url }) => {
-      const page = state.page;
+      const page = state.page?.goto
+        ? state.page
+        : await BrowserFactory.getPage();
       await page.goto(url, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(DEFAULT_WAIT_MS);
       return `Navigated to ${url}`;
@@ -124,7 +132,9 @@ export const navigate = (state: AgentStateType) =>
 export const wait = (state: AgentStateType) =>
   tool(
     async ({ milliseconds }) => {
-      const page = state.page;
+      const page = state.page?.waitForLoadState
+        ? state.page
+        : await BrowserFactory.getPage();
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(milliseconds);
 
@@ -142,7 +152,9 @@ export const wait = (state: AgentStateType) =>
 export const goBack = (state: AgentStateType) =>
   tool(
     async () => {
-      const page = state.page;
+      const page = state.page?.goBack
+        ? state.page
+        : await BrowserFactory.getPage();
       await page.goBack();
       return "Navigated back to the previous page";
     },

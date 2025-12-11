@@ -14,6 +14,7 @@ import {
 } from "./nodes.js";
 import { AgentState } from "./state.js";
 import { captchaHandlerGraph } from "./subgraphs/captcha-handler.js";
+import { loginHandlerGraph } from "./subgraphs/login-handler.js";
 
 const checkpointer = new MemorySaver();
 
@@ -24,6 +25,7 @@ const graph = new StateGraph(AgentState)
   .addNode("ensure_page", ensurePageNode)
   .addNode("label_page_elements", labelElementsNode)
   .addNode("capture_page_screenshot", captureScreenshotNode)
+  .addNode("login_handler", loginHandlerGraph)
   .addNode("captcha_handler", captchaHandlerGraph)
   .addNode("agent_decision", llmCallNode)
   .addNode("execute_tools", toolNode)
@@ -36,7 +38,8 @@ const graph = new StateGraph(AgentState)
   .addEdge("execute_tools", "ensure_page")
   .addEdge("ensure_page", "label_page_elements")
   .addEdge("label_page_elements", "capture_page_screenshot")
-  .addEdge("capture_page_screenshot", "captcha_handler")
+  .addEdge("capture_page_screenshot", "login_handler")
+  .addEdge("login_handler", "captcha_handler")
   .addEdge("captcha_handler", "agent_decision")
   .addConditionalEdges("agent_decision", shouldContinue, {
     toolNode: "execute_tools",
@@ -45,8 +48,11 @@ const graph = new StateGraph(AgentState)
   .addEdge("cleanup_browser", END)
   .compile({
     checkpointer,
+  })
+  .withConfig({
+    recursionLimit: 1000,
   });
 
-graph.name = "Agent";
+graph.name = "WorkflowGraph";
 
 export default graph;

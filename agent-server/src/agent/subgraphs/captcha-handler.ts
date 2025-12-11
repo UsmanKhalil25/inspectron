@@ -2,9 +2,9 @@ import { StateGraph, interrupt } from "@langchain/langgraph";
 import * as z from "zod";
 import { Page } from "playwright";
 import { detectCaptcha } from "../../utils/captcha-detector.js";
+import { BrowserFactory } from "../factory";
 
 const CaptchaState = z.object({
-  page: z.custom<Page>(),
   img: z.string().optional(),
   captchaType: z.string().optional(),
   solved: z.boolean().optional(),
@@ -14,15 +14,9 @@ const CaptchaState = z.object({
 type CaptchaStateType = z.infer<typeof CaptchaState>;
 
 async function detectCaptchaNode(state: CaptchaStateType) {
-  if (!state.page) {
-    console.error("No page object in state");
-    return {
-      captchaType: "none",
-      solved: true,
-    };
-  }
+  const page = await BrowserFactory.getPage();
 
-  const result = await detectCaptcha(state.page);
+  const result = await detectCaptcha(page);
 
   if (!result.detected) {
     return {
@@ -31,7 +25,7 @@ async function detectCaptchaNode(state: CaptchaStateType) {
     };
   }
 
-  const url = state.page.url();
+  const url = page.url();
 
   return {
     captchaType: result.type,
@@ -96,15 +90,9 @@ async function verifySolvedNode(state: CaptchaStateType) {
     solved: state.solved,
   });
 
-  if (!state.page) {
-    console.error("No page object in verify node");
-    return {
-      captchaType: "none",
-      solved: true,
-    };
-  }
+  const page = await BrowserFactory.getPage();
 
-  const result = await detectCaptcha(state.page);
+  const result = await detectCaptcha(page);
 
   if (result.detected) {
     console.log("Captcha still detected:", result.type);
@@ -158,4 +146,8 @@ const workflow = new StateGraph(CaptchaState)
     end: "__end__",
   });
 
-export const captchaHandlerGraph = workflow.compile({ checkpointer: true });
+export const captchaHandlerGraph = workflow
+  .compile({ checkpointer: true })
+  .withConfig({
+    recursionLimit: 1000,
+  });

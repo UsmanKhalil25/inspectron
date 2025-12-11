@@ -19,6 +19,12 @@ export const AgentState = z.object({
   input: z.string(),
   img: z.string().optional(),
   interactiveElements: z.array(PageElementSchema).optional(),
+  credentials: z
+    .object({
+      username: z.string(),
+      password: z.string(),
+    })
+    .optional(),
 });
 
 export type Prediction = z.infer<typeof PredictionSchema>;

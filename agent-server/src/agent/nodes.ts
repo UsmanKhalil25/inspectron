@@ -11,6 +11,7 @@ import { END } from "@langchain/langgraph";
 
 import { AgentStateType } from "./state.js";
 import { labelElements } from "../utils/label-elements.js";
+import { DebugLogger } from "../utils/debug-logger.js";
 import { LlmFactory, BrowserFactory } from "./factory";
 import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
 import {
@@ -18,6 +19,9 @@ import {
   WEB_BROWSING_AGENT_PROMPT,
   SCREENSHOT_OBSERVATION_TEXT,
 } from "./prompts.js";
+
+const DEBUG_MODE = process.env.DEBUG_AGENT === "true";
+let debugLogger: DebugLogger | null = null;
 
 export async function getInteractiveElements(
   page: Page,
@@ -73,6 +77,12 @@ export async function getInteractiveElements(
 export async function initializationNode(state: AgentStateType) {
   await BrowserFactory.launch();
   const page = await BrowserFactory.getPage();
+
+  if (DEBUG_MODE && !debugLogger) {
+    const threadId = state.input || "unknown";
+    debugLogger = new DebugLogger(threadId);
+  }
+
   return {
     ...state,
     page,
@@ -103,15 +113,23 @@ export async function shouldInitializeBrowser(state: AgentStateType) {
 
 export async function cleanupNode(state: AgentStateType) {
   await BrowserFactory.cleanup();
+
+  if (DEBUG_MODE && debugLogger) {
+    console.log(`Debug session complete: ${debugLogger.getSessionPath()}`);
+    console.log(`Total iterations: ${debugLogger.getIterationCount()}`);
+    debugLogger = null;
+  }
+
   return {
     ...state,
     img: undefined,
     interactiveElements: [],
+    credentials: undefined,
   };
 }
 
 export async function ensurePageNode(state: AgentStateType) {
-  const page = state.page;
+  const page = await BrowserFactory.getPage();
 
   try {
     await page.waitForLoadState("load", { timeout: 10000 });
@@ -120,11 +138,16 @@ export async function ensurePageNode(state: AgentStateType) {
     console.log("Page load timeout, continuing anyway");
   }
 
-  return state;
+  return {
+    ...state,
+    page,
+  };
 }
 
 export async function labelElementsNode(state: AgentStateType) {
-  const page = state.page;
+  const page = state.page?.evaluate
+    ? state.page
+    : await BrowserFactory.getPage();
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);
   return {
@@ -134,9 +157,29 @@ export async function labelElementsNode(state: AgentStateType) {
 }
 
 export async function captureScreenshotNode(state: AgentStateType) {
-  const page = state.page;
-  const screenshot = await page.screenshot({ fullPage: true, type: "png" });
+  const page = state.page?.screenshot
+    ? state.page
+    : await BrowserFactory.getPage();
+  const screenshot = await page.screenshot();
   const base64Image = screenshot.toString("base64");
+
+  if (DEBUG_MODE && debugLogger) {
+    try {
+      const url = await page.url();
+      debugLogger.saveIteration({
+        screenshot: base64Image,
+        elements: state.interactiveElements || [],
+        url,
+        metadata: {
+          llmCalls: state.llmCalls || 0,
+          messageCount: state.messages.length,
+        },
+      });
+    } catch (error) {
+      console.error("Error saving debug iteration:", error);
+    }
+  }
+
   return {
     ...state,
     img: base64Image,
@@ -175,6 +218,12 @@ export async function llmCallNode(state: AgentStateType) {
   ];
 
   if (state.img) {
+    let screenshotText = SCREENSHOT_OBSERVATION_TEXT;
+
+    if (state.credentials) {
+      screenshotText += `\n\nLOGIN CREDENTIALS PROVIDED:\n- Username/Email: ${state.credentials.username}\n- Password: ${state.credentials.password}\n\nYou must fill in the login form with these credentials using the type tool.`;
+    }
+
     messages.push(
       new HumanMessage({
         content: [
@@ -186,7 +235,7 @@ export async function llmCallNode(state: AgentStateType) {
           },
           {
             type: "text",
-            text: SCREENSHOT_OBSERVATION_TEXT,
+            text: screenshotText,
           },
         ],
       }),
