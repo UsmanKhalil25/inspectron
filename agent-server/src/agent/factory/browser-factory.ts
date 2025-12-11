@@ -5,38 +5,38 @@ export class BrowserFactory {
   private static context: BrowserContext | null = null;
   private static page: Page | null = null;
 
-  static async getBrowser(): Promise<Browser> {
-    if (!this.browser) {
-      this.browser = await chromium.launch({ headless: false });
-    }
-    return this.browser;
-  }
+  static async launch() {
+    this.browser = await chromium.launch({
+      headless: false,
+      args: [
+        "--disable-web-security",
+        "--no-sandbox",
+        "--disable-site-isolation-trials",
+      ],
+    });
 
-  static async getContext(): Promise<BrowserContext> {
-    if (!this.context) {
-      const browser = await this.getBrowser();
-      this.context = await browser.newContext();
-    }
-    return this.context;
+    this.context = await this.browser.newContext({ ignoreHTTPSErrors: true });
+    this.page = await this.context.newPage();
   }
 
   static async getPage(): Promise<Page> {
     if (!this.page) {
-      const context = await this.getContext();
-      this.page = await context.newPage();
+      await this.launch();
     }
-    return this.page;
+    return this.page!;
   }
 
-  static async reset(): Promise<void> {
+  static async cleanup(): Promise<void> {
     if (this.page) {
       await this.page.close();
       this.page = null;
     }
+
     if (this.context) {
       await this.context.close();
       this.context = null;
     }
+
     if (this.browser) {
       await this.browser.close();
       this.browser = null;

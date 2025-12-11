@@ -4,7 +4,6 @@ import { MessagesZodMeta } from "@langchain/langgraph";
 import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
 
-
 import { PageElementSchema } from "../schemas/page-elements.js";
 
 const PredictionSchema = z.object({
@@ -12,7 +11,7 @@ const PredictionSchema = z.object({
 });
 
 export const AgentState = z.object({
-    messages: z
+  messages: z
     .array(z.custom<BaseMessage>())
     .register(registry, MessagesZodMeta),
   llmCalls: z.number().optional(),

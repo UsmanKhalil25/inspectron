@@ -80,7 +80,7 @@ export const scroll = (state: AgentStateType) =>
           break;
       }
 
-      await page.mouse.wheel( deltaX, deltaY );
+      await page.mouse.wheel(deltaX, deltaY);
       return `Scrolled ${direction} by ${amount} pixels`;
     },
     {
@@ -98,10 +98,29 @@ export const scroll = (state: AgentStateType) =>
     },
   );
 
+export const navigate = (state: AgentStateType) =>
+  tool(
+    async ({ url }) => {
+      const page = state.page;
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      return `Navigated to ${url}`;
+    },
+    {
+      name: "navigate",
+      description: "Navigate to a specified URL",
+      schema: z.object({
+        url: z.string().describe("The URL to navigate to"),
+      }),
+    },
+  );
+
 export const wait = (state: AgentStateType) =>
   tool(
     async ({ milliseconds }) => {
-      await new Promise((resolve) => setTimeout(resolve, milliseconds));
+      const page = state.page;
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(milliseconds);
+
       return `Waited for ${milliseconds}ms`;
     },
     {
