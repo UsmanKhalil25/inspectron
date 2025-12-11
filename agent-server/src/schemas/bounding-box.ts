@@ -7,5 +7,4 @@ export const BoundingBoxSchema = z.object({
   height: z.number(),
 });
 
-
 export type BoundingBox = z.infer<typeof BoundingBoxSchema>;
