@@ -1,15 +1,12 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 
-import { MessagesState } from "./state.js";
-import { llmCall, toolNode, shouldContinue } from "./nodes.js";
+import { captureScreenshotNode, labelElementsNode } from "./nodes.js";
+import { AgentState} from "./state.js";
 
-const graph = new StateGraph(MessagesState)
-  .addNode("llmCall", llmCall)
-  .addNode("toolNode", toolNode)
-  .addEdge(START, "llmCall")
-  .addConditionalEdges("llmCall", shouldContinue, ["toolNode", END])
-  .addEdge("toolNode", "llmCall")
-  .compile();
+
+const graph = new StateGraph(AgentState)
+  .addNode("labelElements", labelElementsNode)
+  .addNode("captureScreenshot", captureScreenshotNode)
 
 graph.name = "New Agent";
 

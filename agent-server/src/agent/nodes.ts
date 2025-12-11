@@ -1,53 +1,69 @@
-import * as z from "zod";
-import {
-  SystemMessage,
-  AIMessage,
-  ToolMessage,
-} from "@langchain/core/messages";
-import { END } from "@langchain/langgraph";
-import { MessagesState } from "./state.js";
-import { tools, toolsByName } from "./tools.js";
-import { LLMFactory } from "./factory.js";
+import type { Page } from "playwright";
 
-export async function llmCall(state: z.infer<typeof MessagesState>) {
-  const model = LLMFactory.getLLM();
-  const modelWithTools = model.bindTools(tools);
+import type { PageElement } from "../schemas/page-elements.js";
 
-  return {
-    messages: await modelWithTools.invoke([
-      new SystemMessage(
-        "You are a helpful assistant tasked with performing arithmetic on a set of inputs.",
-      ),
-      ...state.messages,
-    ]),
-    llmCalls: (state.llmCalls ?? 0) + 1,
-  };
+import { AgentStateType } from "./state.js";
+import { labelElements } from "../utils/label-elements.js";
+import { LlmFactory } from "./factory";
+
+export async function getInteractiveElements(page: Page): Promise<PageElement[]> {
+  return page.evaluate(() => {
+    const selectors = [
+      "input",
+      "textarea",
+      "button",
+      "[role=button]",
+      "[onclick]",
+      "a[href]",
+      "select",
+      "iframe",
+      "video",
+    ];
+
+    const elements = document.querySelectorAll(selectors.join(","));
+    const result: PageElement[] = [];
+
+    elements.forEach((el, index) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        result.push({
+          id: index + 1,
+          tag: el.tagName.toLowerCase(),
+          text: (el as HTMLElement).innerText?.trim() || null,
+          boundingBox: {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+          },
+        });
+      }
+    });
+
+    return result;
+  });
 }
 
-export async function toolNode(state: z.infer<typeof MessagesState>) {
-  const lastMessage = state.messages.at(-1);
 
-  if (lastMessage == null || !AIMessage.isInstance(lastMessage)) {
-    return { messages: [] };
-  }
-
-  const result: ToolMessage[] = [];
-  for (const toolCall of lastMessage.tool_calls ?? []) {
-    const tool = toolsByName[toolCall.name];
-    const observation = await tool.invoke(toolCall);
-    result.push(observation);
-  }
-
-  return { messages: result };
+export async function labelElementsNode(state: AgentStateType) {
+  const page = state.page;
+  const interactiveElements = await getInteractiveElements(page);
+  await labelElements(page, interactiveElements);
+  state.interactiveElements= interactiveElements;
 }
 
-export async function shouldContinue(state: z.infer<typeof MessagesState>) {
-  const lastMessage = state.messages.at(-1);
-  if (lastMessage == null || !AIMessage.isInstance(lastMessage)) return END;
+export async function captureScreenshotNode(state: AgentStateType) {
+  const page = state.page;
+  return await page.screenshot({ fullPage: true });
+}
 
-  if (lastMessage.tool_calls?.length) {
-    return "toolNode";
-  }
+export async function llmCall(state: AgentStateType) {
+  const model = LlmFactory.getLLM();
 
-  return END;
+}
+
+
+export async function shouldContinue(state: AgentStateType) {
+  // TODO: implement a better logic to decide whether to continue or not
+
 }

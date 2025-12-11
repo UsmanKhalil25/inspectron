@@ -1,8 +1,7 @@
 import { Page } from "playwright";
-import { PageElement } from "../types";
+import type { PageElement } from "../schemas/page-elements.js";
 
-export class LabelingService {
-  static async labelElements(page: Page, elements: PageElement[]) {
+export  async function labelElements(page: Page, elements: PageElement[]) {
     await page.evaluate((items) => {
       function getRandomColor() {
         const letters = "0123456789ABCDEF";
@@ -46,4 +45,5 @@ export class LabelingService {
       });
     }, elements);
   }
-}
+
+

@@ -1,11 +1,11 @@
 import type { ChatOpenAI } from "@langchain/openai";
 import type { ChatOllama } from "@langchain/ollama";
 
-import { OpenaiClient } from "../clients/llm/openai-client.js";
-import { OllamaClient } from "../clients/llm/ollama-client.js";
-import { stringEnv } from "../utils/config.js";
+import { OpenaiClient } from "../../clients/llm/openai-client.js";
+import { OllamaClient } from "../../clients/llm/ollama-client.js";
+import { stringEnv } from "../../utils/config.js";
 
-export class LLMFactory {
+export class LlmFactory {
   private static openaiClient: OpenaiClient | null = null;
   private static ollamaClient: OllamaClient | null = null;
 
