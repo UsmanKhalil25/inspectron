@@ -94,6 +94,9 @@ export default function useInterruptedActions({
               decisions,
             },
           },
+          config: {
+            recursion_limit: 1000,
+          },
         },
       );
       return true;
@@ -193,6 +196,9 @@ export default function useInterruptedActions({
         {
           command: {
             goto: END,
+          },
+          config: {
+            recursion_limit: 1000,
           },
         },
       );
