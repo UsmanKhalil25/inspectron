@@ -173,6 +173,83 @@ export async function ensurePageNode(state: AgentStateType) {
   };
 }
 
+export async function shouldRunLoginHandler(state: AgentStateType) {
+  // Skip if login is already completed
+  if (state.loginCompleted) {
+    console.log("[Should Run Login Handler] Login completed - skipping");
+    return "skip_login";
+  }
+
+  // Skip if we already have credentials (waiting for agent to fill form)
+  if (state.credentials) {
+    console.log("[Should Run Login Handler] Credentials already provided - skipping (agent will fill form)");
+    return "skip_login";
+  }
+
+  // Only run login handler if we have no credentials and no completion
+  console.log("[Should Run Login Handler] No credentials yet - running login handler");
+  return "check_login";
+}
+
+export async function checkLoginCompletionNode(state: AgentStateType) {
+  // Only check if we have credentials but haven't completed login
+  if (!state.credentials || state.loginCompleted) {
+    return { ...state };
+  }
+
+  const page = await BrowserFactory.getPage();
+  const currentUrl = page.url();
+  const loginUrl = state.loginUrl;
+
+  // Method 1: If we had a login URL and we're now on a different URL, login succeeded
+  if (loginUrl && currentUrl !== loginUrl) {
+    console.log(`[Login Completion Check] URL changed from ${loginUrl} to ${currentUrl} - login completed`);
+    return {
+      ...state,
+      loginCompleted: true,
+    };
+  }
+
+  // Method 2: Check if login form is no longer present
+  const loginStillPresent = await page.evaluate(() => {
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    return passwordFields.length > 0;
+  });
+
+  if (!loginStillPresent) {
+    console.log("[Login Completion Check] Login form no longer present - login completed");
+    return {
+      ...state,
+      loginCompleted: true,
+    };
+  }
+
+  // Method 3: Check for common success indicators
+  const loginSuccess = await page.evaluate(() => {
+    const bodyText = document.body.innerText.toLowerCase();
+    const successIndicators = [
+      'welcome',
+      'dashboard',
+      'logout',
+      'sign out',
+      'my account',
+      'profile'
+    ];
+    return successIndicators.some(indicator => bodyText.includes(indicator));
+  });
+
+  if (loginSuccess) {
+    console.log("[Login Completion Check] Success indicators found on page - login completed");
+    return {
+      ...state,
+      loginCompleted: true,
+    };
+  }
+
+  console.log("[Login Completion Check] Login not yet complete, form may still be present");
+  return { ...state };
+}
+
 export async function labelElementsNode(state: AgentStateType) {
   const page = state.page?.evaluate
     ? state.page

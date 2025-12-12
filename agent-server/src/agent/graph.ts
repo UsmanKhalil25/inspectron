@@ -11,6 +11,8 @@ import {
   toolNode,
   shouldContinue,
   shouldInitializeBrowser,
+  shouldRunLoginHandler,
+  checkLoginCompletionNode,
 } from "./nodes.js";
 import { AgentState } from "./state.js";
 import { captchaHandlerGraph } from "./subgraphs/captcha-handler.js";
@@ -27,6 +29,7 @@ const graph = new StateGraph(AgentState)
   .addNode("capture_page_screenshot", captureScreenshotNode)
   .addNode("login_handler", loginHandlerGraph)
   .addNode("captcha_handler", captchaHandlerGraph)
+  .addNode("check_login_completion", checkLoginCompletionNode)
   .addNode("agent_decision", llmCallNode)
   .addNode("execute_tools", toolNode)
   .addEdge(START, "decide_browser_needed")
@@ -36,10 +39,14 @@ const graph = new StateGraph(AgentState)
   })
   .addEdge("initialize_browser", "execute_tools")
   .addEdge("execute_tools", "ensure_page")
-  .addEdge("ensure_page", "label_page_elements")
+  .addEdge("ensure_page", "check_login_completion")
+  .addConditionalEdges("check_login_completion", shouldRunLoginHandler, {
+    check_login: "login_handler",
+    skip_login: "label_page_elements",
+  })
+  .addEdge("login_handler", "label_page_elements")
   .addEdge("label_page_elements", "capture_page_screenshot")
-  .addEdge("capture_page_screenshot", "login_handler")
-  .addEdge("login_handler", "captcha_handler")
+  .addEdge("capture_page_screenshot", "captcha_handler")
   .addEdge("captcha_handler", "agent_decision")
   .addConditionalEdges("agent_decision", shouldContinue, {
     toolNode: "execute_tools",

@@ -6,14 +6,14 @@ import { BrowserFactory } from "../factory";
 const LoginState = z.object({
   img: z.string().optional(),
   loginRequired: z.boolean().optional(),
-  loginUrl: z.string().optional(),
+  loginUrl: z.string().optional(), // Shared with parent state for completion detection
   credentials: z
     .object({
       username: z.string(),
       password: z.string(),
     })
     .optional(),
-  loginCompleted: z.boolean().optional(),
+  loginCompleted: z.boolean().optional(), // Shared with parent state
 });
 
 type LoginStateType = z.infer<typeof LoginState>;
@@ -21,12 +21,23 @@ type LoginStateType = z.infer<typeof LoginState>;
 async function detectLoginNode(state: LoginStateType) {
   // Skip login detection if already logged in
   if (state.loginCompleted) {
+    console.log("[Login Handler] Skipping - already completed login");
     return {
       loginRequired: false,
     };
   }
 
   const page = await BrowserFactory.getPage();
+  const currentUrl = page.url();
+
+  // If we already have credentials and we're not on the same login URL, assume login was successful
+  if (state.credentials && state.loginUrl && currentUrl !== state.loginUrl) {
+    console.log("[Login Handler] URL changed after login, marking as completed");
+    return {
+      loginRequired: false,
+      loginCompleted: true,
+    };
+  }
 
   const loginDetected = await page.evaluate(() => {
     // Check for password field
@@ -162,19 +173,30 @@ async function handleLoginInterruptNode(state: LoginStateType) {
 }
 
 async function performLoginNode(state: LoginStateType) {
-  console.log("Login credentials received, passing to agent for form filling");
+  console.log("[Login Handler] Login credentials received, passing to agent for form filling");
+  console.log("[Login Handler] NOT setting loginCompleted - agent will fill form and we'll detect completion after");
   return {
     loginRequired: false,
     credentials: state.credentials,
-    loginCompleted: true,
+    // loginCompleted is NOT set here - will be set after agent actually logs in
   };
 }
 
 function shouldRequestCredentials(state: LoginStateType) {
   if (!state.loginRequired) {
+    console.log("[Login Handler] Login not required, ending");
     return "end";
   }
-  return state.credentials ? "login" : "interrupt";
+
+  // If we already have credentials but login is still required, it means we've already
+  // asked for credentials and the agent should be filling the form
+  if (state.credentials) {
+    console.log("[Login Handler] Credentials already provided, proceeding to login");
+    return "login";
+  }
+
+  console.log("[Login Handler] Login required, requesting credentials");
+  return "interrupt";
 }
 
 const workflow = new StateGraph(LoginState)
@@ -190,7 +212,6 @@ const workflow = new StateGraph(LoginState)
   .addEdge("interrupt", "login")
   .addEdge("login", "__end__");
 
-// Don't pass checkpointer - subgraph will use parent's checkpointer for shared state
 const compiled = workflow.compile();
 
 export const loginHandlerGraph = compiled;

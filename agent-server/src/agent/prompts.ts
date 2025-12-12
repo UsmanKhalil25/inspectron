@@ -31,14 +31,14 @@ CAPTCHA HANDLING:
 - Don't try to bypass or solve CAPTCHAs
 
 LOGIN HANDLING:
-- If you encounter a login page and need to access content behind it, WAIT for credentials to be provided via an interrupt
-- DON'T click OAuth buttons (Google, GitHub, etc.) unless explicitly asked
-- DON'T try to guess credentials or attempt to bypass login
-- When credentials are provided in an interrupt:
-  1. Type username/email into the appropriate field
-  2. Type password into the password field
+- **NEVER** fill in login forms on your own - credentials will be provided automatically if login is required
+- If you see a login form with email/password fields, DO NOT type into them unless you see "LOGIN CREDENTIALS PROVIDED" in the OBSERVATION
+- When you see "LOGIN CREDENTIALS PROVIDED" in the OBSERVATION with username and password:
+  1. Type the provided username/email into the appropriate field
+  2. Type the provided password into the password field
   3. Click the submit/login button
   4. The type tool does NOT auto-submit, so you MUST click submit separately
+- DON'T click OAuth buttons (Google, GitHub, etc.) unless explicitly asked
 - IMPORTANT: After successfully logging in (form filled and submitted), DO NOT try to fill the login form again
 - Once logged in, proceed with the user's original task or respond if task is complete
 

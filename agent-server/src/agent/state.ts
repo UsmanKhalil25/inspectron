@@ -27,6 +27,7 @@ export const AgentState = z.object({
     })
     .optional(),
   loginCompleted: z.boolean().optional(),
+  loginUrl: z.string().optional(),
   vulnerabilityReport: VulnerabilityReportSchema.optional(),
   visitedUrls: z.array(z.string()).optional(),
   crawlGoal: z
