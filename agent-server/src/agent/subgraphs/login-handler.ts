@@ -40,8 +40,14 @@ async function detectLoginNode(state: LoginStateType) {
     const url = window.location.href.toLowerCase();
 
     // If it's clearly a signup/register page, exclude it
-    const signupKeywords = ['sign up', 'signup', 'register', 'create account', 'join'];
-    const isSignupPage = signupKeywords.some(keyword => {
+    const signupKeywords = [
+      "sign up",
+      "signup",
+      "register",
+      "create account",
+      "join",
+    ];
+    const isSignupPage = signupKeywords.some((keyword) => {
       return url.includes(keyword) || pageText.includes(keyword);
     });
 
@@ -53,7 +59,7 @@ async function detectLoginNode(state: LoginStateType) {
 
       // Check for confirm password field by name/id
       const confirmPasswordField = document.querySelector(
-        'input[name*="confirm" i][type="password"], input[id*="confirm" i][type="password"]'
+        'input[name*="confirm" i][type="password"], input[id*="confirm" i][type="password"]',
       );
       if (confirmPasswordField) {
         return false;
@@ -62,12 +68,14 @@ async function detectLoginNode(state: LoginStateType) {
 
     // Check for login-specific forms
     const loginForms = document.querySelectorAll(
-      'form[action*="login" i], form[action*="signin" i]'
+      'form[action*="login" i], form[action*="signin" i]',
     );
 
     // Look for login-specific text near the password field
-    const loginKeywords = ['log in', 'login', 'sign in', 'signin'];
-    const hasLoginKeyword = loginKeywords.some(keyword => pageText.includes(keyword));
+    const loginKeywords = ["log in", "login", "sign in", "signin"];
+    const hasLoginKeyword = loginKeywords.some((keyword) =>
+      pageText.includes(keyword),
+    );
 
     return loginForms.length > 0 || hasLoginKeyword;
   });
