@@ -13,7 +13,7 @@ import { AgentStateType } from "./state.js";
 import { labelElements } from "../utils/label-elements.js";
 import { DebugLogger } from "../utils/debug-logger.js";
 import { LlmFactory, BrowserFactory } from "./factory";
-import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
+import { click, type, scroll, goBack, wait, navigate, scanVulnerabilities } from "./tools.js";
 import {
   INITIAL_AGENT_PROMPT,
   WEB_BROWSING_AGENT_PROMPT,
@@ -93,6 +93,15 @@ export async function shouldContinue(state: AgentStateType) {
   const lastMessage = state.messages[state.messages.length - 1];
   if (lastMessage == null || !AIMessage.isInstance(lastMessage)) return END;
 
+  // Hard stop if crawl goal is reached
+  if (state.crawlGoal) {
+    const { currentPageCount, targetPageCount } = state.crawlGoal;
+    if (currentPageCount >= targetPageCount) {
+      console.log(`[Crawl Goal] Target reached: ${currentPageCount}/${targetPageCount} pages. Stopping execution.`);
+      return END;
+    }
+  }
+
   if (lastMessage.tool_calls?.length) {
     return "toolNode";
   }
@@ -138,9 +147,29 @@ export async function ensurePageNode(state: AgentStateType) {
     console.log("Page load timeout, continuing anyway");
   }
 
+  // Track visited URLs
+  const currentUrl = page.url();
+  const visitedUrls = state.visitedUrls || [];
+
+  // Add current URL if not already visited
+  if (!visitedUrls.includes(currentUrl)) {
+    visitedUrls.push(currentUrl);
+    console.log(`[URL Tracker] Visited page ${visitedUrls.length}: ${currentUrl}`);
+  }
+
+  // Update crawl goal progress if it exists
+  const crawlGoal = state.crawlGoal
+    ? {
+        ...state.crawlGoal,
+        currentPageCount: visitedUrls.length,
+      }
+    : undefined;
+
   return {
     ...state,
     page,
+    visitedUrls,
+    crawlGoal,
   };
 }
 
@@ -194,13 +223,52 @@ export async function initialLLMCallNode(state: AgentStateType) {
 
   const messages = [new SystemMessage(INITIAL_AGENT_PROMPT), ...state.messages];
 
+  // Parse user input to detect crawl goals
+  let crawlGoal = state.crawlGoal;
+
+  if (state.input) {
+    const userInput = state.input.toLowerCase();
+
+    // Check if user specified a page count (e.g., "crawl 5 pages", "visit at least 10 pages")
+    const crawlMatch = userInput.match(/(?:crawl|visit|explore).*?(?:at least|atleast)?\s*(\d+)\s*pages?/i);
+    if (crawlMatch) {
+      const targetPageCount = parseInt(crawlMatch[1], 10);
+      crawlGoal = {
+        targetPageCount,
+        currentPageCount: 0,
+      };
+      console.log(`[Crawl Goal] Target: ${targetPageCount} pages`);
+    }
+  }
+
   return {
     messages: await modelWithTools.invoke(messages),
     llmCalls: (state.llmCalls ?? 0) + 1,
+    crawlGoal,
+    visitedUrls: state.visitedUrls || [],
   };
 }
 
 export async function llmCallNode(state: AgentStateType) {
+  // Check if crawl goal is already reached - force agent to respond directly
+  if (state.crawlGoal) {
+    const { currentPageCount, targetPageCount } = state.crawlGoal;
+    if (currentPageCount >= targetPageCount) {
+      console.log(`[Crawl Goal] Target reached before LLM call: ${currentPageCount}/${targetPageCount} pages.`);
+
+      const model = LlmFactory.getLLM();
+      const forceStopMessage = new SystemMessage(
+        `STOP: You have successfully visited ${currentPageCount} pages, meeting the crawl goal of ${targetPageCount} pages. ` +
+        `Do NOT use any tools. Respond directly to the user with a summary of your crawl, including the pages you visited.`
+      );
+
+      return {
+        messages: await model.invoke([forceStopMessage, ...state.messages]),
+        llmCalls: (state.llmCalls ?? 0) + 1,
+      };
+    }
+  }
+
   const model = LlmFactory.getLLM();
   const tools = [
     click(state),
@@ -209,6 +277,7 @@ export async function llmCallNode(state: AgentStateType) {
     wait(state),
     goBack(state),
     navigate(state),
+    scanVulnerabilities(state),
   ];
   const modelWithTools = model.bindTools(tools);
 
@@ -222,6 +291,20 @@ export async function llmCallNode(state: AgentStateType) {
 
     if (state.credentials) {
       screenshotText += `\n\nLOGIN CREDENTIALS PROVIDED:\n- Username/Email: ${state.credentials.username}\n- Password: ${state.credentials.password}\n\nYou must fill in the login form with these credentials using the type tool.`;
+    }
+
+    // Add visited URLs tracking information
+    if (state.visitedUrls && state.visitedUrls.length > 0) {
+      screenshotText += `\n\nVISITED URLS (${state.visitedUrls.length}):\n${state.visitedUrls.map((url, i) => `${i + 1}. ${url}`).join('\n')}`;
+      screenshotText += `\n\nIMPORTANT: You have already visited the above URLs. Do NOT navigate to or click links that lead to these pages again. Focus on discovering NEW pages.`;
+    }
+
+    // Add crawl goal progress if exists
+    if (state.crawlGoal) {
+      screenshotText += `\n\nCRAWL PROGRESS: ${state.crawlGoal.currentPageCount} / ${state.crawlGoal.targetPageCount} pages visited`;
+      if (state.crawlGoal.currentPageCount >= state.crawlGoal.targetPageCount) {
+        screenshotText += `\n⚠️ TARGET REACHED: You have visited the required number of pages. Complete your task and respond directly.`;
+      }
     }
 
     messages.push(
@@ -262,6 +345,7 @@ export async function toolNode(state: AgentStateType) {
     wait: wait(state),
     go_back: goBack(state),
     navigate: navigate(state),
+    scan_vulnerabilities: scanVulnerabilities(state),
   };
 
   const result: ToolMessage[] = [];

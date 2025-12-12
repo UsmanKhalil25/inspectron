@@ -14,6 +14,7 @@ import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
+import { VulnerabilityReport } from "@/components/VulnerabilityReport";
 
 function CustomComponent({
   message,
@@ -184,6 +185,9 @@ export function AssistantMessage({
                 message={message}
                 thread={thread}
               />
+            )}
+            {thread.values?.vulnerabilityReport && isLastMessage && (
+              <VulnerabilityReport report={thread.values.vulnerabilityReport} />
             )}
             <Interrupt
               interrupt={threadInterrupt}

@@ -5,6 +5,7 @@ import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
 
 import { PageElementSchema } from "../schemas/page-elements.js";
+import { VulnerabilityReportSchema } from "./types/vulnerability.js";
 
 const PredictionSchema = z.object({
   summary: z.string(),
@@ -26,6 +27,14 @@ export const AgentState = z.object({
     })
     .optional(),
   loginCompleted: z.boolean().optional(),
+  vulnerabilityReport: VulnerabilityReportSchema.optional(),
+  visitedUrls: z.array(z.string()).optional(),
+  crawlGoal: z
+    .object({
+      targetPageCount: z.number(),
+      currentPageCount: z.number(),
+    })
+    .optional(),
 });
 
 export type Prediction = z.infer<typeof PredictionSchema>;
