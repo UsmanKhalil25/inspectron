@@ -13,31 +13,63 @@ const LoginState = z.object({
       password: z.string(),
     })
     .optional(),
+  loginCompleted: z.boolean().optional(),
 });
 
 type LoginStateType = z.infer<typeof LoginState>;
 
 async function detectLoginNode(state: LoginStateType) {
+  // Skip login detection if already logged in
+  if (state.loginCompleted) {
+    return {
+      loginRequired: false,
+    };
+  }
+
   const page = await BrowserFactory.getPage();
 
   const loginDetected = await page.evaluate(() => {
-    const loginIndicators = [
-      'input[type="password"]',
-      'input[name="password"]',
-      'input[id*="password"]',
-      'input[name="username"]',
-      'input[name="email"]',
-      'button[type="submit"]',
-      'form[action*="login"]',
-      'form[action*="signin"]',
-    ];
-
+    // Check for password field
     const passwordFields = document.querySelectorAll('input[type="password"]');
+    if (passwordFields.length === 0) {
+      return false;
+    }
+
+    // Get page text content to check for signup/register keywords
+    const pageText = document.body.innerText.toLowerCase();
+    const url = window.location.href.toLowerCase();
+
+    // If it's clearly a signup/register page, exclude it
+    const signupKeywords = ['sign up', 'signup', 'register', 'create account', 'join'];
+    const isSignupPage = signupKeywords.some(keyword => {
+      return url.includes(keyword) || pageText.includes(keyword);
+    });
+
+    if (isSignupPage) {
+      // Check if there are multiple password fields (confirm password = likely signup)
+      if (passwordFields.length > 1) {
+        return false;
+      }
+
+      // Check for confirm password field by name/id
+      const confirmPasswordField = document.querySelector(
+        'input[name*="confirm" i][type="password"], input[id*="confirm" i][type="password"]'
+      );
+      if (confirmPasswordField) {
+        return false;
+      }
+    }
+
+    // Check for login-specific forms
     const loginForms = document.querySelectorAll(
-      'form[action*="login"], form[action*="signin"]',
+      'form[action*="login" i], form[action*="signin" i]'
     );
 
-    return passwordFields.length > 0 || loginForms.length > 0;
+    // Look for login-specific text near the password field
+    const loginKeywords = ['log in', 'login', 'sign in', 'signin'];
+    const hasLoginKeyword = loginKeywords.some(keyword => pageText.includes(keyword));
+
+    return loginForms.length > 0 || hasLoginKeyword;
   });
 
   if (!loginDetected) {
@@ -126,6 +158,7 @@ async function performLoginNode(state: LoginStateType) {
   return {
     loginRequired: false,
     credentials: state.credentials,
+    loginCompleted: true,
   };
 }
 
@@ -149,8 +182,7 @@ const workflow = new StateGraph(LoginState)
   .addEdge("interrupt", "login")
   .addEdge("login", "__end__");
 
-export const loginHandlerGraph = workflow
-  .compile({ checkpointer: true })
-  .withConfig({
-    recursionLimit: 1000,
-  });
+// Don't pass checkpointer - subgraph will use parent's checkpointer for shared state
+const compiled = workflow.compile();
+
+export const loginHandlerGraph = compiled;

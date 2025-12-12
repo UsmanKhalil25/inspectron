@@ -85,6 +85,9 @@ const StreamSession = ({
     assistantId,
     threadId: threadId ?? null,
     fetchStateHistory: true,
+    config: {
+      recursion_limit: 1000,
+    },
     onCustomEvent: (event, options) => {
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
         options.mutate((prev) => {

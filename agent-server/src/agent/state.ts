@@ -25,6 +25,7 @@ export const AgentState = z.object({
       password: z.string(),
     })
     .optional(),
+  loginCompleted: z.boolean().optional(),
 });
 
 export type Prediction = z.infer<typeof PredictionSchema>;

@@ -198,6 +198,9 @@ export function Thread() {
         streamMode: ["values"],
         streamSubgraphs: true,
         streamResumable: true,
+        config: {
+          recursion_limit: 1000,
+        },
         optimisticValues: (prev) => ({
           ...prev,
           context,
@@ -225,6 +228,9 @@ export function Thread() {
       streamMode: ["values"],
       streamSubgraphs: true,
       streamResumable: true,
+      config: {
+        recursion_limit: 1000,
+      },
     });
   };
 

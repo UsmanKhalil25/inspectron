@@ -22,11 +22,19 @@ WEB BROWSING GUIDELINES:
 - Don't interact with useless elements (Login, Sign-in, donations, ads) unless specifically requested
 - When you have the final answer to the user's request, respond directly without using tools
 
+REGISTRATION/SIGNUP PAGE HANDLING:
+- If you land on a registration or signup page (with "Sign Up", "Register", "Create Account", etc.):
+  1. Look for a "Login" or "Sign In" link/button on the page and click it to navigate to the login page
+  2. If no login link is found, use go_back to return to the previous page and try a different route
+  3. NEVER fill out registration forms unless explicitly asked by the user
+- Common login links are labeled: "Already have an account?", "Sign In", "Login", "Log In"
+
 LOGIN HANDLING:
 - When login credentials are provided (username and password in state), you must fill the login form fields using the type tool
 - Use type tool for each field separately (email/username field, then password field)
 - After filling both fields, click the submit/login button
 - The type tool does NOT automatically submit, so you must click the submit button separately
+- Make sure you are on a LOGIN page, not a registration/signup page before entering credentials
 
 Remember: You can see the page through screenshots. Analyze the visual information carefully to identify the correct numerical label for interaction.`;
 

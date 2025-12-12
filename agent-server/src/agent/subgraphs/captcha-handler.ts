@@ -146,8 +146,7 @@ const workflow = new StateGraph(CaptchaState)
     end: "__end__",
   });
 
-export const captchaHandlerGraph = workflow
-  .compile({ checkpointer: true })
-  .withConfig({
-    recursionLimit: 1000,
-  });
+// Don't pass checkpointer - subgraph will use parent's checkpointer for shared state
+const compiled = workflow.compile();
+
+export const captchaHandlerGraph = compiled;

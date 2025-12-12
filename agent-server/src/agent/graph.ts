@@ -48,9 +48,6 @@ const graph = new StateGraph(AgentState)
   .addEdge("cleanup_browser", END)
   .compile({
     checkpointer,
-  })
-  .withConfig({
-    recursionLimit: 1000,
   });
 
 graph.name = "WorkflowGraph";
