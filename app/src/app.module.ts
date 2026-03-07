@@ -10,8 +10,10 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+
+import { UsersModule } from './users/users.module';
+import { ScansModule } from './scans/scans.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { ContactChannelModule } from './contact-channel/contact-channel.module';
@@ -48,6 +50,7 @@ import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware'
         include: [
           AuthModule,
           UsersModule,
+          ScansModule,
           CampaignsModule,
           ContactsModule,
           ContactChannelModule,
@@ -64,6 +67,7 @@ import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware'
     }),
     AuthModule,
     UsersModule,
+    ScansModule,
     CampaignsModule,
     ContactsModule,
     ContactChannelModule,

@@ -9,6 +9,7 @@ import {
 
 import { Campaign } from 'src/campaigns/campaign.entity';
 import { Contact } from 'src/contacts/contact.entity';
+import { Scan } from 'src/scans/scans.entity';
 
 @Entity()
 export class User {
@@ -32,6 +33,9 @@ export class User {
 
   @OneToMany(() => Contact, (contact) => contact.user)
   contacts: Contact[];
+
+  @OneToMany(() => Scan, (scan) => scan.user)
+  scans: Scan[];
 
   @CreateDateColumn()
   createdAt: Date;

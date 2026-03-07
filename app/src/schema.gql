@@ -44,6 +44,19 @@ type PaginationInfo {
   hasPreviousPage: Boolean!
 }
 
+type Scan {
+  id: ID!
+  url: String!
+  user: PublicUser!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ScansResponse {
+  scans: [Scan!]!
+  pagination: PaginationInfo!
+}
+
 type ContactChannel {
   id: ID!
   type: CommunicationChannel!
@@ -138,6 +151,8 @@ type Query {
   campaign(id: String!): Campaign!
   campaigns(page: Int = 1, limit: Int = 20, filters: CampaignFiltersInput): CampaignsResponse!
   campaignStats: CampaignStats!
+  scan(id: String!): Scan!
+  scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
   currentUser: User
 }
 
@@ -176,11 +191,26 @@ enum CampaignSortBy {
   UPDATED_AT
 }
 
+input ScanFiltersInput {
+  search: String
+  createdAfter: String
+  createdBefore: String
+  sortBy: ScanSortBy = CREATED_AT
+  sortOrder: SortOrder = DESC
+}
+
+enum ScanSortBy {
+  CREATED_AT
+  UPDATED_AT
+  URL
+}
+
 type Mutation {
   createContact(input: CreateContactInput!): Contact!
   bulkCreateContact(input: BulkCreateContactInput!): BulkCreateContactResponse!
   createCampaign(input: CreateCampaignInput!): Campaign!
   addContactsToCampaign(input: AddContactsToCampaignInput!): Campaign!
+  createScan(input: CreateScanInput!): Scan!
   login(input: LoginUserInput!): LoginResponse!
   register(input: RegisterUserInput!): RegisterResponse!
 }
@@ -210,6 +240,10 @@ input CreateCampaignInput {
 input AddContactsToCampaignInput {
   campaignId: String!
   contactIds: [String!]!
+}
+
+input CreateScanInput {
+  url: String!
 }
 
 input LoginUserInput {
