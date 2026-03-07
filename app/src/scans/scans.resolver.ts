@@ -10,6 +10,7 @@ import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 
 import { ScansResponse } from './types/scans-response.type';
 import { Scan } from './types/scan.type';
+import { ScanStats } from './types/scan-stats.type';
 
 import { JwtPayload } from 'src/commom/interfaces/jwt-payload.interface';
 
@@ -36,6 +37,13 @@ export class ScansResolver {
   ) {
     const userId = context.req.user.sub;
     return await this.scansService.findMany(userId, paginationArgs, filters);
+  }
+
+  @Query(() => ScanStats)
+  @UseGuards(JwtAuthGuard)
+  async scanStats(@Context() context: { req: { user: JwtPayload } }) {
+    const userId = context.req.user.sub;
+    return await this.scansService.getScansStats(userId);
   }
 
   @Mutation(() => Scan)

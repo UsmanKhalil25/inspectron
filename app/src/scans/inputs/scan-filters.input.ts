@@ -2,6 +2,7 @@ import { InputType, Field } from '@nestjs/graphql';
 import { IsOptional, IsString, IsEnum, IsDateString } from 'class-validator';
 
 import { ScanSortBy } from '../enums/scan-sort-by.enum';
+import { ScanStatus } from '../enums/scan-status.enum';
 import { SortOrder } from 'src/commom/enums/sort-order.enum';
 
 @InputType()
@@ -12,6 +13,13 @@ export class ScanFiltersInput {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @Field(() => ScanStatus, {
+    nullable: true,
+  })
+  @IsOptional()
+  @IsEnum(ScanStatus)
+  status?: ScanStatus;
 
   @Field(() => String, {
     nullable: true,

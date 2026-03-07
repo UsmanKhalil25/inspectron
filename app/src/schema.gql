@@ -47,14 +47,36 @@ type PaginationInfo {
 type Scan {
   id: ID!
   url: String!
+  status: ScanStatus!
   user: PublicUser!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
+enum ScanStatus {
+  DRAFT
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
 type ScansResponse {
   scans: [Scan!]!
   pagination: PaginationInfo!
+}
+
+type ScanStatusStats {
+  draft: Int!
+  queued: Int!
+  active: Int!
+  completed: Int!
+  failed: Int!
+}
+
+type ScanStats {
+  totalScans: Int!
+  scansByStatus: ScanStatusStats!
 }
 
 type ContactChannel {
@@ -153,6 +175,7 @@ type Query {
   campaignStats: CampaignStats!
   scan(id: String!): Scan!
   scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
+  scanStats: ScanStats!
   currentUser: User
 }
 
@@ -193,6 +216,7 @@ enum CampaignSortBy {
 
 input ScanFiltersInput {
   search: String
+  status: ScanStatus
   createdAfter: String
   createdBefore: String
   sortBy: ScanSortBy = CREATED_AT
@@ -244,6 +268,7 @@ input AddContactsToCampaignInput {
 
 input CreateScanInput {
   url: String!
+  status: ScanStatus
 }
 
 input LoginUserInput {

@@ -1,5 +1,13 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
+
+import { ScanStatus } from '../enums/scan-status.enum';
 
 @InputType()
 export class CreateScanInput {
@@ -8,4 +16,9 @@ export class CreateScanInput {
   @IsNotEmpty()
   @IsUrl()
   url: string;
+
+  @Field(() => ScanStatus, { nullable: true })
+  @IsOptional()
+  @IsEnum(ScanStatus)
+  status?: ScanStatus;
 }

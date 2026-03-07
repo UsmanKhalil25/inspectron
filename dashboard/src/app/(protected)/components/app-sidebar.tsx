@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Target, Users, BarChart3, Settings } from "lucide-react";
+import {
+  Home,
+  ScanSearch,
+  Target,
+  Users,
+  BarChart3,
+  Settings,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -32,6 +39,11 @@ const NAV_ITEMS = [
     title: "Campaigns",
     url: "/campaigns",
     icon: Target,
+  },
+  {
+    title: "Scans",
+    url: "/scans",
+    icon: ScanSearch,
   },
   {
     title: "Contacts",

@@ -1,6 +1,7 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 
 import { PublicUser } from 'src/users/types/public-user.type';
+import { ScanStatus } from '../enums/scan-status.enum';
 
 @ObjectType()
 export class Scan {
@@ -9,6 +10,9 @@ export class Scan {
 
   @Field()
   url: string;
+
+  @Field(() => ScanStatus)
+  status: ScanStatus;
 
   @Field(() => PublicUser)
   user: PublicUser;

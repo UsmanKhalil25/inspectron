@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 
 import { User } from 'src/users/user.entity';
+import { ScanStatus } from './enums/scan-status.enum';
 
 @Entity()
 export class Scan {
@@ -16,6 +17,13 @@ export class Scan {
 
   @Column({ type: 'text' })
   url: string;
+
+  @Column({
+    type: 'enum',
+    enum: ScanStatus,
+    default: ScanStatus.DRAFT,
+  })
+  status: ScanStatus;
 
   @ManyToOne(() => User, (user) => user.campaigns)
   user: User;

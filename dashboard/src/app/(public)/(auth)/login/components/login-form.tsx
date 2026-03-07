@@ -59,7 +59,7 @@ export function LoginForm() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2">
             <MainLogo />
-            <h1 className="text-xl font-bold">Welcome to SafeScreen</h1>
+            <h1 className="text-xl font-bold">Welcome to inspectron</h1>
             <p className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link href="/register" className="underline underline-offset-4">

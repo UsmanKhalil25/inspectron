@@ -20,9 +20,13 @@ import { CreateScanInput } from './inputs/create-scan.input';
 import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 import { ScanFiltersInput } from './inputs/scan-filters.input';
 import { ScansResponse } from './types/scans-response.type';
+import { ScanStats } from './types/scan-stats.type';
 import { isValidDateString } from 'src/commom/utils/date.utils';
 import { ScanSortBy } from './enums/scan-sort-by.enum';
+import { ScanStatus } from './enums/scan-status.enum';
 import { SortOrder } from 'src/commom/enums/sort-order.enum';
+
+const CREATABLE_SCAN_STATUSES = [ScanStatus.DRAFT, ScanStatus.QUEUED];
 
 @Injectable()
 export class ScansService {
@@ -101,10 +105,14 @@ export class ScansService {
     };
 
     if (filters) {
-      const { search, createdAfter, createdBefore } = filters;
+      const { search, status, createdAfter, createdBefore } = filters;
 
       if (search) {
         where.url = ILike(`%${search}%`);
+      }
+
+      if (status) {
+        where.status = status;
       }
 
       if (createdAfter && !isValidDateString(createdAfter)) {
@@ -181,6 +189,12 @@ export class ScansService {
       throw new BadRequestException('Scan URL is required');
     }
 
+    if (input.status && !CREATABLE_SCAN_STATUSES.includes(input.status)) {
+      throw new BadRequestException(
+        `Invalid status "${input.status}" for scan creation. Only "draft" and "queued" are allowed.`,
+      );
+    }
+
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -190,6 +204,7 @@ export class ScansService {
       try {
         const scan = manager.create(Scan, {
           url: input.url.trim(),
+          status: input.status ?? ScanStatus.DRAFT,
           user,
         });
 
@@ -221,5 +236,54 @@ export class ScansService {
         );
       }
     });
+  }
+
+  async getScansStats(userId: string): Promise<ScanStats> {
+    if (!userId) {
+      throw new BadRequestException('User id is required');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      const results = await this.scansRepository
+        .createQueryBuilder('scan')
+        .select([
+          'COUNT(*) AS "totalScans"',
+          `SUM(CASE WHEN scan.status = '${ScanStatus.DRAFT}' THEN 1 ELSE 0 END) AS "draftCount"`,
+          `SUM(CASE WHEN scan.status = '${ScanStatus.QUEUED}' THEN 1 ELSE 0 END) AS "queuedCount"`,
+          `SUM(CASE WHEN scan.status = '${ScanStatus.ACTIVE}' THEN 1 ELSE 0 END) AS "activeCount"`,
+          `SUM(CASE WHEN scan.status = '${ScanStatus.COMPLETED}' THEN 1 ELSE 0 END) AS "completedCount"`,
+          `SUM(CASE WHEN scan.status = '${ScanStatus.FAILED}' THEN 1 ELSE 0 END) AS "failedCount"`,
+        ])
+        .where('scan.userId = :userId', { userId })
+        .getRawOne<{
+          totalScans: string;
+          draftCount: string;
+          queuedCount: string;
+          activeCount: string;
+          completedCount: string;
+          failedCount: string;
+        }>();
+
+      return {
+        totalScans: Number(results?.totalScans) || 0,
+        scansByStatus: {
+          draft: Number(results?.draftCount) || 0,
+          queued: Number(results?.queuedCount) || 0,
+          active: Number(results?.activeCount) || 0,
+          completed: Number(results?.completedCount) || 0,
+          failed: Number(results?.failedCount) || 0,
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve scan statistics',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 }
