@@ -1,0 +1,225 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  id: ID!
+  email: String!
+  name: String!
+  lastLoginAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type PublicUser {
+  id: String!
+  email: String!
+  name: String!
+  lastLoginAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type LoginResponse {
+  message: String!
+  user: PublicUser!
+}
+
+type RegisterResponse {
+  message: String!
+  data: PublicUser!
+}
+
+type PaginationInfo {
+  page: Int!
+  limit: Int!
+  total: Int!
+  totalPages: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type ContactChannel {
+  id: ID!
+  type: CommunicationChannel!
+  value: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum CommunicationChannel {
+  EMAIL
+  SMS
+}
+
+type Contact {
+  id: ID!
+  name: String!
+  contactChannels: [ContactChannel!]!
+  user: PublicUser!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Campaign {
+  id: ID!
+  title: String!
+  description: String!
+  channelType: CommunicationChannel!
+  status: CampaignStatus!
+  user: PublicUser!
+  contacts: [Contact!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum CampaignStatus {
+  DRAFT
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+type CampaignsResponse {
+  campaigns: [Campaign!]!
+  pagination: PaginationInfo!
+}
+
+type CampaignStatusStats {
+  draft: Int!
+  queued: Int!
+  active: Int!
+  completed: Int!
+  failed: Int!
+}
+
+type CampaignChannelStats {
+  email: Int!
+  sms: Int!
+}
+
+type CampaignStats {
+  totalCampaigns: Int!
+  campaignsByStatus: CampaignStatusStats!
+  campaignsByChannel: CampaignChannelStats!
+}
+
+type BulkCreateContactError {
+  index: Int!
+  error: String!
+}
+
+type BulkCreateContactSummary {
+  total: Int!
+  successful: Int!
+  failed: Int!
+}
+
+type BulkCreateContactResponse {
+  created: [Contact!]!
+  errors: [BulkCreateContactError!]!
+  summary: BulkCreateContactSummary!
+}
+
+type ContactsResponse {
+  contacts: [Contact!]!
+  pagination: PaginationInfo!
+}
+
+type Query {
+  contact(id: String!): Contact!
+  contacts(page: Int = 1, limit: Int = 20, filters: ContactFilterInput): ContactsResponse!
+  campaign(id: String!): Campaign!
+  campaigns(page: Int = 1, limit: Int = 20, filters: CampaignFiltersInput): CampaignsResponse!
+  campaignStats: CampaignStats!
+  currentUser: User
+}
+
+input ContactFilterInput {
+  search: String
+  createdAfter: String
+  createdBefore: String
+  sortBy: ContactSortBy = CREATED_AT
+  sortOrder: SortOrder = DESC
+}
+
+enum ContactSortBy {
+  CREATED_AT
+  NAME
+  UPDATED_AT
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+input CampaignFiltersInput {
+  search: String
+  status: CampaignStatus
+  createdAfter: String
+  createdBefore: String
+  sortBy: CampaignSortBy = CREATED_AT
+  sortOrder: SortOrder = DESC
+}
+
+enum CampaignSortBy {
+  CREATED_AT
+  NAME
+  STATUS
+  UPDATED_AT
+}
+
+type Mutation {
+  createContact(input: CreateContactInput!): Contact!
+  bulkCreateContact(input: BulkCreateContactInput!): BulkCreateContactResponse!
+  createCampaign(input: CreateCampaignInput!): Campaign!
+  addContactsToCampaign(input: AddContactsToCampaignInput!): Campaign!
+  login(input: LoginUserInput!): LoginResponse!
+  register(input: RegisterUserInput!): RegisterResponse!
+}
+
+input CreateContactInput {
+  name: String!
+  contactChannels: [CreateContactChannelInput!]!
+}
+
+input CreateContactChannelInput {
+  type: CommunicationChannel!
+  value: String!
+}
+
+input BulkCreateContactInput {
+  contacts: [CreateContactInput!]!
+}
+
+input CreateCampaignInput {
+  title: String!
+  description: String!
+  channelType: CommunicationChannel!
+  status: CampaignStatus
+  contactIds: [String!]
+}
+
+input AddContactsToCampaignInput {
+  campaignId: String!
+  contactIds: [String!]!
+}
+
+input LoginUserInput {
+  email: String!
+  password: String!
+}
+
+input RegisterUserInput {
+  email: String!
+  name: String!
+  password: String!
+  confirmPassword: String!
+}
