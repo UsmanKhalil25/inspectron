@@ -1,0 +1,13 @@
+{
+  "name": "inspectron",
+  "private": true,
+  "workspaces": [
+    "app",
+    "dashboard",
+    "engine"
+  ],
+  "scripts": {
+    "format": "bun run --filter app format && bun run --filter dashboard format && bun run --filter engine format",
+    "lint": "bun run --filter app lint && bun run --filter dashboard lint && bun run --filter engine lint"
+  }
+}

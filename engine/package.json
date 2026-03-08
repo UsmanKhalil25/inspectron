@@ -1,0 +1,24 @@
+{
+  "name": "engine",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "format": "prettier --write .",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/openai": "^3.0.41",
+    "ai": "^6.0.116",
+    "hono": "^4.12.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@eslint/js": "latest",
+    "eslint": "latest",
+    "eslint-plugin-prettier": "latest",
+    "prettier": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "globals": "latest"
+  }
+}
