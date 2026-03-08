@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import type { StringValue } from 'ms';
 
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
@@ -20,7 +21,8 @@ import { AuthResolver } from './auth.resolver';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('auth.jwtSecret'),
         signOptions: {
-          expiresIn: configService.get<string>('auth.jwtExpiresIn'),
+          expiresIn: (configService.get<string>('auth.jwtExpiresIn') ??
+            '1d') as StringValue,
         },
       }),
     }),
