@@ -2,7 +2,7 @@
 
 import { useSuspenseQuery } from "@apollo/client";
 
-import { ScanSearch, Play, CheckCircle, XCircle } from "lucide-react";
+import { Target, Play, XCircle, Calendar } from "lucide-react";
 
 import { StatCard } from "./stat-card";
 import { SCAN_STATS } from "@/graphql/queries/scan-stats";
@@ -42,7 +42,7 @@ function ScansStatsImpl({ cookieHeader }: { cookieHeader: string }) {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Scans"
-        icon={ScanSearch}
+        icon={Target}
         value={<div className="text-2xl font-bold">{stats.total}</div>}
       />
 
@@ -58,7 +58,7 @@ function ScansStatsImpl({ cookieHeader }: { cookieHeader: string }) {
 
       <StatCard
         title="Completed"
-        icon={CheckCircle}
+        icon={Calendar}
         value={
           <div className="text-2xl font-bold text-green-600">
             {stats.completed}

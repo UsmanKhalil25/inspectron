@@ -1,34 +1,27 @@
-import { LucideIcon } from "lucide-react";
+import { motion } from "motion/react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-import { Card, CardContent } from "@/components/ui/card";
-
-interface StatCardProps {
+interface StatsCardProps {
   title: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   value: React.ReactNode;
-  description?: string;
 }
 
-export function StatCard({
-  title,
-  icon: Icon,
-  value,
-  description,
-}: StatCardProps) {
+export function StatCard({ title, icon: Icon, value }: StatsCardProps) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-6">
-        <div className="rounded-full bg-muted p-3">
-          <Icon className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      <Card className="rounded-2xl shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-5 w-5 text-inherit" />
+        </CardHeader>
+        <CardContent className="text-2xl font-bold flex items-center justify-start gap-2">
           {value}
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
