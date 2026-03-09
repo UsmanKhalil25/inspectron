@@ -79,139 +79,11 @@ type ScanStats {
   scansByStatus: ScanStatusStats!
 }
 
-type ContactChannel {
-  id: ID!
-  type: CommunicationChannel!
-  value: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-enum CommunicationChannel {
-  EMAIL
-  SMS
-}
-
-type Contact {
-  id: ID!
-  name: String!
-  contactChannels: [ContactChannel!]!
-  user: PublicUser!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-type Campaign {
-  id: ID!
-  title: String!
-  description: String!
-  channelType: CommunicationChannel!
-  status: CampaignStatus!
-  user: PublicUser!
-  contacts: [Contact!]!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-enum CampaignStatus {
-  DRAFT
-  QUEUED
-  ACTIVE
-  COMPLETED
-  FAILED
-}
-
-type CampaignsResponse {
-  campaigns: [Campaign!]!
-  pagination: PaginationInfo!
-}
-
-type CampaignStatusStats {
-  draft: Int!
-  queued: Int!
-  active: Int!
-  completed: Int!
-  failed: Int!
-}
-
-type CampaignChannelStats {
-  email: Int!
-  sms: Int!
-}
-
-type CampaignStats {
-  totalCampaigns: Int!
-  campaignsByStatus: CampaignStatusStats!
-  campaignsByChannel: CampaignChannelStats!
-}
-
-type BulkCreateContactError {
-  index: Int!
-  error: String!
-}
-
-type BulkCreateContactSummary {
-  total: Int!
-  successful: Int!
-  failed: Int!
-}
-
-type BulkCreateContactResponse {
-  created: [Contact!]!
-  errors: [BulkCreateContactError!]!
-  summary: BulkCreateContactSummary!
-}
-
-type ContactsResponse {
-  contacts: [Contact!]!
-  pagination: PaginationInfo!
-}
-
 type Query {
-  contact(id: String!): Contact!
-  contacts(page: Int = 1, limit: Int = 20, filters: ContactFilterInput): ContactsResponse!
-  campaign(id: String!): Campaign!
-  campaigns(page: Int = 1, limit: Int = 20, filters: CampaignFiltersInput): CampaignsResponse!
-  campaignStats: CampaignStats!
   scan(id: String!): Scan!
   scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
   scanStats: ScanStats!
   currentUser: User
-}
-
-input ContactFilterInput {
-  search: String
-  createdAfter: String
-  createdBefore: String
-  sortBy: ContactSortBy = CREATED_AT
-  sortOrder: SortOrder = DESC
-}
-
-enum ContactSortBy {
-  CREATED_AT
-  NAME
-  UPDATED_AT
-}
-
-enum SortOrder {
-  ASC
-  DESC
-}
-
-input CampaignFiltersInput {
-  search: String
-  status: CampaignStatus
-  createdAfter: String
-  createdBefore: String
-  sortBy: CampaignSortBy = CREATED_AT
-  sortOrder: SortOrder = DESC
-}
-
-enum CampaignSortBy {
-  CREATED_AT
-  NAME
-  STATUS
-  UPDATED_AT
 }
 
 input ScanFiltersInput {
@@ -229,41 +101,15 @@ enum ScanSortBy {
   URL
 }
 
+enum SortOrder {
+  ASC
+  DESC
+}
+
 type Mutation {
-  createContact(input: CreateContactInput!): Contact!
-  bulkCreateContact(input: BulkCreateContactInput!): BulkCreateContactResponse!
-  createCampaign(input: CreateCampaignInput!): Campaign!
-  addContactsToCampaign(input: AddContactsToCampaignInput!): Campaign!
   createScan(input: CreateScanInput!): Scan!
   login(input: LoginUserInput!): LoginResponse!
   register(input: RegisterUserInput!): RegisterResponse!
-}
-
-input CreateContactInput {
-  name: String!
-  contactChannels: [CreateContactChannelInput!]!
-}
-
-input CreateContactChannelInput {
-  type: CommunicationChannel!
-  value: String!
-}
-
-input BulkCreateContactInput {
-  contacts: [CreateContactInput!]!
-}
-
-input CreateCampaignInput {
-  title: String!
-  description: String!
-  channelType: CommunicationChannel!
-  status: CampaignStatus
-  contactIds: [String!]
-}
-
-input AddContactsToCampaignInput {
-  campaignId: String!
-  contactIds: [String!]!
 }
 
 input CreateScanInput {

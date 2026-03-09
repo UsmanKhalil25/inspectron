@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
@@ -14,10 +15,7 @@ import { AuthModule } from './auth/auth.module';
 
 import { UsersModule } from './users/users.module';
 import { ScansModule } from './scans/scans.module';
-import { CampaignsModule } from './campaigns/campaigns.module';
-import { ContactsModule } from './contacts/contacts.module';
-import { ContactChannelModule } from './contact-channel/contact-channel.module';
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+
 import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware';
 
 @Module({
@@ -47,14 +45,7 @@ import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware'
         playground: false,
         plugins: [ApolloServerPluginLandingPageLocalDefault()],
         autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
-        include: [
-          AuthModule,
-          UsersModule,
-          ScansModule,
-          CampaignsModule,
-          ContactsModule,
-          ContactChannelModule,
-        ],
+        include: [AuthModule, UsersModule, ScansModule],
         cors: {
           origin: configService.get<string>('app.corsOrigin'),
           credentials: true,
@@ -68,9 +59,6 @@ import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware'
     AuthModule,
     UsersModule,
     ScansModule,
-    CampaignsModule,
-    ContactsModule,
-    ContactChannelModule,
   ],
 })
 export class AppModule {

@@ -25,7 +25,7 @@ export class Scan {
   })
   status: ScanStatus;
 
-  @ManyToOne(() => User, (user) => user.campaigns)
+  @ManyToOne(() => User, (user) => user.scans)
   user: User;
 
   @CreateDateColumn()
