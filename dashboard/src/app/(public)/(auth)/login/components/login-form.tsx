@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { LoadingText } from "@/components/ui/loading-text";
 import { MainLogo } from "@/components/ui/main-logo";
 
@@ -104,9 +105,8 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input
+                    <PasswordInput
                       {...field}
-                      type="password"
                       autoComplete="current-password"
                       aria-describedby="password-error"
                     />

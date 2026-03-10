@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { LoadingText } from "@/components/ui/loading-text";
 import { MainLogo } from "@/components/ui/main-logo";
 
@@ -125,11 +126,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      autoComplete="new-password"
-                    />
+                    <PasswordInput {...field} autoComplete="new-password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,11 +140,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      autoComplete="new-password"
-                    />
+                    <PasswordInput {...field} autoComplete="new-password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

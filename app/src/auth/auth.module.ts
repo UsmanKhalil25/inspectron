@@ -21,8 +21,8 @@ import { AuthResolver } from './auth.resolver';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('auth.jwtSecret'),
         signOptions: {
-          expiresIn: (configService.get<string>('auth.jwtExpiresIn') ??
-            '1d') as StringValue,
+          expiresIn:
+            configService.get<StringValue>('auth.jwtExpiresIn') ?? '1d',
         },
       }),
     }),
