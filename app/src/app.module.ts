@@ -8,20 +8,19 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
-import authConfig from './config/auth.config';
-import databaseConfig from './config/database.config';
+import { authConfig, databaseConfig, redisConfig } from './config';
 
 import { AuthModule } from './auth/auth.module';
-
 import { UsersModule } from './users/users.module';
 import { ScansModule } from './scans/scans.module';
 
-import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware';
+import { AuthTokenMiddleware } from './commom/middlewares';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [authConfig, databaseConfig],
+      load: [authConfig, databaseConfig, redisConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -54,6 +53,17 @@ import { AuthTokenMiddleware } from './commom/middlewares/auth-token.middleware'
           req,
           res,
         }),
+      }),
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
+          password: configService.get<string>('redis.password'),
+        },
       }),
     }),
     AuthModule,

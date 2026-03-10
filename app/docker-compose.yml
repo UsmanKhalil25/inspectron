@@ -16,6 +16,18 @@ services:
     networks:
       - inspectron-net
 
+  redis:
+    image: redis:alpine
+    container_name: inspectron-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: supersecurepassword
+    command: ["redis-server", "--requirepass", "supersecurepassword"]
+    ports:
+      - "6379:6379"
+    networks:
+      - inspectron-net
+
 volumes:
   postgres_data:
 
