@@ -1,6 +1,6 @@
 "use client";
 
-import { useSuspenseQuery } from "@apollo/client";
+import { useSuspenseQuery, useSubscription } from "@apollo/client";
 import { useSearchParams } from "next/navigation";
 
 import { AlertTriangle, ScanSearch } from "lucide-react";
@@ -18,6 +18,7 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { ScansTableRow } from "./scans-table-row";
 
 import { SCANS } from "@/graphql/queries/scans";
+import { SCAN_STATUS_CHANGED } from "@/graphql/subscriptions/scan-status";
 import { useMapFilters } from "@/hooks/use-map-filters";
 
 import {
@@ -27,6 +28,36 @@ import {
   SCANS_TABLE_DESCRIPTION,
   SCANS_TABLE_TITLE,
 } from "../../constants";
+
+import { GetScansQuery, ScanStatus } from "@/__generated__/graphql";
+
+function ScanSubscriptionLogger({
+  scanId,
+  cookieHeader,
+}: {
+  scanId: string;
+  cookieHeader: string;
+}) {
+  useSubscription(SCAN_STATUS_CHANGED, {
+    variables: { scanId },
+    context: {
+      headers: {
+        cookie: cookieHeader,
+      },
+    },
+    onData: (data) => {
+      console.log(`[Subscription ${scanId}] Data received:`, data);
+    },
+    onError: (error) => {
+      console.error(`[Subscription ${scanId}] Error:`, error);
+    },
+    onComplete: () => {
+      console.log(`[Subscription ${scanId}] Completed`);
+    },
+  });
+
+  return null;
+}
 
 interface StateProps {
   title?: string;
@@ -84,6 +115,14 @@ export function ScansTableImpl({ cookieHeader }: { cookieHeader: string }) {
   });
 
   const scans = data?.scans?.scans || [];
+
+  const activeScanIds = scans
+    .filter(
+      (scan: GetScansQuery["scans"]["scans"][number]) =>
+        scan.status === ScanStatus.Queued || scan.status === ScanStatus.Active,
+    )
+    .map((scan: GetScansQuery["scans"]["scans"][number]) => scan.id);
+
   const currentPage = data?.scans?.pagination.page ?? 1;
   const totalPages = data?.scans?.pagination.totalPages ?? 1;
   const hasNextPage = data?.scans?.pagination.hasNextPage ?? false;
@@ -95,6 +134,13 @@ export function ScansTableImpl({ cookieHeader }: { cookieHeader: string }) {
 
   const renderTable = () => (
     <>
+      {activeScanIds.map((scanId) => (
+        <ScanSubscriptionLogger
+          key={scanId}
+          scanId={scanId}
+          cookieHeader={cookieHeader}
+        />
+      ))}
       <Table>
         <TableHeader className="border-b border-border/50">
           <TableRow>

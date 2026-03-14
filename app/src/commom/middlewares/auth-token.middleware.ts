@@ -8,6 +8,12 @@ interface RequestWithCookies extends Request {
 @Injectable()
 export class AuthTokenMiddleware implements NestMiddleware {
   use(req: RequestWithCookies, _res: Response, next: NextFunction) {
+    // Skip WebSocket upgrade requests
+    if (req.headers['upgrade'] === 'websocket') {
+      next();
+      return;
+    }
+
     const token = req.cookies?.['auth-token'];
     if (token) {
       req.headers['authorization'] = `Bearer ${token}`;
