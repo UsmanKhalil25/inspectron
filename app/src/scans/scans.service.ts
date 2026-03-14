@@ -3,8 +3,11 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import {
   Repository,
   FindOptionsWhere,
@@ -30,12 +33,17 @@ const CREATABLE_SCAN_STATUSES = [ScanStatus.DRAFT, ScanStatus.QUEUED];
 
 @Injectable()
 export class ScansService {
+  private readonly logger = new Logger(ScansService.name);
+
   constructor(
     @InjectRepository(Scan)
     private readonly scansRepository: Repository<Scan>,
 
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectQueue('scans')
+    private readonly scansQueue: Queue,
   ) {}
 
   async findById(scanId: string, userId: string): Promise<Scan> {
@@ -200,42 +208,61 @@ export class ScansService {
       throw new NotFoundException('User not found');
     }
 
-    return await this.scansRepository.manager.transaction(async (manager) => {
-      try {
-        const scan = manager.create(Scan, {
-          url: input.url.trim(),
-          status: input.status ?? ScanStatus.DRAFT,
-          user,
-        });
+    const scan = await this.scansRepository.manager.transaction(
+      async (manager) => {
+        try {
+          const newScan = manager.create(Scan, {
+            url: input.url.trim(),
+            status: input.status ?? ScanStatus.DRAFT,
+            user,
+          });
 
-        const savedScan = await manager.save(Scan, scan);
+          const savedScan = await manager.save(Scan, newScan);
 
-        const scanWithRelations = await manager.findOne(Scan, {
-          where: { id: savedScan.id },
-          relations: ['user'],
-        });
+          const scanWithRelations = await manager.findOne(Scan, {
+            where: { id: savedScan.id },
+            relations: ['user'],
+          });
 
-        if (!scanWithRelations) {
+          if (!scanWithRelations) {
+            throw new InternalServerErrorException(
+              'Failed to reload scan with relations',
+            );
+          }
+
+          return scanWithRelations;
+        } catch (error) {
+          if (
+            error instanceof NotFoundException ||
+            error instanceof BadRequestException
+          ) {
+            throw error;
+          }
+
           throw new InternalServerErrorException(
-            'Failed to reload scan with relations',
+            'Failed to create scan',
+            error instanceof Error ? error.message : String(error),
           );
         }
+      },
+    );
 
-        return scanWithRelations;
+    if (scan.status === ScanStatus.QUEUED) {
+      try {
+        await this.scansQueue.add('scan', {
+          scanId: scan.id,
+          url: scan.url,
+        });
+        this.logger.log(`Scan ${scan.id} added to queue`);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof BadRequestException
-        ) {
-          throw error;
-        }
+        this.logger.error(`Failed to add scan ${scan.id} to queue:`, error);
 
-        throw new InternalServerErrorException(
-          'Failed to create scan',
-          error instanceof Error ? error.message : String(error),
-        );
+        scan.status = ScanStatus.FAILED;
+        await this.scansRepository.save(scan);
       }
-    });
+    }
+
+    return scan;
   }
 
   async getScansStats(userId: string): Promise<ScanStats> {
