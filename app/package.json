@@ -17,6 +17,7 @@
   "dependencies": {
     "@apollo/server": "^4.12.2",
     "@as-integrations/express5": "^1.1.2",
+    "@langchain/langgraph-sdk": "^1.7.2",
     "@nestjs/apollo": "^13.1.0",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",

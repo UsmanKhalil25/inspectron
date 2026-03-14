@@ -4,7 +4,7 @@
   "workspaces": [
     "app",
     "dashboard",
-    "engine"
+    "agent-server"
   ],
   "scripts": {
     "format": "bun run --filter app format && bun run --filter dashboard format && bun run --filter engine format",

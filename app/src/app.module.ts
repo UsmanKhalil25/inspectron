@@ -13,6 +13,7 @@ import { authConfig, databaseConfig, redisConfig } from './config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ScansModule } from './scans/scans.module';
+import { AgentsModule } from './agents/agents.module';
 
 import { AuthTokenMiddleware } from './commom/middlewares';
 import { BullModule } from '@nestjs/bullmq';
@@ -74,6 +75,7 @@ import { BullModule } from '@nestjs/bullmq';
     AuthModule,
     UsersModule,
     ScansModule,
+    AgentsModule,
   ],
 })
 export class AppModule {

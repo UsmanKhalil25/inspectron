@@ -25,6 +25,9 @@ export class Scan {
   })
   status: ScanStatus;
 
+  @Column({ type: 'text', nullable: true })
+  threadId: string | null;
+
   @ManyToOne(() => User, (user) => user.scans)
   user: User;
 

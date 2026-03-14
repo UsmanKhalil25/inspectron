@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import { Scan } from './scans.entity';
 import { ScanStatus } from './enums/scan-status.enum';
+import { AgentsBridgeService } from './agents-bridge.service';
 import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
 
 export interface ScanJobData {
@@ -22,6 +23,7 @@ export class ScanConsumer extends WorkerHost {
     private readonly scansRepository: Repository<Scan>,
     @Inject(PUB_SUB)
     private readonly pubSub: PubSub,
+    private readonly agentsBridgeService: AgentsBridgeService,
   ) {
     super();
   }
@@ -57,14 +59,9 @@ export class ScanConsumer extends WorkerHost {
 
       this.logger.log(`Starting scan for URL: ${url}`);
 
-      await this.simulateScan(url);
+      // Use AgentsBridgeService to execute the scan
+      await this.agentsBridgeService.executeScan(scan);
 
-      scan.status = ScanStatus.COMPLETED;
-      await this.scansRepository.save(scan);
-      await this.pubSub.publish(SCAN_STATUS_CHANGED, {
-        [SCAN_STATUS_CHANGED]: scan,
-      });
-      this.logger.log(`Scan ${scanId} completed successfully`);
     } catch (error) {
       this.logger.error(`Scan ${scanId} failed:`, error);
 
@@ -82,13 +79,5 @@ export class ScanConsumer extends WorkerHost {
 
       throw error;
     }
-  }
-
-  private async simulateScan(url: string): Promise<void> {
-    this.logger.log(`Scanning URL: ${url}`);
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    this.logger.log(`Scan completed for URL: ${url}`);
   }
 }
