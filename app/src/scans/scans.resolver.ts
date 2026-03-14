@@ -1,5 +1,13 @@
-import { Query, Mutation, Resolver, Context, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import {
+  Query,
+  Mutation,
+  Subscription,
+  Resolver,
+  Context,
+  Args,
+} from '@nestjs/graphql';
+import { UseGuards, Inject } from '@nestjs/common';
+import { PubSub } from 'graphql-subscriptions';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScansService } from './scans.service';
@@ -13,10 +21,14 @@ import { Scan } from './types/scan.type';
 import { ScanStats } from './types/scan-stats.type';
 
 import { JwtPayload } from 'src/commom/interfaces/jwt-payload.interface';
+import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
 
 @Resolver(() => Scan)
 export class ScansResolver {
-  constructor(private readonly scansService: ScansService) {}
+  constructor(
+    private readonly scansService: ScansService,
+    @Inject(PUB_SUB) private readonly pubSub: PubSub,
+  ) {}
 
   @Query(() => Scan)
   @UseGuards(JwtAuthGuard)
@@ -54,5 +66,14 @@ export class ScansResolver {
   ) {
     const userId = context.req.user.sub;
     return await this.scansService.createScan(input, userId);
+  }
+
+  @Subscription(() => Scan, {
+    filter: (payload, variables) => {
+      return payload.scanStatusChanged.id === variables.scanId;
+    },
+  })
+  scanStatusChanged(@Args('scanId') scanId: string) {
+    return this.pubSub.asyncIterableIterator(SCAN_STATUS_CHANGED);
   }
 }

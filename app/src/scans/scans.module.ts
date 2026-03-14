@@ -6,7 +6,8 @@ import { User } from 'src/users/user.entity';
 import { Scan } from './scans.entity';
 import { ScansService } from './scans.service';
 import { ScansResolver } from './scans.resolver';
-import { ScanConsumer } from './scan-consumer';
+import { ScanConsumer } from './scan.consumer';
+import { PUB_SUB, createPubSub } from './scans.constants';
 
 @Module({
   imports: [
@@ -15,6 +16,15 @@ import { ScanConsumer } from './scan-consumer';
       name: 'scans',
     }),
   ],
-  providers: [ScansService, ScansResolver, ScanConsumer],
+  providers: [
+    ScansService,
+    ScansResolver,
+    ScanConsumer,
+    {
+      provide: PUB_SUB,
+      useValue: createPubSub(),
+    },
+  ],
+  exports: [PUB_SUB],
 })
 export class ScansModule {}

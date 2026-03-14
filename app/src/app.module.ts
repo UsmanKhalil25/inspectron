@@ -49,6 +49,11 @@ import { BullModule } from '@nestjs/bullmq';
           origin: configService.get<string>('app.corsOrigin'),
           credentials: true,
         },
+        subscriptions: {
+          'graphql-ws': {
+            path: '/graphql',
+          },
+        },
         context: ({ req, res }: { req: Request; res: Response }) => ({
           req,
           res,

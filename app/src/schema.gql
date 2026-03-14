@@ -128,3 +128,7 @@ input RegisterUserInput {
   password: String!
   confirmPassword: String!
 }
+
+type Subscription {
+  scanStatusChanged(scanId: String!): Scan!
+}

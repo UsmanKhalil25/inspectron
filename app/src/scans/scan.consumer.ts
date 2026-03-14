@@ -1,10 +1,12 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PubSub } from 'graphql-subscriptions';
 import { Scan } from './scans.entity';
 import { ScanStatus } from './enums/scan-status.enum';
+import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
 
 export interface ScanJobData {
   scanId: string;
@@ -18,6 +20,8 @@ export class ScanConsumer extends WorkerHost {
   constructor(
     @InjectRepository(Scan)
     private readonly scansRepository: Repository<Scan>,
+    @Inject(PUB_SUB)
+    private readonly pubSub: PubSub,
   ) {
     super();
   }
@@ -46,6 +50,9 @@ export class ScanConsumer extends WorkerHost {
 
       scan.status = ScanStatus.ACTIVE;
       await this.scansRepository.save(scan);
+      await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+        [SCAN_STATUS_CHANGED]: scan,
+      });
       this.logger.log(`Scan ${scanId} status updated to ACTIVE`);
 
       this.logger.log(`Starting scan for URL: ${url}`);
@@ -54,6 +61,9 @@ export class ScanConsumer extends WorkerHost {
 
       scan.status = ScanStatus.COMPLETED;
       await this.scansRepository.save(scan);
+      await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+        [SCAN_STATUS_CHANGED]: scan,
+      });
       this.logger.log(`Scan ${scanId} completed successfully`);
     } catch (error) {
       this.logger.error(`Scan ${scanId} failed:`, error);
@@ -65,6 +75,9 @@ export class ScanConsumer extends WorkerHost {
       if (scan) {
         scan.status = ScanStatus.FAILED;
         await this.scansRepository.save(scan);
+        await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+          [SCAN_STATUS_CHANGED]: scan,
+        });
       }
 
       throw error;
