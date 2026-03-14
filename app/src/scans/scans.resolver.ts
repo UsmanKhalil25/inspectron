@@ -69,11 +69,14 @@ export class ScansResolver {
   }
 
   @Subscription(() => Scan, {
-    filter: (payload, variables) => {
+    filter: (
+      payload: { scanStatusChanged: { id: string } },
+      variables: { scanId: string },
+    ) => {
       return payload.scanStatusChanged.id === variables.scanId;
     },
   })
-  scanStatusChanged(@Args('scanId') scanId: string) {
+  scanStatusChanged(@Args('scanId') _scanId: string) {
     return this.pubSub.asyncIterableIterator(SCAN_STATUS_CHANGED);
   }
 }

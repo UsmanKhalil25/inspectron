@@ -11,7 +11,6 @@ interface PasswordInputProps extends React.ComponentProps<"input"> {
 function PasswordInput({
   className,
   containerClassName,
-  type,
   ...props
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = React.useState(false);
