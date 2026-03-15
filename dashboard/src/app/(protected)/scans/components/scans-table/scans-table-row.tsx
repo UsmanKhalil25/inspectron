@@ -1,5 +1,7 @@
+import { useRouter } from "next/navigation";
 import { TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import { SCAN_STATUS_BADGE } from "@/common/constants/scan-status-badge.constant";
@@ -32,20 +34,27 @@ function ScanDateCell({ date }: { date: string }) {
 
 function ScanUrlCell({ url }: { url: string }) {
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-medium text-foreground hover:underline truncate block max-w-[350px]"
-    >
-      {url}
-    </a>
+    <div className="flex items-center gap-2 max-w-[350px]">
+      <span className="font-medium text-foreground truncate">{url}</span>
+
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <ExternalLink className="h-4 w-4" />
+      </a>
+    </div>
   );
 }
-
 export function ScansTableRow({ scan }: ScansTableRowProps) {
+  const router = useRouter();
   return (
-    <tr className="group">
+    <tr
+      className="group cursor-pointer hover:bg-muted/50"
+      onClick={() => router.push(`scans/${scan.id}`)}
+    >
       <TableCell className={SCANS_TABLE_COLUMN_WIDTHS.url}>
         <ScanUrlCell url={scan.url} />
       </TableCell>
