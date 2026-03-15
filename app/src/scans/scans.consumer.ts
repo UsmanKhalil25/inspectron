@@ -61,7 +61,6 @@ export class ScanConsumer extends WorkerHost {
 
       // Use AgentsBridgeService to execute the scan
       await this.agentsBridgeService.executeScan(scan);
-
     } catch (error) {
       this.logger.error(`Scan ${scanId} failed:`, error);
 

@@ -79,8 +79,8 @@ export class AgentsBridgeService {
       for await (const chunk of stream) {
         this.logger.debug(`Event: ${JSON.stringify(chunk)}`);
 
-        const chunkAny = chunk as any;
-        
+        const chunkAny = chunk;
+
         // Handle navigation events
         if (chunkAny.event === 'on_tool_end' && chunkAny.name === 'navigate') {
           const output = chunkAny.data?.output;
