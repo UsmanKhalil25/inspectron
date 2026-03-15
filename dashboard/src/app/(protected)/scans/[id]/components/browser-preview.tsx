@@ -18,26 +18,19 @@ export function BrowserPreview({
         <span className="text-xs font-medium text-muted-foreground">
           Browser Preview
         </span>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <RefreshCw className="h-3 w-3" />
+        <div className="flex w-1/2 items-center gap-1.5 rounded-sm bg-muted/40 px-2 py-0.5">
+          <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />
+          <span className="font-mono text-[10px] text-muted-foreground truncate">
+            {url}
+          </span>
+        </div>
+
+        <Button variant="ghost" size="icon">
+          <RefreshCw />
         </Button>
       </div>
 
       <div className="relative flex flex-1 flex-col">
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-muted/20 px-3">
-          <div className="flex gap-1">
-            <span className="h-2 w-2 rounded-full bg-red-400/60" />
-            <span className="h-2 w-2 rounded-full bg-yellow-400/60" />
-            <span className="h-2 w-2 rounded-full bg-emerald-400/60" />
-          </div>
-          <div className="flex flex-1 items-center gap-1.5 rounded-sm bg-muted/40 px-2 py-0.5">
-            <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />
-            <span className="font-mono text-[10px] text-muted-foreground truncate">
-              {url}
-            </span>
-          </div>
-        </div>
-
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Globe className="mx-auto mb-3 h-10 w-10 opacity-20" />
