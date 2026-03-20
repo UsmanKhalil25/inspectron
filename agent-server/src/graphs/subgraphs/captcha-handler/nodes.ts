@@ -1,19 +1,10 @@
-import { StateGraph, interrupt } from "@langchain/langgraph";
-import * as z from "zod";
-import { detectCaptcha } from "../../utils/captcha-detector.js";
-import { BrowserFactory } from "../factory/index.js";
+import { interrupt } from "@langchain/langgraph";
+import type { CaptchaStateType } from "./state";
+import { detectCaptcha } from "../../../utils/captcha-detector";
+import { BrowserManager } from "../../../libs";
 
-const CaptchaState = z.object({
-  img: z.string().optional(),
-  captchaType: z.string().optional(),
-  solved: z.boolean().optional(),
-  url: z.string().optional(),
-});
-
-type CaptchaStateType = z.infer<typeof CaptchaState>;
-
-async function detectCaptchaNode(state: CaptchaStateType) {
-  const page = await BrowserFactory.getPage();
+export async function detectCaptchaNode(_state: CaptchaStateType) {
+  const page = await BrowserManager.getPage();
 
   const result = await detectCaptcha(page);
 
@@ -33,11 +24,11 @@ async function detectCaptchaNode(state: CaptchaStateType) {
   };
 }
 
-async function handleInterruptNode(state: CaptchaStateType) {
+export function handleInterruptNode(state: CaptchaStateType) {
   const captchaType = state.captchaType || "Unknown";
   const url = state.url || "unknown";
 
-  const userConfirmation = interrupt({
+  const userConfirmation: unknown = interrupt({
     action_requests: [
       {
         name: "solve_captcha",
@@ -68,10 +59,10 @@ async function handleInterruptNode(state: CaptchaStateType) {
     const confirmation = userConfirmation as Record<string, unknown>;
 
     if (confirmation.decisions && Array.isArray(confirmation.decisions)) {
-      const decision = confirmation.decisions[0];
+      const decision = confirmation.decisions[0] as { type?: string };
       solved = decision?.type === "approve";
     } else if (Array.isArray(userConfirmation)) {
-      const decision = userConfirmation[0];
+      const decision = userConfirmation[0] as { type?: string };
       solved = decision?.type === "approve";
     } else if (confirmation.type) {
       solved = confirmation.type === "approve";
@@ -83,13 +74,13 @@ async function handleInterruptNode(state: CaptchaStateType) {
   return { solved };
 }
 
-async function verifySolvedNode(state: CaptchaStateType) {
+export async function verifySolvedNode(state: CaptchaStateType) {
   console.log("Verifying captcha solved, current state:", {
     captchaType: state.captchaType,
     solved: state.solved,
   });
 
-  const page = await BrowserFactory.getPage();
+  const page = await BrowserManager.getPage();
 
   const result = await detectCaptcha(page);
 
@@ -108,7 +99,7 @@ async function verifySolvedNode(state: CaptchaStateType) {
   };
 }
 
-function shouldInterrupt(state: CaptchaStateType) {
+export function shouldInterrupt(state: CaptchaStateType) {
   const shouldEnd = state.captchaType === "none" || state.solved;
   console.log("shouldInterrupt check:", {
     captchaType: state.captchaType,
@@ -121,31 +112,8 @@ function shouldInterrupt(state: CaptchaStateType) {
   return "interrupt";
 }
 
-function shouldVerify(state: CaptchaStateType) {
+export function shouldVerify(state: CaptchaStateType) {
   const decision = state.solved ? "verify" : "interrupt";
   console.log("shouldVerify check:", { solved: state.solved, decision });
   return decision;
 }
-
-const workflow = new StateGraph(CaptchaState)
-  .addNode("detect", detectCaptchaNode)
-  .addNode("interrupt", handleInterruptNode)
-  .addNode("verify", verifySolvedNode)
-  .addEdge("__start__", "detect")
-  .addConditionalEdges("detect", shouldInterrupt, {
-    interrupt: "interrupt",
-    end: "__end__",
-  })
-  .addConditionalEdges("interrupt", shouldVerify, {
-    verify: "verify",
-    interrupt: "interrupt",
-  })
-  .addConditionalEdges("verify", shouldInterrupt, {
-    interrupt: "interrupt",
-    end: "__end__",
-  });
-
-// Don't pass checkpointer - subgraph will use parent's checkpointer for shared state
-const compiled = workflow.compile();
-
-export const captchaHandlerGraph = compiled;

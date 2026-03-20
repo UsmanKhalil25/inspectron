@@ -1,5 +1,5 @@
 import { Page } from "playwright";
-import type { PageElement } from "../schemas/page-elements.js";
+import type { PageElement } from "../schemas/page-elements";
 
 export async function labelElements(page: Page, elements: PageElement[]) {
   await page.evaluate((items) => {

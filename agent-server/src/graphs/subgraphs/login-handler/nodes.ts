@@ -1,24 +1,8 @@
-import { StateGraph, interrupt } from "@langchain/langgraph";
-import * as z from "zod";
-import { BrowserFactory } from "../factory/index.js";
+import { interrupt } from "@langchain/langgraph";
+import type { LoginStateType } from "./state.ts";
+import { BrowserManager } from "../../../libs/index.ts";
 
-const LoginState = z.object({
-  img: z.string().optional(),
-  loginRequired: z.boolean().optional(),
-  loginUrl: z.string().optional(), // Shared with parent state for completion detection
-  credentials: z
-    .object({
-      username: z.string(),
-      password: z.string(),
-    })
-    .optional(),
-  loginCompleted: z.boolean().optional(), // Shared with parent state
-});
-
-type LoginStateType = z.infer<typeof LoginState>;
-
-async function detectLoginNode(state: LoginStateType) {
-  // Skip login detection if already logged in
+export async function detectLoginNode(state: LoginStateType) {
   if (state.loginCompleted) {
     console.log("[Login Handler] Skipping - already completed login");
     return {
@@ -26,10 +10,9 @@ async function detectLoginNode(state: LoginStateType) {
     };
   }
 
-  const page = await BrowserFactory.getPage();
+  const page = await BrowserManager.getPage();
   const currentUrl = page.url();
 
-  // If we already have credentials and we're not on the same login URL, assume login was successful
   if (state.credentials && state.loginUrl && currentUrl !== state.loginUrl) {
     console.log(
       "[Login Handler] URL changed after login, marking as completed",
@@ -41,17 +24,14 @@ async function detectLoginNode(state: LoginStateType) {
   }
 
   const loginDetected = await page.evaluate(() => {
-    // Check for password field
     const passwordFields = document.querySelectorAll('input[type="password"]');
     if (passwordFields.length === 0) {
       return false;
     }
 
-    // Get page text content to check for signup/register keywords
     const pageText = document.body.innerText.toLowerCase();
     const url = window.location.href.toLowerCase();
 
-    // If it's clearly a signup/register page, exclude it
     const signupKeywords = [
       "sign up",
       "signup",
@@ -64,12 +44,10 @@ async function detectLoginNode(state: LoginStateType) {
     });
 
     if (isSignupPage) {
-      // Check if there are multiple password fields (confirm password = likely signup)
       if (passwordFields.length > 1) {
         return false;
       }
 
-      // Check for confirm password field by name/id
       const confirmPasswordField = document.querySelector(
         'input[name*="confirm" i][type="password"], input[id*="confirm" i][type="password"]',
       );
@@ -78,12 +56,10 @@ async function detectLoginNode(state: LoginStateType) {
       }
     }
 
-    // Check for login-specific forms
     const loginForms = document.querySelectorAll(
       'form[action*="login" i], form[action*="signin" i]',
     );
 
-    // Look for login-specific text near the password field
     const loginKeywords = ["log in", "login", "sign in", "signin"];
     const hasLoginKeyword = loginKeywords.some((keyword) =>
       pageText.includes(keyword),
@@ -106,10 +82,10 @@ async function detectLoginNode(state: LoginStateType) {
   };
 }
 
-async function handleLoginInterruptNode(state: LoginStateType) {
+export function handleLoginInterruptNode(state: LoginStateType) {
   const loginUrl = state.loginUrl || "unknown";
 
-  const userResponse = interrupt({
+  const userResponse: unknown = interrupt({
     action_requests: [
       {
         name: "provide_credentials",
@@ -149,13 +125,16 @@ async function handleLoginInterruptNode(state: LoginStateType) {
     JSON.stringify(userResponse, null, 2),
   );
 
-  let credentials = null;
+  let credentials: { username: string; password: string } | undefined;
 
   if (userResponse && typeof userResponse === "object") {
     const response = userResponse as Record<string, unknown>;
 
     if (response.decisions && Array.isArray(response.decisions)) {
-      const decision = response.decisions[0];
+      const decision = response.decisions[0] as {
+        type?: string;
+        edited_action?: { args?: { username?: string; password?: string } };
+      };
       if (
         (decision?.type === "approve" || decision?.type === "edit") &&
         decision.edited_action?.args
@@ -173,7 +152,7 @@ async function handleLoginInterruptNode(state: LoginStateType) {
   return { credentials };
 }
 
-async function performLoginNode(state: LoginStateType) {
+export function performLoginNode(state: LoginStateType) {
   console.log(
     "[Login Handler] Login credentials received, passing to agent for form filling",
   );
@@ -183,18 +162,15 @@ async function performLoginNode(state: LoginStateType) {
   return {
     loginRequired: false,
     credentials: state.credentials,
-    // loginCompleted is NOT set here - will be set after agent actually logs in
   };
 }
 
-function shouldRequestCredentials(state: LoginStateType) {
+export function shouldRequestCredentials(state: LoginStateType) {
   if (!state.loginRequired) {
     console.log("[Login Handler] Login not required, ending");
     return "end";
   }
 
-  // If we already have credentials but login is still required, it means we've already
-  // asked for credentials and the agent should be filling the form
   if (state.credentials) {
     console.log(
       "[Login Handler] Credentials already provided, proceeding to login",
@@ -205,20 +181,3 @@ function shouldRequestCredentials(state: LoginStateType) {
   console.log("[Login Handler] Login required, requesting credentials");
   return "interrupt";
 }
-
-const workflow = new StateGraph(LoginState)
-  .addNode("detect", detectLoginNode)
-  .addNode("interrupt", handleLoginInterruptNode)
-  .addNode("login", performLoginNode)
-  .addEdge("__start__", "detect")
-  .addConditionalEdges("detect", shouldRequestCredentials, {
-    interrupt: "interrupt",
-    login: "login",
-    end: "__end__",
-  })
-  .addEdge("interrupt", "login")
-  .addEdge("login", "__end__");
-
-const compiled = workflow.compile();
-
-export const loginHandlerGraph = compiled;

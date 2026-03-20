@@ -4,7 +4,7 @@ import { MessagesZodMeta } from "@langchain/langgraph";
 import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
 
-import { PageElementSchema } from "../schemas/page-elements.js";
+import { PageElementSchema } from "../../schemas/page-elements";
 
 export const AgentState = z.object({
   messages: z

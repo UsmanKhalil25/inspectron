@@ -1,6 +1,6 @@
 import { ChatOllama } from "@langchain/ollama";
 
-import { stringEnv, numberEnv } from "../../utils/config.js";
+import { stringEnv, numberEnv } from "../../utils";
 
 export class OllamaClient {
   private readonly modelName = stringEnv("OLLAMA_MODEL_NAME", "gemma3:latest");

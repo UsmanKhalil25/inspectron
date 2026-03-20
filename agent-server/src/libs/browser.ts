@@ -1,6 +1,6 @@
 import { Browser, BrowserContext, Page, chromium } from "playwright";
 
-export class BrowserFactory {
+export class BrowserManager {
   private static browser: Browser | null = null;
   private static context: BrowserContext | null = null;
   private static page: Page | null = null;
@@ -23,7 +23,7 @@ export class BrowserFactory {
     if (!this.page) {
       await this.launch();
     }
-    return this.page!;
+    return this.page as Page;
   }
 
   static async cleanup(): Promise<void> {

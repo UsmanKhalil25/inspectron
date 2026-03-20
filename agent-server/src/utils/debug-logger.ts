@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { PageElement } from "../schemas/page-elements.js";
+import type { PageElement } from "../schemas/page-elements";
 
 export class DebugLogger {
   private debugDir: string;
@@ -173,7 +173,10 @@ export class DebugLogger {
       ${
         data.metadata
           ? Object.entries(data.metadata)
-              .map(([key, value]) => `<p><strong>${key}:</strong> ${value}</p>`)
+              .map(
+                ([key, value]) =>
+                  `<p><strong>${key}:</strong> ${String(value)}</p>`,
+              )
               .join("")
           : ""
       }

@@ -1,6 +1,6 @@
 import type { Page } from "playwright";
 
-import type { PageElement } from "../schemas/page-elements.js";
+import type { PageElement } from "../../schemas/page-elements";
 import {
   SystemMessage,
   AIMessage,
@@ -9,17 +9,18 @@ import {
 } from "@langchain/core/messages";
 import { END } from "@langchain/langgraph";
 
-import { AgentStateType } from "./state.js";
-import { labelElements } from "../utils/label-elements.js";
-import { DebugLogger } from "../utils/debug-logger.js";
-import { LlmFactory, BrowserFactory } from "./factory/index.js";
-import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
+import type { AgentStateType } from "./state";
+import { labelElements } from "../../utils/label-elements";
+import { DebugLogger } from "../../utils/debug-logger";
+import { LlmFactory } from "../../clients/llm/factory";
+import { BrowserManager } from "../../libs";
+import { click, type_, scroll, goBack, wait, navigate } from "./tools";
 import {
   INITIAL_AGENT_PROMPT,
   WEB_BROWSING_AGENT_PROMPT,
   SCREENSHOT_OBSERVATION_TEXT,
-} from "./prompts.js";
-import { stringEnv } from "../utils/config.js";
+} from "./prompts";
+import { stringEnv } from "../../utils/config";
 
 const DEBUG_MODE = stringEnv("DEBUG_AGENT", "false") === "true";
 let debugLogger: DebugLogger | null = null;
@@ -76,8 +77,8 @@ export async function getInteractiveElements(
 }
 
 export async function openBrowserNode(state: AgentStateType) {
-  await BrowserFactory.launch();
-  const page = await BrowserFactory.getPage();
+  await BrowserManager.launch();
+  const page = await BrowserManager.getPage();
 
   if (DEBUG_MODE && !debugLogger) {
     const threadId = state.input || "unknown";
@@ -90,11 +91,10 @@ export async function openBrowserNode(state: AgentStateType) {
   };
 }
 
-export async function shouldContinue(state: AgentStateType) {
+export function shouldContinue(state: AgentStateType) {
   const lastMessage = state.messages[state.messages.length - 1];
   if (lastMessage == null || !AIMessage.isInstance(lastMessage)) return END;
 
-  // Hard stop if crawl goal is reached
   if (state.crawlGoal) {
     const { currentPageCount, targetPageCount } = state.crawlGoal;
     if (currentPageCount >= targetPageCount) {
@@ -112,7 +112,7 @@ export async function shouldContinue(state: AgentStateType) {
   return END;
 }
 
-export async function shouldInitializeBrowser(state: AgentStateType) {
+export function shouldInitializeBrowser(state: AgentStateType) {
   const lastMessage = state.messages[state.messages.length - 1];
   if (lastMessage == null || !AIMessage.isInstance(lastMessage)) return END;
 
@@ -124,7 +124,7 @@ export async function shouldInitializeBrowser(state: AgentStateType) {
 }
 
 export async function closeBrowserNode(state: AgentStateType) {
-  await BrowserFactory.cleanup();
+  await BrowserManager.cleanup();
 
   if (DEBUG_MODE && debugLogger) {
     console.log(`Debug session complete: ${debugLogger.getSessionPath()}`);
@@ -141,7 +141,7 @@ export async function closeBrowserNode(state: AgentStateType) {
 }
 
 export async function syncPageNode(state: AgentStateType) {
-  const page = await BrowserFactory.getPage();
+  const page = await BrowserManager.getPage();
 
   try {
     await page.waitForLoadState("load", { timeout: 10000 });
@@ -150,11 +150,9 @@ export async function syncPageNode(state: AgentStateType) {
     console.log("Page load timeout, continuing anyway");
   }
 
-  // Track visited URLs
   const currentUrl = page.url();
   const visitedUrls = state.visitedUrls || [];
 
-  // Add current URL if not already visited
   if (!visitedUrls.includes(currentUrl)) {
     visitedUrls.push(currentUrl);
     console.log(
@@ -162,7 +160,6 @@ export async function syncPageNode(state: AgentStateType) {
     );
   }
 
-  // Update crawl goal progress if it exists
   const crawlGoal = state.crawlGoal
     ? {
         ...state.crawlGoal,
@@ -178,14 +175,12 @@ export async function syncPageNode(state: AgentStateType) {
   };
 }
 
-export async function shouldRunLoginHandler(state: AgentStateType) {
-  // Skip if login is already completed
+export function shouldRunLoginHandler(state: AgentStateType) {
   if (state.loginCompleted) {
     console.log("[Should Run Login Handler] Login completed - skipping");
     return "skip_login";
   }
 
-  // Skip if we already have credentials (waiting for agent to fill form)
   if (state.credentials) {
     console.log(
       "[Should Run Login Handler] Credentials already provided - skipping (agent will fill form)",
@@ -193,7 +188,6 @@ export async function shouldRunLoginHandler(state: AgentStateType) {
     return "skip_login";
   }
 
-  // Only run login handler if we have no credentials and no completion
   console.log(
     "[Should Run Login Handler] No credentials yet - running login handler",
   );
@@ -201,16 +195,14 @@ export async function shouldRunLoginHandler(state: AgentStateType) {
 }
 
 export async function detectLoginNode(state: AgentStateType) {
-  // Only check if we have credentials but haven't completed login
   if (!state.credentials || state.loginCompleted) {
     return { ...state };
   }
 
-  const page = await BrowserFactory.getPage();
+  const page = await BrowserManager.getPage();
   const currentUrl = page.url();
   const loginUrl = state.loginUrl;
 
-  // Method 1: If we had a login URL and we're now on a different URL, login succeeded
   if (loginUrl && currentUrl !== loginUrl) {
     console.log(
       `[Login Completion Check] URL changed from ${loginUrl} to ${currentUrl} - login completed`,
@@ -221,7 +213,6 @@ export async function detectLoginNode(state: AgentStateType) {
     };
   }
 
-  // Method 2: Check if login form is no longer present
   const loginStillPresent = await page.evaluate(() => {
     const passwordFields = document.querySelectorAll('input[type="password"]');
     return passwordFields.length > 0;
@@ -237,7 +228,6 @@ export async function detectLoginNode(state: AgentStateType) {
     };
   }
 
-  // Method 3: Check for common success indicators
   const loginSuccess = await page.evaluate(() => {
     const bodyText = document.body.innerText.toLowerCase();
     const successIndicators = [
@@ -268,9 +258,7 @@ export async function detectLoginNode(state: AgentStateType) {
 }
 
 export async function labelElementsNode(state: AgentStateType) {
-  const page = state.page?.evaluate
-    ? state.page
-    : await BrowserFactory.getPage();
+  const page = state.page ? state.page : await BrowserManager.getPage();
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);
   return {
@@ -280,15 +268,13 @@ export async function labelElementsNode(state: AgentStateType) {
 }
 
 export async function screenshotNode(state: AgentStateType) {
-  const page = state.page?.screenshot
-    ? state.page
-    : await BrowserFactory.getPage();
+  const page = state.page ? state.page : await BrowserManager.getPage();
   const screenshot = await page.screenshot();
   const base64Image = screenshot.toString("base64");
 
   if (DEBUG_MODE && debugLogger) {
     try {
-      const url = await page.url();
+      const url = page.url();
       debugLogger.saveIteration({
         screenshot: base64Image,
         elements: state.interactiveElements || [],
@@ -317,13 +303,10 @@ export async function initialPlanNode(state: AgentStateType) {
 
   const messages = [new SystemMessage(INITIAL_AGENT_PROMPT), ...state.messages];
 
-  // Parse user input to detect crawl goals
   let crawlGoal = state.crawlGoal;
 
   if (state.input) {
     const userInput = state.input.toLowerCase();
-
-    // Check if user specified a page count (e.g., "crawl 5 pages", "visit at least 10 pages")
     const crawlMatch = userInput.match(
       /(?:crawl|visit|explore).*?(?:at least|atleast)?\s*(\d+)\s*pages?/i,
     );
@@ -346,7 +329,6 @@ export async function initialPlanNode(state: AgentStateType) {
 }
 
 export async function reasonNode(state: AgentStateType) {
-  // Check if crawl goal is already reached - force agent to respond directly
   if (state.crawlGoal) {
     const { currentPageCount, targetPageCount } = state.crawlGoal;
     if (currentPageCount >= targetPageCount) {
@@ -370,7 +352,7 @@ export async function reasonNode(state: AgentStateType) {
   const model = LlmFactory.getLLM();
   const tools = [
     click(state),
-    type(state),
+    type_(state),
     scroll(state),
     wait(state),
     goBack(state),
@@ -390,13 +372,11 @@ export async function reasonNode(state: AgentStateType) {
       screenshotText += `\n\nLOGIN CREDENTIALS PROVIDED:\n- Username/Email: ${state.credentials.username}\n- Password: ${state.credentials.password}\n\nYou must fill in the login form with these credentials using the type tool.`;
     }
 
-    // Add visited URLs tracking information
     if (state.visitedUrls && state.visitedUrls.length > 0) {
       screenshotText += `\n\nVISITED URLS (${state.visitedUrls.length}):\n${state.visitedUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}`;
       screenshotText += `\n\nIMPORTANT: You have already visited the above URLs. Do NOT navigate to or click links that lead to these pages again. Focus on discovering NEW pages.`;
     }
 
-    // Add crawl goal progress if exists
     if (state.crawlGoal) {
       screenshotText += `\n\nCRAWL PROGRESS: ${state.crawlGoal.currentPageCount} / ${state.crawlGoal.targetPageCount} pages visited`;
       if (state.crawlGoal.currentPageCount >= state.crawlGoal.targetPageCount) {
@@ -437,7 +417,7 @@ export async function runToolsNode(state: AgentStateType) {
 
   const toolsByName = {
     click: click(state),
-    type: type(state),
+    type: type_(state),
     scroll: scroll(state),
     wait: wait(state),
     go_back: goBack(state),
@@ -446,9 +426,12 @@ export async function runToolsNode(state: AgentStateType) {
 
   const result: ToolMessage[] = [];
   for (const toolCall of lastMessage.tool_calls ?? []) {
-    const tool = toolsByName[toolCall.name];
+    const toolName = toolCall.name as keyof typeof toolsByName;
+    const tool = toolsByName[toolName];
     if (tool) {
-      const observation = await tool.invoke(toolCall);
+      const observation = await (
+        tool as unknown as { invoke: (arg: unknown) => Promise<ToolMessage> }
+      ).invoke(toolCall);
       result.push(observation);
     }
   }

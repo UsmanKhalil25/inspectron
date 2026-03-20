@@ -13,14 +13,14 @@ import {
   shouldInitializeBrowser,
   shouldRunLoginHandler,
   detectLoginNode,
-} from "./nodes.js";
-import { AgentState } from "./state.js";
-import { captchaHandlerGraph } from "./subgraphs/captcha-handler.js";
-import { loginHandlerGraph } from "./subgraphs/login-handler.js";
+} from "./nodes";
+import { AgentState } from "./state";
+import { captchaHandlerGraph } from "../subgraphs/captcha-handler";
+import { loginHandlerGraph } from "../subgraphs/login-handler";
 
 const checkpointer = new MemorySaver();
 
-const graph = new StateGraph(AgentState)
+export const graph = new StateGraph(AgentState)
   .addNode("initialPlan", initialPlanNode)
   .addNode("openBrowser", openBrowserNode)
   .addNode("closeBrowser", closeBrowserNode)
@@ -58,5 +58,3 @@ const graph = new StateGraph(AgentState)
   });
 
 graph.name = "WorkflowGraph";
-
-export default graph;

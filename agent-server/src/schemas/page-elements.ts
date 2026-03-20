@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { BoundingBoxSchema } from "./bounding-box.js";
+import { BoundingBoxSchema } from "./bounding-box";
 
 export const PageElementSchema = z.object({
   id: z.number(),

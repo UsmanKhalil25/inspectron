@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 
-import { stringEnv, numberEnv } from "../../utils/config.js";
+import { stringEnv, numberEnv } from "../../utils";
 
 export class OpenaiClient {
   private readonly apiKey = stringEnv("OPENAI_API_KEY");
