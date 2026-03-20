@@ -1,8 +1,7 @@
 import { StateGraph, interrupt } from "@langchain/langgraph";
 import * as z from "zod";
-import { Page } from "playwright";
 import { detectCaptcha } from "../../utils/captcha-detector.js";
-import { BrowserFactory } from "../factory";
+import { BrowserFactory } from "../factory.js";
 
 const CaptchaState = z.object({
   img: z.string().optional(),
@@ -66,7 +65,7 @@ async function handleInterruptNode(state: CaptchaStateType) {
   let solved = false;
 
   if (userConfirmation && typeof userConfirmation === "object") {
-    const confirmation = userConfirmation as any;
+    const confirmation = userConfirmation as Record<string, unknown>;
 
     if (confirmation.decisions && Array.isArray(confirmation.decisions)) {
       const decision = confirmation.decisions[0];

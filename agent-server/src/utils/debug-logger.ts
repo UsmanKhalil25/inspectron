@@ -27,7 +27,7 @@ export class DebugLogger {
     screenshot: string;
     elements: PageElement[];
     url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }) {
     this.iterationCount++;
     const iterationDir = path.join(
@@ -73,7 +73,7 @@ export class DebugLogger {
     screenshot: string;
     elements: PageElement[];
     url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): string {
     const elementRows = data.elements
       .map(

@@ -1,7 +1,6 @@
 import { StateGraph, interrupt } from "@langchain/langgraph";
 import * as z from "zod";
-import { Page } from "playwright";
-import { BrowserFactory } from "../factory";
+import { BrowserFactory } from "../factory.js";
 
 const LoginState = z.object({
   img: z.string().optional(),
@@ -32,7 +31,9 @@ async function detectLoginNode(state: LoginStateType) {
 
   // If we already have credentials and we're not on the same login URL, assume login was successful
   if (state.credentials && state.loginUrl && currentUrl !== state.loginUrl) {
-    console.log("[Login Handler] URL changed after login, marking as completed");
+    console.log(
+      "[Login Handler] URL changed after login, marking as completed",
+    );
     return {
       loginRequired: false,
       loginCompleted: true,
@@ -151,7 +152,7 @@ async function handleLoginInterruptNode(state: LoginStateType) {
   let credentials = null;
 
   if (userResponse && typeof userResponse === "object") {
-    const response = userResponse as any;
+    const response = userResponse as Record<string, unknown>;
 
     if (response.decisions && Array.isArray(response.decisions)) {
       const decision = response.decisions[0];
@@ -173,8 +174,12 @@ async function handleLoginInterruptNode(state: LoginStateType) {
 }
 
 async function performLoginNode(state: LoginStateType) {
-  console.log("[Login Handler] Login credentials received, passing to agent for form filling");
-  console.log("[Login Handler] NOT setting loginCompleted - agent will fill form and we'll detect completion after");
+  console.log(
+    "[Login Handler] Login credentials received, passing to agent for form filling",
+  );
+  console.log(
+    "[Login Handler] NOT setting loginCompleted - agent will fill form and we'll detect completion after",
+  );
   return {
     loginRequired: false,
     credentials: state.credentials,
@@ -191,7 +196,9 @@ function shouldRequestCredentials(state: LoginStateType) {
   // If we already have credentials but login is still required, it means we've already
   // asked for credentials and the agent should be filling the form
   if (state.credentials) {
-    console.log("[Login Handler] Credentials already provided, proceeding to login");
+    console.log(
+      "[Login Handler] Credentials already provided, proceeding to login",
+    );
     return "login";
   }
 

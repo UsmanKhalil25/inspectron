@@ -12,15 +12,16 @@ import { END } from "@langchain/langgraph";
 import { AgentStateType } from "./state.js";
 import { labelElements } from "../utils/label-elements.js";
 import { DebugLogger } from "../utils/debug-logger.js";
-import { LlmFactory, BrowserFactory } from "./factory";
-import { click, type, scroll, goBack, wait, navigate, scanVulnerabilities } from "./tools.js";
+import { LlmFactory, BrowserFactory } from "./factory.js";
+import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
 import {
   INITIAL_AGENT_PROMPT,
   WEB_BROWSING_AGENT_PROMPT,
   SCREENSHOT_OBSERVATION_TEXT,
 } from "./prompts.js";
+import { stringEnv } from "../utils/config.js";
 
-const DEBUG_MODE = process.env.DEBUG_AGENT === "true";
+const DEBUG_MODE = stringEnv("DEBUG_AGENT", "false") === "true";
 let debugLogger: DebugLogger | null = null;
 
 export async function getInteractiveElements(
@@ -97,7 +98,9 @@ export async function shouldContinue(state: AgentStateType) {
   if (state.crawlGoal) {
     const { currentPageCount, targetPageCount } = state.crawlGoal;
     if (currentPageCount >= targetPageCount) {
-      console.log(`[Crawl Goal] Target reached: ${currentPageCount}/${targetPageCount} pages. Stopping execution.`);
+      console.log(
+        `[Crawl Goal] Target reached: ${currentPageCount}/${targetPageCount} pages. Stopping execution.`,
+      );
       return END;
     }
   }
@@ -143,7 +146,7 @@ export async function ensurePageNode(state: AgentStateType) {
   try {
     await page.waitForLoadState("load", { timeout: 10000 });
     await page.waitForLoadState("networkidle", { timeout: 5000 });
-  } catch (error) {
+  } catch {
     console.log("Page load timeout, continuing anyway");
   }
 
@@ -154,7 +157,9 @@ export async function ensurePageNode(state: AgentStateType) {
   // Add current URL if not already visited
   if (!visitedUrls.includes(currentUrl)) {
     visitedUrls.push(currentUrl);
-    console.log(`[URL Tracker] Visited page ${visitedUrls.length}: ${currentUrl}`);
+    console.log(
+      `[URL Tracker] Visited page ${visitedUrls.length}: ${currentUrl}`,
+    );
   }
 
   // Update crawl goal progress if it exists
@@ -182,12 +187,16 @@ export async function shouldRunLoginHandler(state: AgentStateType) {
 
   // Skip if we already have credentials (waiting for agent to fill form)
   if (state.credentials) {
-    console.log("[Should Run Login Handler] Credentials already provided - skipping (agent will fill form)");
+    console.log(
+      "[Should Run Login Handler] Credentials already provided - skipping (agent will fill form)",
+    );
     return "skip_login";
   }
 
   // Only run login handler if we have no credentials and no completion
-  console.log("[Should Run Login Handler] No credentials yet - running login handler");
+  console.log(
+    "[Should Run Login Handler] No credentials yet - running login handler",
+  );
   return "check_login";
 }
 
@@ -203,7 +212,9 @@ export async function checkLoginCompletionNode(state: AgentStateType) {
 
   // Method 1: If we had a login URL and we're now on a different URL, login succeeded
   if (loginUrl && currentUrl !== loginUrl) {
-    console.log(`[Login Completion Check] URL changed from ${loginUrl} to ${currentUrl} - login completed`);
+    console.log(
+      `[Login Completion Check] URL changed from ${loginUrl} to ${currentUrl} - login completed`,
+    );
     return {
       ...state,
       loginCompleted: true,
@@ -217,7 +228,9 @@ export async function checkLoginCompletionNode(state: AgentStateType) {
   });
 
   if (!loginStillPresent) {
-    console.log("[Login Completion Check] Login form no longer present - login completed");
+    console.log(
+      "[Login Completion Check] Login form no longer present - login completed",
+    );
     return {
       ...state,
       loginCompleted: true,
@@ -228,25 +241,29 @@ export async function checkLoginCompletionNode(state: AgentStateType) {
   const loginSuccess = await page.evaluate(() => {
     const bodyText = document.body.innerText.toLowerCase();
     const successIndicators = [
-      'welcome',
-      'dashboard',
-      'logout',
-      'sign out',
-      'my account',
-      'profile'
+      "welcome",
+      "dashboard",
+      "logout",
+      "sign out",
+      "my account",
+      "profile",
     ];
-    return successIndicators.some(indicator => bodyText.includes(indicator));
+    return successIndicators.some((indicator) => bodyText.includes(indicator));
   });
 
   if (loginSuccess) {
-    console.log("[Login Completion Check] Success indicators found on page - login completed");
+    console.log(
+      "[Login Completion Check] Success indicators found on page - login completed",
+    );
     return {
       ...state,
       loginCompleted: true,
     };
   }
 
-  console.log("[Login Completion Check] Login not yet complete, form may still be present");
+  console.log(
+    "[Login Completion Check] Login not yet complete, form may still be present",
+  );
   return { ...state };
 }
 
@@ -307,7 +324,9 @@ export async function initialLLMCallNode(state: AgentStateType) {
     const userInput = state.input.toLowerCase();
 
     // Check if user specified a page count (e.g., "crawl 5 pages", "visit at least 10 pages")
-    const crawlMatch = userInput.match(/(?:crawl|visit|explore).*?(?:at least|atleast)?\s*(\d+)\s*pages?/i);
+    const crawlMatch = userInput.match(
+      /(?:crawl|visit|explore).*?(?:at least|atleast)?\s*(\d+)\s*pages?/i,
+    );
     if (crawlMatch) {
       const targetPageCount = parseInt(crawlMatch[1], 10);
       crawlGoal = {
@@ -331,12 +350,14 @@ export async function llmCallNode(state: AgentStateType) {
   if (state.crawlGoal) {
     const { currentPageCount, targetPageCount } = state.crawlGoal;
     if (currentPageCount >= targetPageCount) {
-      console.log(`[Crawl Goal] Target reached before LLM call: ${currentPageCount}/${targetPageCount} pages.`);
+      console.log(
+        `[Crawl Goal] Target reached before LLM call: ${currentPageCount}/${targetPageCount} pages.`,
+      );
 
       const model = LlmFactory.getLLM();
       const forceStopMessage = new SystemMessage(
         `STOP: You have successfully visited ${currentPageCount} pages, meeting the crawl goal of ${targetPageCount} pages. ` +
-        `Do NOT use any tools. Respond directly to the user with a summary of your crawl, including the pages you visited.`
+          `Do NOT use any tools. Respond directly to the user with a summary of your crawl, including the pages you visited.`,
       );
 
       return {
@@ -354,7 +375,6 @@ export async function llmCallNode(state: AgentStateType) {
     wait(state),
     goBack(state),
     navigate(state),
-    scanVulnerabilities(state),
   ];
   const modelWithTools = model.bindTools(tools);
 
@@ -372,7 +392,7 @@ export async function llmCallNode(state: AgentStateType) {
 
     // Add visited URLs tracking information
     if (state.visitedUrls && state.visitedUrls.length > 0) {
-      screenshotText += `\n\nVISITED URLS (${state.visitedUrls.length}):\n${state.visitedUrls.map((url, i) => `${i + 1}. ${url}`).join('\n')}`;
+      screenshotText += `\n\nVISITED URLS (${state.visitedUrls.length}):\n${state.visitedUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}`;
       screenshotText += `\n\nIMPORTANT: You have already visited the above URLs. Do NOT navigate to or click links that lead to these pages again. Focus on discovering NEW pages.`;
     }
 
@@ -415,14 +435,13 @@ export async function toolNode(state: AgentStateType) {
     return { messages: [] };
   }
 
-  const toolsByName: Record<string, any> = {
+  const toolsByName = {
     click: click(state),
     type: type(state),
     scroll: scroll(state),
     wait: wait(state),
     go_back: goBack(state),
     navigate: navigate(state),
-    scan_vulnerabilities: scanVulnerabilities(state),
   };
 
   const result: ToolMessage[] = [];

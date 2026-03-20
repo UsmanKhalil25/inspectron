@@ -1,3 +1,5 @@
+// This file is specifically for environment variable access
+/* eslint-disable no-process-env */
 export function stringEnv(name: string, fallback?: string): string {
   const value = process.env[name];
 
@@ -10,6 +12,7 @@ export function stringEnv(name: string, fallback?: string): string {
 }
 
 export function numberEnv(name: string, fallback?: number): number {
+  /* eslint-disable no-process-env */
   const raw = process.env[name];
 
   if (raw === undefined || raw === "") {

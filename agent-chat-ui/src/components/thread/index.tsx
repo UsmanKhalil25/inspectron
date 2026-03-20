@@ -87,8 +87,6 @@ function ScrollToBottom(props: { className?: string }) {
   );
 }
 
-
-
 export function Thread() {
   const [artifactContext, setArtifactContext] = useArtifactContext();
   const [artifactOpen, closeArtifact] = useArtifactOpen();
