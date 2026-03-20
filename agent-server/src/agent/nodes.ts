@@ -12,7 +12,7 @@ import { END } from "@langchain/langgraph";
 import { AgentStateType } from "./state.js";
 import { labelElements } from "../utils/label-elements.js";
 import { DebugLogger } from "../utils/debug-logger.js";
-import { LlmFactory, BrowserFactory } from "./factory.js";
+import { LlmFactory, BrowserFactory } from "./factory/index.js";
 import { click, type, scroll, goBack, wait, navigate } from "./tools.js";
 import {
   INITIAL_AGENT_PROMPT,
@@ -75,7 +75,7 @@ export async function getInteractiveElements(
   });
 }
 
-export async function initializationNode(state: AgentStateType) {
+export async function openBrowserNode(state: AgentStateType) {
   await BrowserFactory.launch();
   const page = await BrowserFactory.getPage();
 
@@ -106,7 +106,7 @@ export async function shouldContinue(state: AgentStateType) {
   }
 
   if (lastMessage.tool_calls?.length) {
-    return "toolNode";
+    return "runTools";
   }
 
   return END;
@@ -123,7 +123,7 @@ export async function shouldInitializeBrowser(state: AgentStateType) {
   return END;
 }
 
-export async function cleanupNode(state: AgentStateType) {
+export async function closeBrowserNode(state: AgentStateType) {
   await BrowserFactory.cleanup();
 
   if (DEBUG_MODE && debugLogger) {
@@ -140,7 +140,7 @@ export async function cleanupNode(state: AgentStateType) {
   };
 }
 
-export async function ensurePageNode(state: AgentStateType) {
+export async function syncPageNode(state: AgentStateType) {
   const page = await BrowserFactory.getPage();
 
   try {
@@ -200,7 +200,7 @@ export async function shouldRunLoginHandler(state: AgentStateType) {
   return "check_login";
 }
 
-export async function checkLoginCompletionNode(state: AgentStateType) {
+export async function detectLoginNode(state: AgentStateType) {
   // Only check if we have credentials but haven't completed login
   if (!state.credentials || state.loginCompleted) {
     return { ...state };
@@ -279,7 +279,7 @@ export async function labelElementsNode(state: AgentStateType) {
   };
 }
 
-export async function captureScreenshotNode(state: AgentStateType) {
+export async function screenshotNode(state: AgentStateType) {
   const page = state.page?.screenshot
     ? state.page
     : await BrowserFactory.getPage();
@@ -309,7 +309,7 @@ export async function captureScreenshotNode(state: AgentStateType) {
   };
 }
 
-export async function initialLLMCallNode(state: AgentStateType) {
+export async function initialPlanNode(state: AgentStateType) {
   const model = LlmFactory.getLLM();
 
   const tools = [navigate(state)];
@@ -345,7 +345,7 @@ export async function initialLLMCallNode(state: AgentStateType) {
   };
 }
 
-export async function llmCallNode(state: AgentStateType) {
+export async function reasonNode(state: AgentStateType) {
   // Check if crawl goal is already reached - force agent to respond directly
   if (state.crawlGoal) {
     const { currentPageCount, targetPageCount } = state.crawlGoal;
@@ -428,7 +428,7 @@ export async function llmCallNode(state: AgentStateType) {
   };
 }
 
-export async function toolNode(state: AgentStateType) {
+export async function runToolsNode(state: AgentStateType) {
   const lastMessage = state.messages[state.messages.length - 1];
 
   if (lastMessage == null || !AIMessage.isInstance(lastMessage)) {

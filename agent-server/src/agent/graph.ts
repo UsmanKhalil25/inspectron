@@ -1,18 +1,18 @@
 import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 
 import {
-  initialLLMCallNode,
-  llmCallNode,
-  captureScreenshotNode,
-  initializationNode,
+  initialPlanNode,
+  reasonNode,
+  screenshotNode,
+  openBrowserNode,
   labelElementsNode,
-  ensurePageNode,
-  cleanupNode,
-  toolNode,
+  syncPageNode,
+  closeBrowserNode,
+  runToolsNode,
   shouldContinue,
   shouldInitializeBrowser,
   shouldRunLoginHandler,
-  checkLoginCompletionNode,
+  detectLoginNode,
 } from "./nodes.js";
 import { AgentState } from "./state.js";
 import { captchaHandlerGraph } from "./subgraphs/captcha-handler.js";
@@ -21,38 +21,38 @@ import { loginHandlerGraph } from "./subgraphs/login-handler.js";
 const checkpointer = new MemorySaver();
 
 const graph = new StateGraph(AgentState)
-  .addNode("decide_browser_needed", initialLLMCallNode)
-  .addNode("initialize_browser", initializationNode)
-  .addNode("cleanup_browser", cleanupNode)
-  .addNode("ensure_page", ensurePageNode)
-  .addNode("label_page_elements", labelElementsNode)
-  .addNode("capture_page_screenshot", captureScreenshotNode)
-  .addNode("login_handler", loginHandlerGraph)
-  .addNode("captcha_handler", captchaHandlerGraph)
-  .addNode("check_login_completion", checkLoginCompletionNode)
-  .addNode("agent_decision", llmCallNode)
-  .addNode("execute_tools", toolNode)
-  .addEdge(START, "decide_browser_needed")
-  .addConditionalEdges("decide_browser_needed", shouldInitializeBrowser, {
-    initialization: "initialize_browser",
+  .addNode("initialPlan", initialPlanNode)
+  .addNode("openBrowser", openBrowserNode)
+  .addNode("closeBrowser", closeBrowserNode)
+  .addNode("syncPage", syncPageNode)
+  .addNode("labelElements", labelElementsNode)
+  .addNode("screenshot", screenshotNode)
+  .addNode("loginHandler", loginHandlerGraph)
+  .addNode("captchaHandler", captchaHandlerGraph)
+  .addNode("detectLogin", detectLoginNode)
+  .addNode("reason", reasonNode)
+  .addNode("runTools", runToolsNode)
+  .addEdge(START, "initialPlan")
+  .addConditionalEdges("initialPlan", shouldInitializeBrowser, {
+    initialization: "openBrowser",
     [END]: END,
   })
-  .addEdge("initialize_browser", "execute_tools")
-  .addEdge("execute_tools", "ensure_page")
-  .addEdge("ensure_page", "check_login_completion")
-  .addConditionalEdges("check_login_completion", shouldRunLoginHandler, {
-    check_login: "login_handler",
-    skip_login: "label_page_elements",
+  .addEdge("openBrowser", "runTools")
+  .addEdge("runTools", "syncPage")
+  .addEdge("syncPage", "detectLogin")
+  .addConditionalEdges("detectLogin", shouldRunLoginHandler, {
+    check_login: "loginHandler",
+    skip_login: "labelElements",
   })
-  .addEdge("login_handler", "label_page_elements")
-  .addEdge("label_page_elements", "capture_page_screenshot")
-  .addEdge("capture_page_screenshot", "captcha_handler")
-  .addEdge("captcha_handler", "agent_decision")
-  .addConditionalEdges("agent_decision", shouldContinue, {
-    toolNode: "execute_tools",
-    [END]: "cleanup_browser",
+  .addEdge("loginHandler", "labelElements")
+  .addEdge("labelElements", "screenshot")
+  .addEdge("screenshot", "captchaHandler")
+  .addEdge("captchaHandler", "reason")
+  .addConditionalEdges("reason", shouldContinue, {
+    toolNode: "runTools",
+    [END]: "closeBrowser",
   })
-  .addEdge("cleanup_browser", END)
+  .addEdge("closeBrowser", END)
   .compile({
     checkpointer,
   });

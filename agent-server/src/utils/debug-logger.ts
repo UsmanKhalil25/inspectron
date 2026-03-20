@@ -5,7 +5,7 @@ import type { PageElement } from "../schemas/page-elements.js";
 export class DebugLogger {
   private debugDir: string;
   private sessionDir: string;
-  private iterationCount: number = 0;
+  private iterationCount = 0;
 
   constructor(sessionId?: string) {
     this.debugDir = path.join(process.cwd(), "debug");

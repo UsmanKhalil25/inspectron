@@ -1,6 +1,6 @@
 import { StateGraph, interrupt } from "@langchain/langgraph";
 import * as z from "zod";
-import { BrowserFactory } from "../factory.js";
+import { BrowserFactory } from "../factory/index.js";
 
 const LoginState = z.object({
   img: z.string().optional(),

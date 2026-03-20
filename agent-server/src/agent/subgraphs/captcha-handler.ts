@@ -1,7 +1,7 @@
 import { StateGraph, interrupt } from "@langchain/langgraph";
 import * as z from "zod";
 import { detectCaptcha } from "../../utils/captcha-detector.js";
-import { BrowserFactory } from "../factory.js";
+import { BrowserFactory } from "../factory/index.js";
 
 const CaptchaState = z.object({
   img: z.string().optional(),
