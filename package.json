@@ -4,10 +4,11 @@
   "workspaces": [
     "app",
     "dashboard",
-    "agent-server"
+    "agent-server",
+    "agent-chat-ui"
   ],
   "scripts": {
-    "format": "bun run --filter app format && bun run --filter dashboard format && bun run --filter engine format",
-    "lint": "bun run --filter app lint && bun run --filter dashboard lint && bun run --filter engine lint"
+    "format": "bun run --filter app format && bun run --filter dashboard format && bun run --filter agent-chat-ui format",
+    "lint": "bun run --filter app lint && bun run --filter dashboard lint && bun run --filter agent-chat-ui lint"
   }
 }
