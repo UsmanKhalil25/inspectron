@@ -1,10 +1,16 @@
 import { interrupt } from "@langchain/langgraph";
 import type { CaptchaStateType } from "./state";
-import { detectCaptcha } from "../../../utils/captcha-detector";
-import { BrowserManager } from "../../../libs";
+import { detectCaptcha } from "../../../libs/utils/captcha-detector";
 
-export async function detectCaptchaNode(_state: CaptchaStateType) {
-  const page = await BrowserManager.getPage();
+export async function detectCaptchaNode(state: CaptchaStateType) {
+  const page = state.page;
+  if (!page) {
+    console.log("[Captcha Handler] No page available in state");
+    return {
+      captchaType: "none",
+      solved: true,
+    };
+  }
 
   const result = await detectCaptcha(page);
 
@@ -80,7 +86,16 @@ export async function verifySolvedNode(state: CaptchaStateType) {
     solved: state.solved,
   });
 
-  const page = await BrowserManager.getPage();
+  const page = state.page;
+  if (!page) {
+    console.log(
+      "[Captcha Handler] No page available in state for verification",
+    );
+    return {
+      captchaType: "none",
+      solved: true,
+    };
+  }
 
   const result = await detectCaptcha(page);
 

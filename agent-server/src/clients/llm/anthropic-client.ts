@@ -1,6 +1,6 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 
-import { stringEnv, numberEnv } from "../../utils";
+import { stringEnv, numberEnv } from "../../libs/utils";
 
 export class AnthropicClient {
   private readonly apiKey = stringEnv("ANTHROPIC_API_KEY");

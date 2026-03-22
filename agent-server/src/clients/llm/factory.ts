@@ -5,7 +5,7 @@ import type { ChatAnthropic } from "@langchain/anthropic";
 import { OpenaiClient } from "./openai-client";
 import { OllamaClient } from "./ollama-client";
 import { AnthropicClient } from "./anthropic-client";
-import { stringEnv } from "../../utils/config";
+import { stringEnv } from "../../libs/utils/config";
 
 export class LlmFactory {
   private static openaiClient: OpenaiClient | null = null;
