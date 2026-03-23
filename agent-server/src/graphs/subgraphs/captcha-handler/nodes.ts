@@ -1,11 +1,12 @@
 import { interrupt } from "@langchain/langgraph";
 import type { CaptchaStateType } from "./state";
 import { detectCaptcha } from "../../../libs/utils/captcha-detector";
+import { Logger } from "../../../libs/utils";
 
 export async function detectCaptchaNode(state: CaptchaStateType) {
   const page = state.page;
   if (!page) {
-    console.log("[Captcha Handler] No page available in state");
+    Logger.warn("captcha-handler", "No page available in state");
     return {
       captchaType: "none",
       solved: true,
@@ -54,10 +55,7 @@ export function handleInterruptNode(state: CaptchaStateType) {
     ],
   });
 
-  console.log(
-    "Received user confirmation:",
-    JSON.stringify(userConfirmation, null, 2),
-  );
+  Logger.info("captcha-handler", "Received user confirmation", userConfirmation);
 
   let solved = false;
 
@@ -75,22 +73,20 @@ export function handleInterruptNode(state: CaptchaStateType) {
     }
   }
 
-  console.log("Captcha solved status:", solved);
+  Logger.info("captcha-handler", "Captcha solved status", { solved });
 
   return { solved };
 }
 
 export async function verifySolvedNode(state: CaptchaStateType) {
-  console.log("Verifying captcha solved, current state:", {
+  Logger.info("captcha-handler", "Verifying captcha solved", {
     captchaType: state.captchaType,
     solved: state.solved,
   });
 
   const page = state.page;
   if (!page) {
-    console.log(
-      "[Captcha Handler] No page available in state for verification",
-    );
+    Logger.warn("captcha-handler", "No page available in state for verification");
     return {
       captchaType: "none",
       solved: true,
@@ -100,14 +96,14 @@ export async function verifySolvedNode(state: CaptchaStateType) {
   const result = await detectCaptcha(page);
 
   if (result.detected) {
-    console.log("Captcha still detected:", result.type);
+    Logger.info("captcha-handler", "Captcha still detected", { type: result.type });
     return {
       captchaType: result.type,
       solved: false,
     };
   }
 
-  console.log("Captcha verification passed, no captcha detected");
+  Logger.info("captcha-handler", "Captcha verification passed, no captcha detected");
   return {
     captchaType: "none",
     solved: true,
@@ -116,7 +112,7 @@ export async function verifySolvedNode(state: CaptchaStateType) {
 
 export function shouldInterrupt(state: CaptchaStateType) {
   const shouldEnd = state.captchaType === "none" || state.solved;
-  console.log("shouldInterrupt check:", {
+  Logger.info("captcha-handler", "shouldInterrupt check", {
     captchaType: state.captchaType,
     solved: state.solved,
     decision: shouldEnd ? "end" : "interrupt",
@@ -129,6 +125,6 @@ export function shouldInterrupt(state: CaptchaStateType) {
 
 export function shouldVerify(state: CaptchaStateType) {
   const decision = state.solved ? "verify" : "interrupt";
-  console.log("shouldVerify check:", { solved: state.solved, decision });
+  Logger.info("captcha-handler", "shouldVerify check", { solved: state.solved, decision });
   return decision;
 }

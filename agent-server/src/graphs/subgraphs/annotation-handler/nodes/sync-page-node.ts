@@ -1,4 +1,5 @@
 import { AnnotateStateType } from "../state";
+import { Logger } from "../../../../libs/utils";
 
 export async function syncPageNode(state: AnnotateStateType) {
   const page = state.page;
@@ -7,7 +8,7 @@ export async function syncPageNode(state: AnnotateStateType) {
     await page.waitForLoadState("load", { timeout: 10000 });
     await page.waitForLoadState("networkidle", { timeout: 5000 });
   } catch {
-    console.log("Page load timeout, continuing anyway");
+    Logger.warn("sync-page", "Page load timeout, continuing anyway");
   }
 
   return {

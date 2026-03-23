@@ -38,7 +38,7 @@ export const typeText = (state: MainStateType) =>
       return `Clicked to activate, then typed "${text}" into element ${elementId} (<${element.tag}>)`;
     },
     {
-      name: "type",
+      name: "typeText",
       description:
         "Type text into an input field. First clicks the field to activate it, clears any existing text, then types. Use this ONCE per field.",
       schema: z.object({

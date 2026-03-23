@@ -1,5 +1,6 @@
 import { interrupt } from "@langchain/langgraph";
 import type { InputHandlerStateType } from "../state";
+import { Logger } from "../../../../libs/utils";
 
 export function handleInputInterruptNode(
   state: InputHandlerStateType,
@@ -7,16 +8,18 @@ export function handleInputInterruptNode(
   const request = state.inputRequest;
 
   if (!request?.fields?.length) {
-    console.log(
-      "[Input Handler] No input request or fields, returning empty values",
+    Logger.info(
+      "input-handler",
+      "No input request or fields, returning empty values",
     );
     return { inputValues: {} };
   }
 
-  console.log(
-    `[Input Handler] Requesting input for ${request.fields.length} fields`,
+  Logger.info(
+    "input-handler",
+    `Requesting input for ${request.fields.length} fields`,
   );
-  console.log(`[Input Handler] Prompt: ${request.prompt}`);
+  Logger.info("input-handler", `Prompt: ${request.prompt}`);
 
   const properties: Record<
     string,
@@ -59,10 +62,7 @@ export function handleInputInterruptNode(
     ],
   });
 
-  console.log(
-    "[Input Handler] Received user response:",
-    JSON.stringify(userResponse, null, 2),
-  );
+  Logger.info("input-handler", "Received user response", userResponse);
 
   let inputValues: Record<string, string> = {};
 
@@ -82,8 +82,9 @@ export function handleInputInterruptNode(
     }
   }
 
-  console.log(
-    `[Input Handler] Parsed ${Object.keys(inputValues).length} input values`,
+  Logger.info(
+    "input-handler",
+    `Parsed ${Object.keys(inputValues).length} input values`,
   );
 
   return { inputValues };

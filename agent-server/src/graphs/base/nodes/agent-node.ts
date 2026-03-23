@@ -8,6 +8,7 @@ import { MainStateType, NextStep, InputField } from "../state";
 import { AGENT_NODE_PROMPT } from "../prompts";
 import { LlmFactory } from "../../../clients/llm";
 import { click, typeText, scroll, navigate, wait, goBack } from "../tools";
+import { Logger } from "../../../libs/utils";
 
 const RouteSchema = z.object({
   reasoning: z.string().describe("Brief explanation of your decision"),
@@ -81,14 +82,12 @@ export async function agentNode(
 ): Promise<Partial<MainStateType>> {
   const model = LlmFactory.getLLM();
 
-  // If we have inputValues from inputHandler, provide them to the agent
   const hasInputValues =
     state.inputValues && Object.keys(state.inputValues).length > 0;
   if (hasInputValues) {
-    console.log("[Agent Node] Input values received:", state.inputValues);
+    Logger.info("agent-node", "Input values received", state.inputValues);
   }
 
-  // Bind only action tools (not route tool)
   const actionTools = [
     click(state),
     typeText(state),
@@ -103,7 +102,6 @@ export async function agentNode(
   const goal = state.goal || state.input || "No goal specified";
   let promptWithGoal = AGENT_NODE_PROMPT.replace("{goal}", goal);
 
-  // Add input values context if available
   if (hasInputValues) {
     promptWithGoal += `\n\nUSER INPUT AVAILABLE:\nThe user has provided values for the following fields:\n${formatInputValues(state.inputValues)}\n\nUse the typeText tool to fill these values into the corresponding form fields. After filling all fields, click the submit button if applicable.`;
   }
@@ -124,18 +122,16 @@ export async function agentNode(
 
   const messages = [systemMessage, elementsMessage, ...recentMessages];
 
-  // First, let the model take action with tools
   const response = await modelWithTools.invoke(messages);
-
   const toolCalls = response.tool_calls || [];
   const hasActionCalls = toolCalls.length > 0;
 
   const newMessages: (AIMessage | HumanMessage)[] = [response];
 
-  // If the model took an action, route to annotationHandler for fresh screenshot
   if (hasActionCalls) {
-    console.log(
-      `[Agent Node] Model took ${toolCalls.length} action(s):`,
+    Logger.info(
+      "agent-node",
+      `Model took ${toolCalls.length} action(s)`,
       toolCalls.map((tc) => tc.name),
     );
     return {
@@ -145,7 +141,6 @@ export async function agentNode(
     };
   }
 
-  // No action taken - determine why using structured output
   const routeModel = model.withStructuredOutput(RouteSchema);
   const routeDecision = await routeModel.invoke([
     ...messages,
@@ -154,7 +149,7 @@ export async function agentNode(
     ),
   ]);
 
-  console.log("[Agent Node] Route decision:", routeDecision);
+  Logger.info("agent-node", "Route decision", routeDecision);
 
   let nextStep: NextStep;
   let inputRequest: { fields: InputField[]; prompt: string } | undefined;
@@ -182,22 +177,20 @@ export async function agentNode(
     newMessages.push(
       new HumanMessage(`[Need input: ${routeDecision.message}]`),
     );
-    console.log(
-      `[Agent Node] Routing to inputHandler with ${fields.length} fields`,
+    Logger.info(
+      "agent-node",
+      `Routing to inputHandler with ${fields.length} fields`,
     );
   } else {
-    // action === "continue" - should have taken an action, but didn't
-    // Default to annotationHandler to get fresh state
     nextStep = "annotationHandler";
   }
 
-  // Clear inputValues after using them
   const clearInputValues = state.inputValues ? { inputValues: undefined } : {};
 
   return {
     messages: newMessages,
     nextStep,
-    llmCalls: (state.llmCalls ?? 0) + 2, // +2 for action attempt + route decision
+    llmCalls: state.llmCalls ?? 0,
     inputRequest,
     ...clearInputValues,
   };

@@ -16,7 +16,7 @@ export const goBack = (state: MainStateType) =>
       return "Navigated back to the previous page";
     },
     {
-      name: "go_back",
+      name: "goBack",
       description: "Navigate back to the previous page in browser history",
       schema: z.object({}),
     },

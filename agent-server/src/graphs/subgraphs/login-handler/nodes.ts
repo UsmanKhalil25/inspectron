@@ -1,10 +1,11 @@
 import { interrupt } from "@langchain/langgraph";
 import type { LoginStateType } from "./state.ts";
 import { BrowserManager } from "../../../libs/index.ts";
+import { Logger } from "../../../libs/utils";
 
 export async function detectLoginNode(state: LoginStateType) {
   if (state.loginCompleted) {
-    console.log("[Login Handler] Skipping - already completed login");
+    Logger.info("login-handler", "Skipping - already completed login");
     return {
       loginRequired: false,
     };
@@ -14,8 +15,9 @@ export async function detectLoginNode(state: LoginStateType) {
   const currentUrl = page.url();
 
   if (state.credentials && state.loginUrl && currentUrl !== state.loginUrl) {
-    console.log(
-      "[Login Handler] URL changed after login, marking as completed",
+    Logger.info(
+      "login-handler",
+      "URL changed after login, marking as completed",
     );
     return {
       loginRequired: false,
@@ -120,10 +122,7 @@ export function handleLoginInterruptNode(state: LoginStateType) {
     ],
   });
 
-  console.log(
-    "Received login response:",
-    JSON.stringify(userResponse, null, 2),
-  );
+  Logger.info("login-handler", "Received login response", userResponse);
 
   let credentials: { username: string; password: string } | undefined;
 
@@ -147,17 +146,19 @@ export function handleLoginInterruptNode(state: LoginStateType) {
     }
   }
 
-  console.log("Parsed credentials:", credentials ? "received" : "not received");
+  Logger.info("login-handler", "Parsed credentials", { received: credentials ? "yes" : "no" });
 
   return { credentials };
 }
 
 export function performLoginNode(state: LoginStateType) {
-  console.log(
-    "[Login Handler] Login credentials received, passing to agent for form filling",
+  Logger.info(
+    "login-handler",
+    "Login credentials received, passing to agent for form filling",
   );
-  console.log(
-    "[Login Handler] NOT setting loginCompleted - agent will fill form and we'll detect completion after",
+  Logger.info(
+    "login-handler",
+    "NOT setting loginCompleted - agent will fill form and we'll detect completion after",
   );
   return {
     loginRequired: false,
@@ -167,17 +168,18 @@ export function performLoginNode(state: LoginStateType) {
 
 export function shouldRequestCredentials(state: LoginStateType) {
   if (!state.loginRequired) {
-    console.log("[Login Handler] Login not required, ending");
+    Logger.info("login-handler", "Login not required, ending");
     return "end";
   }
 
   if (state.credentials) {
-    console.log(
-      "[Login Handler] Credentials already provided, proceeding to login",
+    Logger.info(
+      "login-handler",
+      "Credentials already provided, proceeding to login",
     );
     return "login";
   }
 
-  console.log("[Login Handler] Login required, requesting credentials");
+  Logger.info("login-handler", "Login required, requesting credentials");
   return "interrupt";
 }

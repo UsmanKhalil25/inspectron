@@ -1,4 +1,5 @@
 import { Page } from "playwright";
+import { Logger } from "./logger";
 
 export interface CaptchaDetectionResult {
   detected: boolean;
@@ -39,7 +40,7 @@ export async function detectCaptcha(
 
     return { detected: false, type: "none" };
   } catch (error) {
-    console.error("Error detecting captcha:", error);
+    Logger.error("captcha-detector", "Error detecting captcha", error);
     return { detected: false, type: "none" };
   }
 }
