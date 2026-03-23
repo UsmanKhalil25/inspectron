@@ -5,29 +5,39 @@ import {
   openBrowserNode,
   closeBrowserNode,
   routeAfterInitialPlan,
-  agentNode,
+  modelInvocation,
+  executeAgentTools,
+  routeAfterModelInvocation,
+  routeAfterTools,
 } from "./nodes";
-import { MainState } from "./state";
-
-import { annotationHandler } from "../subgraphs/annotation-handler";
+import { MainGraphState } from "./state";
+import { annotationGraph } from "../subgraphs/annotation";
 
 const checkpointer = new MemorySaver();
 
-export const graph = new StateGraph(MainState)
-  .addNode("initialPlan", initialPlanNode)
-  .addNode("openBrowser", openBrowserNode)
-  .addNode("annotationHandler", annotationHandler)
-  .addNode("agentNode", agentNode)
-  .addNode("closeBrowser", closeBrowserNode)
-  .addEdge(START, "initialPlan")
-  .addConditionalEdges("initialPlan", routeAfterInitialPlan, {
-    openBrowser: "openBrowser",
+export const graph = new StateGraph(MainGraphState)
+  .addNode("initial_plan", initialPlanNode)
+  .addNode("open_browser", openBrowserNode)
+  .addNode("annotation", annotationGraph)
+  .addNode("model_invocation", modelInvocation)
+  .addNode("execute_tools", executeAgentTools)
+  .addNode("close_browser", closeBrowserNode)
+  .addEdge(START, "initial_plan")
+  .addConditionalEdges("initial_plan", routeAfterInitialPlan, {
+    open_browser: "open_browser",
     [END]: END,
   })
-  .addEdge("openBrowser", "annotationHandler")
-  .addEdge("annotationHandler", "agentNode")
-  .addEdge("agentNode", "closeBrowser")
-  .addEdge("closeBrowser", END)
+  .addEdge("open_browser", "annotation")
+  .addEdge("annotation", "model_invocation")
+  .addConditionalEdges("model_invocation", routeAfterModelInvocation, {
+    execute_tools: "execute_tools",
+    close_browser: "close_browser",
+  })
+  .addConditionalEdges("execute_tools", routeAfterTools, {
+    annotation: "annotation",
+    close_browser: "close_browser",
+  })
+  .addEdge("close_browser", END)
   .compile({ checkpointer });
 
 graph.name = "MainGraph";

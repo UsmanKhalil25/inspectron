@@ -1,11 +1,11 @@
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
-import type { MainStateType } from "../state";
+import type { ToolState } from "./types";
 
 const DEFAULT_WAIT_MS = 500;
 
-export const navigate = (state: MainStateType) =>
+export const navigate = (state: ToolState) =>
   tool(
     async ({ url }) => {
       const page = state.page;

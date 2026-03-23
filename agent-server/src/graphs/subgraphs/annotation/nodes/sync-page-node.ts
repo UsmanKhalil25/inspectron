@@ -1,7 +1,7 @@
-import type { AnnotationHandlerType } from "../state";
+import type { AnnotationGraphStateType } from "../state";
 import { Logger } from "../../../../libs/utils";
 
-export async function syncPageNode(state: AnnotationHandlerType) {
+export async function syncPageNode(state: AnnotationGraphStateType) {
   const page = state.page;
   if (!page) throw new Error("Page not found in state");
 

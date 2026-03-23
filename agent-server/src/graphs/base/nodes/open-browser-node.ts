@@ -1,7 +1,7 @@
-import type { MainStateType } from "../state";
+import type { MainGraphStateType } from "../state";
 import { BrowserManager } from "../../../libs";
 
-export async function openBrowserNode(state: MainStateType) {
+export async function openBrowserNode(state: MainGraphStateType) {
   if (!state.targetUrl)
     throw new Error("openBrowserNode called without a targetUrl in state");
 

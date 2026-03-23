@@ -1,9 +1,9 @@
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
-import type { MainStateType } from "../state";
+import type { ToolState } from "./types";
 
-export const goBack = (state: MainStateType) =>
+export const goBack = (state: ToolState) =>
   tool(
     async () => {
       const page = state.page;

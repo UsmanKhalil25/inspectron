@@ -1,6 +1,6 @@
-import { StateGraph } from "@langchain/langgraph";
+import { StateGraph, START, END } from "@langchain/langgraph";
 
-import { CaptchaState } from "./state";
+import { CaptchaGraphState } from "./state";
 import {
   detectCaptchaNode,
   handleInterruptNode,
@@ -9,14 +9,14 @@ import {
   shouldVerify,
 } from "./nodes";
 
-export const captchaHandlerGraph = new StateGraph(CaptchaState)
+export const captchaGraph = new StateGraph(CaptchaGraphState)
   .addNode("detect", detectCaptchaNode)
   .addNode("interrupt", handleInterruptNode)
   .addNode("verify", verifySolvedNode)
-  .addEdge("__start__", "detect")
+  .addEdge(START, "detect")
   .addConditionalEdges("detect", shouldInterrupt, {
     interrupt: "interrupt",
-    end: "__end__",
+    end: END,
   })
   .addConditionalEdges("interrupt", shouldVerify, {
     verify: "verify",
@@ -24,6 +24,8 @@ export const captchaHandlerGraph = new StateGraph(CaptchaState)
   })
   .addConditionalEdges("verify", shouldInterrupt, {
     interrupt: "interrupt",
-    end: "__end__",
+    end: END,
   })
   .compile();
+
+captchaGraph.name = "Captcha";

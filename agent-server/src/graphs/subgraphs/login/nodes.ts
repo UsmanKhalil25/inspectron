@@ -1,11 +1,11 @@
 import { interrupt } from "@langchain/langgraph";
-import type { LoginStateType } from "./state.ts";
+import type { LoginGraphStateType } from "./state.ts";
 import { BrowserManager } from "../../../libs/index.ts";
 import { Logger } from "../../../libs/utils";
 
-export async function detectLoginNode(state: LoginStateType) {
+export async function detectLoginNode(state: LoginGraphStateType) {
   if (state.loginCompleted) {
-    Logger.info("login-handler", "Skipping - already completed login");
+    Logger.info("login", "Skipping - already completed login");
     return {
       loginRequired: false,
     };
@@ -15,10 +15,7 @@ export async function detectLoginNode(state: LoginStateType) {
   const currentUrl = page.url();
 
   if (state.credentials && state.loginUrl && currentUrl !== state.loginUrl) {
-    Logger.info(
-      "login-handler",
-      "URL changed after login, marking as completed",
-    );
+    Logger.info("login", "URL changed after login, marking as completed");
     return {
       loginRequired: false,
       loginCompleted: true,
@@ -84,7 +81,7 @@ export async function detectLoginNode(state: LoginStateType) {
   };
 }
 
-export function handleLoginInterruptNode(state: LoginStateType) {
+export function handleLoginInterruptNode(state: LoginGraphStateType) {
   const loginUrl = state.loginUrl || "unknown";
 
   const userResponse: unknown = interrupt({
@@ -122,7 +119,7 @@ export function handleLoginInterruptNode(state: LoginStateType) {
     ],
   });
 
-  Logger.info("login-handler", "Received login response", userResponse);
+  Logger.info("login", "Received login response", userResponse);
 
   let credentials: { username: string; password: string } | undefined;
 
@@ -146,20 +143,20 @@ export function handleLoginInterruptNode(state: LoginStateType) {
     }
   }
 
-  Logger.info("login-handler", "Parsed credentials", {
+  Logger.info("login", "Parsed credentials", {
     received: credentials ? "yes" : "no",
   });
 
   return { credentials };
 }
 
-export function performLoginNode(state: LoginStateType) {
+export function performLoginNode(state: LoginGraphStateType) {
   Logger.info(
-    "login-handler",
+    "login",
     "Login credentials received, passing to agent for form filling",
   );
   Logger.info(
-    "login-handler",
+    "login",
     "NOT setting loginCompleted - agent will fill form and we'll detect completion after",
   );
   return {
@@ -168,20 +165,17 @@ export function performLoginNode(state: LoginStateType) {
   };
 }
 
-export function shouldRequestCredentials(state: LoginStateType) {
+export function shouldRequestCredentials(state: LoginGraphStateType) {
   if (!state.loginRequired) {
-    Logger.info("login-handler", "Login not required, ending");
+    Logger.info("login", "Login not required, ending");
     return "end";
   }
 
   if (state.credentials) {
-    Logger.info(
-      "login-handler",
-      "Credentials already provided, proceeding to login",
-    );
+    Logger.info("login", "Credentials already provided, proceeding to login");
     return "login";
   }
 
-  Logger.info("login-handler", "Login required, requesting credentials");
+  Logger.info("login", "Login required, requesting credentials");
   return "interrupt";
 }

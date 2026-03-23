@@ -7,7 +7,18 @@ import {
   PageElementSchema,
 } from "../../../libs/schemas/page-elements";
 
-export const AnnotationHandlerState = Annotation.Root({
+// Schema is the single source of truth (SSOT)
+export const AnnotationGraphSchema = z.object({
+  interactiveElements: z.array(PageElementSchema).optional(),
+  page: z.custom<Page>().optional(),
+  currentScreenshotPath: z.string().optional(),
+});
+
+// Type is derived from schema
+export type AnnotationGraphStateType = z.infer<typeof AnnotationGraphSchema>;
+
+// Annotation uses the same shape as the schema
+export const AnnotationGraphState = Annotation.Root({
   interactiveElements: Annotation<PageElement[] | undefined>({
     value: (_, y) => y,
     default: () => undefined,
@@ -21,11 +32,3 @@ export const AnnotationHandlerState = Annotation.Root({
     default: () => undefined,
   }),
 });
-
-export const AnnotationHandlerSchema = z.object({
-  interactiveElements: z.array(PageElementSchema).optional(),
-  page: z.custom<Page>().optional(),
-  currentScreenshotPath: z.string().optional(),
-});
-
-export type AnnotationHandlerType = z.infer<typeof AnnotationHandlerSchema>;

@@ -1,9 +1,9 @@
 import { END } from "@langchain/langgraph";
 
-import { MainStateType } from "../state";
+import type { MainGraphStateType } from "../state";
 
 export function routeAfterInitialPlan(
-  state: MainStateType,
-): "openBrowser" | typeof END {
-  return state.targetUrl ? "openBrowser" : END;
+  state: MainGraphStateType,
+): "open_browser" | typeof END {
+  return state.targetUrl ? "open_browser" : END;
 }

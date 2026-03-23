@@ -1,23 +1,25 @@
-import { StateGraph } from "@langchain/langgraph";
+import { StateGraph, START, END } from "@langchain/langgraph";
 
-import { LoginState } from "./state.ts";
+import { LoginGraphState } from "./state";
 import {
   detectLoginNode,
   handleLoginInterruptNode,
   performLoginNode,
   shouldRequestCredentials,
-} from "./nodes.ts";
+} from "./nodes";
 
-export const loginHandlerGraph = new StateGraph(LoginState)
+export const loginGraph = new StateGraph(LoginGraphState)
   .addNode("detect", detectLoginNode)
   .addNode("interrupt", handleLoginInterruptNode)
   .addNode("login", performLoginNode)
-  .addEdge("__start__", "detect")
+  .addEdge(START, "detect")
   .addConditionalEdges("detect", shouldRequestCredentials, {
     interrupt: "interrupt",
     login: "login",
-    end: "__end__",
+    end: END,
   })
   .addEdge("interrupt", "login")
-  .addEdge("login", "__end__")
+  .addEdge("login", END)
   .compile();
+
+loginGraph.name = "Login";

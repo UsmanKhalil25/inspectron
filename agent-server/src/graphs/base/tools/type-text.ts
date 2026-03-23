@@ -1,11 +1,11 @@
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
-import type { MainStateType } from "../state";
+import type { ToolState } from "./types";
 
 const DEFAULT_WAIT_MS = 500;
 
-export const typeText = (state: MainStateType) =>
+export const typeText = (state: ToolState) =>
   tool(
     async ({ elementId, text }) => {
       const page = state.page;

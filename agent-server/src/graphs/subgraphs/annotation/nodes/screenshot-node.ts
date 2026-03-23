@@ -1,7 +1,7 @@
-import type { AnnotationHandlerType } from "../state";
+import type { AnnotationGraphStateType } from "../state";
 import { saveImage } from "../../../../libs/utils";
 
-export async function screenshotNode(state: AnnotationHandlerType) {
+export async function screenshotNode(state: AnnotationGraphStateType) {
   const page = state.page;
   if (!page) throw new Error("Page not found in state");
 

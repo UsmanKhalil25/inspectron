@@ -4,7 +4,7 @@ import * as crypto from "crypto";
 
 export async function saveImage(
   base64Image: string,
-  dir: string = "/tmp/inspectron/screenshots",
+  dir: string = "./tmp/inspectron/screenshots",
 ): Promise<string> {
   await mkdir(dir, { recursive: true });
 
