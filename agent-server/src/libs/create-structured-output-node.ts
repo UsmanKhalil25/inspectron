@@ -4,7 +4,10 @@ import { LlmFactory } from "../clients/llm";
 
 interface BaseState {
   messages: BaseMessage[];
-  llmCalls?: number;
+}
+
+export interface CreateStructuredNodeConfig {
+  tags?: string[];
 }
 
 export function createStructuredNode<
@@ -14,20 +17,19 @@ export function createStructuredNode<
   schema: z.ZodType<TOutput>,
   systemPrompt: string,
   stateMapper: (result: TOutput, state: TState) => Record<string, unknown>,
+  config?: CreateStructuredNodeConfig,
 ) {
   return async (state: TState) => {
-    const model = LlmFactory.getLLM().withStructuredOutput<TOutput>(
-      schema as any,
-    );
+    let model = LlmFactory.getLLM().withStructuredOutput<TOutput>(schema);
+    if (config?.tags) {
+      model = model.withConfig({ tags: config.tags });
+    }
     const messages: BaseMessage[] = [
       new SystemMessage(systemPrompt),
       ...state.messages,
     ];
     const result = await model.invoke(messages);
 
-    return {
-      ...stateMapper(result, state),
-      llmCalls: (state.llmCalls ?? 0) + 1,
-    };
+    return stateMapper(result, state);
   };
 }

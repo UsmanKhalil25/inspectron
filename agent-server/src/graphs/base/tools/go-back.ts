@@ -3,8 +3,6 @@ import * as z from "zod";
 
 import type { MainStateType } from "../state";
 
-const DEFAULT_WAIT_MS = 500;
-
 export const goBack = (state: MainStateType) =>
   tool(
     async () => {

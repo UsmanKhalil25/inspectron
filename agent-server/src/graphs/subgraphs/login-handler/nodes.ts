@@ -146,7 +146,9 @@ export function handleLoginInterruptNode(state: LoginStateType) {
     }
   }
 
-  Logger.info("login-handler", "Parsed credentials", { received: credentials ? "yes" : "no" });
+  Logger.info("login-handler", "Parsed credentials", {
+    received: credentials ? "yes" : "no",
+  });
 
   return { credentials };
 }

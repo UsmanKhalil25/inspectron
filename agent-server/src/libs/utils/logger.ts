@@ -7,10 +7,13 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   error: 3,
 };
 
-const currentLogLevel =
-  LOG_LEVELS[(process.env.LOG_LEVEL as LogLevel) || "info"];
+const currentLogLevel = LOG_LEVELS["info"];
 
-function formatMessage(level: LogLevel, context: string, message: string): string {
+function formatMessage(
+  level: LogLevel,
+  context: string,
+  message: string,
+): string {
   const timestamp = new Date().toISOString();
   return `[${timestamp}] [${level.toUpperCase()}] [${context}] ${message}`;
 }

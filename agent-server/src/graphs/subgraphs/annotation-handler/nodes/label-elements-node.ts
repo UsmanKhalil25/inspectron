@@ -1,7 +1,7 @@
 import { Page } from "playwright";
 
 import { PageElement } from "../../../../libs/schemas";
-import { AnnotateStateType } from "../state";
+import type { AnnotationHandlerType } from "../state";
 
 async function getInteractiveElements(page: Page): Promise<PageElement[]> {
   return page.evaluate(() => {
@@ -99,8 +99,10 @@ async function labelElements(page: Page, elements: PageElement[]) {
   }, elements);
 }
 
-export async function labelElementsNode(state: AnnotateStateType) {
+export async function labelElementsNode(state: AnnotationHandlerType) {
   const page = state.page;
+  if (!page) throw new Error("Page not found in state");
+
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);
   return {

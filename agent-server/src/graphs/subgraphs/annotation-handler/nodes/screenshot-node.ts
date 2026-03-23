@@ -1,16 +1,16 @@
-import { AnnotateStateType } from "../state";
-import { ScreenshotStorage } from "../../../../libs/utils";
+import type { AnnotationHandlerType } from "../state";
+import { saveImage } from "../../../../libs/utils";
 
-export async function screenshotNode(state: AnnotateStateType) {
+export async function screenshotNode(state: AnnotationHandlerType) {
   const page = state.page;
+  if (!page) throw new Error("Page not found in state");
+
   const screenshot = await page.screenshot();
-
-  // Save screenshot to disk for debugging
-  ScreenshotStorage.saveScreenshot(screenshot);
-
   const base64Image = screenshot.toString("base64");
 
+  const currentScreenshotPath = await saveImage(base64Image);
+
   return {
-    img: base64Image,
+    currentScreenshotPath,
   };
 }
