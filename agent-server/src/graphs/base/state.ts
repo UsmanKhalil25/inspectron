@@ -1,6 +1,5 @@
 import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 import { BaseMessage } from "@langchain/core/messages";
-import type { Page } from "playwright";
 import { z } from "zod";
 import { PageElement, PageElementSchema } from "../../libs/schemas";
 
@@ -10,10 +9,13 @@ export const MainGraphSchema = z.object({
   messages: z.array(z.custom<BaseMessage>()),
   targetUrl: z.string().optional(),
   interactiveElements: z.array(PageElementSchema).optional(),
-  page: z.custom<Page>().optional(),
   currentScreenshotPath: z.string().optional(),
-  mainAgentAction: z.enum(["continue", "complete"]).optional(),
+  nextNode: z
+    .enum(["browser_agent", "captcha_handler", "close_browser"])
+    .optional(),
   browserInstruction: z.string().optional(),
+  captchaType: z.string().optional(),
+  solved: z.boolean().optional(),
 });
 
 // Type is derived from schema
@@ -37,19 +39,25 @@ export const MainGraphState = Annotation.Root({
     value: (_, y) => y,
     default: () => undefined,
   }),
-  page: Annotation<Page | undefined>({
-    value: (_, y) => y,
-    default: () => undefined,
-  }),
   currentScreenshotPath: Annotation<string | undefined>({
     value: (_, y) => y,
     default: () => undefined,
   }),
-  mainAgentAction: Annotation<"continue" | "complete" | undefined>({
+  nextNode: Annotation<
+    "browser_agent" | "captcha_handler" | "close_browser" | undefined
+  >({
     value: (_, y) => y,
     default: () => undefined,
   }),
   browserInstruction: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  captchaType: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  solved: Annotation<boolean | undefined>({
     value: (_, y) => y,
     default: () => undefined,
   }),

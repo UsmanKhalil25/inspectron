@@ -1,7 +1,8 @@
 import { Page } from "playwright";
 
 import { PageElement } from "../../../../libs/schemas";
-import type { AnnotationGraphStateType } from "../state";
+import type { MainGraphStateType } from "../../../base/state";
+import { BrowserManager } from "../../../../libs";
 
 async function getInteractiveElements(page: Page): Promise<PageElement[]> {
   return page.evaluate(() => {
@@ -99,9 +100,9 @@ async function labelElements(page: Page, elements: PageElement[]) {
   }, elements);
 }
 
-export async function labelElementsNode(state: AnnotationGraphStateType) {
-  const page = state.page;
-  if (!page) throw new Error("Page not found in state");
+export async function labelElementsNode(_state: MainGraphStateType) {
+  const page = await BrowserManager.getPage();
+  if (!page) throw new Error("Page not available");
 
   const interactiveElements = await getInteractiveElements(page);
   await labelElements(page, interactiveElements);

@@ -1,9 +1,10 @@
-import type { AnnotationGraphStateType } from "../state";
 import { Logger } from "../../../../libs/utils";
+import { BrowserManager } from "../../../../libs";
+import type { MainGraphStateType } from "../../../base/state";
 
-export async function syncPageNode(state: AnnotationGraphStateType) {
-  const page = state.page;
-  if (!page) throw new Error("Page not found in state");
+export async function syncPageNode(_state: MainGraphStateType) {
+  const page = await BrowserManager.getPage();
+  if (!page) throw new Error("Page not available");
 
   try {
     await page.waitForLoadState("load", { timeout: 10000 });
@@ -12,7 +13,5 @@ export async function syncPageNode(state: AnnotationGraphStateType) {
     Logger.warn("sync-page", "Page load timeout, continuing anyway");
   }
 
-  return {
-    page,
-  };
+  return {};
 }

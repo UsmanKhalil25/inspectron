@@ -1,9 +1,9 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 
-import { AnnotationGraphState } from "./state";
 import { syncPageNode, labelElementsNode, screenshotNode } from "./nodes";
+import { MainGraphState } from "../../base/state";
 
-export const annotationGraph = new StateGraph(AnnotationGraphState)
+export const annotationGraph = new StateGraph(MainGraphState)
   .addNode("sync_page", syncPageNode)
   .addNode("label_elements", labelElementsNode)
   .addNode("screenshot", screenshotNode)

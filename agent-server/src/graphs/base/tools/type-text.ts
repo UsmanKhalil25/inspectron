@@ -2,13 +2,14 @@ import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
 import type { ToolState } from "./types";
+import { BrowserManager } from "../../../libs";
 
 const DEFAULT_WAIT_MS = 500;
 
 export const typeText = (state: ToolState) =>
   tool(
     async ({ elementId, text }) => {
-      const page = state.page;
+      const page = await BrowserManager.getPage();
       if (!page) {
         return "Error: Browser page not available";
       }

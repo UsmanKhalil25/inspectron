@@ -5,7 +5,7 @@ import {
   modelInvocation,
   executeAgentTools,
   routeAfterModelInvocation,
-} from "../../base/nodes";
+} from "./nodes";
 
 export const browserAgentGraph = new StateGraph(MainGraphState)
   .addNode("model_invocation", modelInvocation)

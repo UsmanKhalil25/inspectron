@@ -20,11 +20,6 @@ export async function modelInvocation(state: MainGraphStateType) {
   }
 
   const currentScreenshot = await loadImage(state.currentScreenshotPath);
-  const page = state.page;
-
-  if (!page) {
-    throw new Error("Page not found in state");
-  }
 
   const model = LlmFactory.getLLM();
   const tools = [

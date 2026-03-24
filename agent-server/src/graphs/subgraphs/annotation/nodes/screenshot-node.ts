@@ -1,9 +1,10 @@
-import type { AnnotationGraphStateType } from "../state";
+import type { MainGraphStateType } from "../../../base/state";
 import { saveImage } from "../../../../libs/utils";
+import { BrowserManager } from "../../../../libs";
 
-export async function screenshotNode(state: AnnotationGraphStateType) {
-  const page = state.page;
-  if (!page) throw new Error("Page not found in state");
+export async function screenshotNode(_state: MainGraphStateType) {
+  const page = await BrowserManager.getPage();
+  if (!page) throw new Error("Page not available");
 
   const screenshot = await page.screenshot();
   const base64Image = screenshot.toString("base64");

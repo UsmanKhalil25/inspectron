@@ -11,6 +11,7 @@ import {
 import { MainGraphState } from "./state";
 import { annotationGraph } from "../subgraphs/annotation";
 import { browserAgentGraph } from "../subgraphs/browser-agent";
+import { captchaGraph } from "../subgraphs/captcha";
 
 const checkpointer = new MemorySaver();
 
@@ -20,6 +21,7 @@ export const graph = new StateGraph(MainGraphState)
   .addNode("annotation", annotationGraph)
   .addNode("main_agent", mainAgentNode)
   .addNode("browser_agent", browserAgentGraph)
+  .addNode("captcha_handler", captchaGraph)
   .addNode("close_browser", closeBrowserNode)
   .addEdge(START, "initial_plan")
   .addConditionalEdges("initial_plan", routeAfterInitialPlan, {
@@ -30,9 +32,11 @@ export const graph = new StateGraph(MainGraphState)
   .addEdge("annotation", "main_agent")
   .addConditionalEdges("main_agent", routeAfterMainAgent, {
     browser_agent: "browser_agent",
+    captcha_handler: "captcha_handler",
     close_browser: "close_browser",
   })
   .addEdge("browser_agent", "annotation")
+  .addEdge("captcha_handler", "annotation")
   .addEdge("close_browser", END)
   .compile({ checkpointer });
 

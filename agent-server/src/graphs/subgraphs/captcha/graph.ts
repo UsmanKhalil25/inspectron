@@ -1,6 +1,6 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 
-import { CaptchaGraphState } from "./state";
+import { MainGraphState } from "../../base/state";
 import {
   detectCaptchaNode,
   handleInterruptNode,
@@ -9,7 +9,7 @@ import {
   shouldVerify,
 } from "./nodes";
 
-export const captchaGraph = new StateGraph(CaptchaGraphState)
+export const captchaGraph = new StateGraph(MainGraphState)
   .addNode("detect", detectCaptchaNode)
   .addNode("interrupt", handleInterruptNode)
   .addNode("verify", verifySolvedNode)
