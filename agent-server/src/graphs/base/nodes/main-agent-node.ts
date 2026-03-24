@@ -7,8 +7,8 @@ import { MAIN_AGENT_PROMPT } from "../prompts";
 import type { MainGraphStateType } from "../state";
 
 const MainAgentDecisionSchema = z.object({
-  action: z.enum(["continue", "complete"]),
-  instruction: z.string(),
+  nextNode: z.enum(["browser_agent", "close_browser", "captcha_handler"]),
+  instruction: z.string().default(""),
   reason: z.string(),
 });
 
@@ -45,7 +45,7 @@ export async function mainAgentNode(state: MainGraphStateType) {
   const result = await model.invoke(messages);
 
   return {
-    mainAgentAction: result.action,
+    nextNode: result.nextNode,
     browserInstruction: result.instruction,
   };
 }

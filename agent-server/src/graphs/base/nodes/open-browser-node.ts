@@ -9,5 +9,5 @@ export async function openBrowserNode(state: MainGraphStateType) {
   const page = await BrowserManager.getPage();
   await page.goto(state.targetUrl, { waitUntil: "networkidle" });
 
-  return { page };
+  return {};
 }
