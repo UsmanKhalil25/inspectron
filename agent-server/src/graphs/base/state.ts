@@ -11,11 +11,20 @@ export const MainGraphSchema = z.object({
   interactiveElements: z.array(PageElementSchema).optional(),
   currentScreenshotPath: z.string().optional(),
   nextNode: z
-    .enum(["browser_agent", "captcha_handler", "close_browser"])
+    .enum([
+      "browser_agent",
+      "captcha_handler",
+      "close_browser",
+      "input_handler",
+    ])
     .optional(),
   browserInstruction: z.string().optional(),
   captchaType: z.string().optional(),
   solved: z.boolean().optional(),
+  inputHandlerInstruction: z.string().optional(),
+  inputHandlerElementId: z.number().optional(),
+  inputHandlerFieldType: z.enum(["text", "password"]).optional(),
+  inputHandlerValue: z.string().optional(),
 });
 
 // Type is derived from schema
@@ -44,7 +53,11 @@ export const MainGraphState = Annotation.Root({
     default: () => undefined,
   }),
   nextNode: Annotation<
-    "browser_agent" | "captcha_handler" | "close_browser" | undefined
+    | "browser_agent"
+    | "captcha_handler"
+    | "close_browser"
+    | "input_handler"
+    | undefined
   >({
     value: (_, y) => y,
     default: () => undefined,
@@ -58,6 +71,22 @@ export const MainGraphState = Annotation.Root({
     default: () => undefined,
   }),
   solved: Annotation<boolean | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  inputHandlerInstruction: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  inputHandlerElementId: Annotation<number | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  inputHandlerFieldType: Annotation<"text" | "password" | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  inputHandlerValue: Annotation<string | undefined>({
     value: (_, y) => y,
     default: () => undefined,
   }),

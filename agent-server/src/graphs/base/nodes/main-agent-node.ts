@@ -7,9 +7,17 @@ import { MAIN_AGENT_PROMPT } from "../prompts";
 import type { MainGraphStateType } from "../state";
 
 const MainAgentDecisionSchema = z.object({
-  nextNode: z.enum(["browser_agent", "close_browser", "captcha_handler"]),
+  nextNode: z.enum([
+    "browser_agent",
+    "close_browser",
+    "captcha_handler",
+    "input_handler",
+  ]),
   instruction: z.string().default(""),
   reason: z.string(),
+  inputHandlerElementId: z.number().optional(),
+  inputHandlerFieldType: z.enum(["text", "password"]).optional(),
+  inputHandlerInstruction: z.string().optional(),
 });
 
 export async function mainAgentNode(state: MainGraphStateType) {
@@ -47,5 +55,8 @@ export async function mainAgentNode(state: MainGraphStateType) {
   return {
     nextNode: result.nextNode,
     browserInstruction: result.instruction,
+    inputHandlerElementId: result.inputHandlerElementId,
+    inputHandlerFieldType: result.inputHandlerFieldType,
+    inputHandlerInstruction: result.inputHandlerInstruction,
   };
 }
