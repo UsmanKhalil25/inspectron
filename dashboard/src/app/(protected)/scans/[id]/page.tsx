@@ -1,14 +1,14 @@
 import { Metadata } from "next";
-import { ScanDetailHeader } from "./components/scan-detail-header";
-import { BrowserPreview } from "./components/browser-preview";
-import { AgentActivity } from "./components/agent-activity";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
+
+import { ScanDetailImpl } from "./components/scan-detail-impl";
+import { ScanDetailSkeleton } from "./components/scan-detail-skeleton";
 
 export const metadata: Metadata = {
   title: "Scan Details",
   description: "View scan progress and results",
 };
-
-const SCAN_URL = "https://example.com";
 
 export default async function ScanDetailPage({
   params,
@@ -16,13 +16,11 @@ export default async function ScanDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const cookieHeader = (await cookies()).toString();
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
-      <ScanDetailHeader url={SCAN_URL} status="Active" scanId={id} />
-      <div className="flex flex-1 overflow-hidden">
-        <BrowserPreview url={SCAN_URL} />
-        <AgentActivity url={SCAN_URL} />
-      </div>
-    </div>
+    <Suspense fallback={<ScanDetailSkeleton />}>
+      <ScanDetailImpl scanId={id} cookieHeader={cookieHeader} />
+    </Suspense>
   );
 }

@@ -19,6 +19,7 @@ type Documents = {
   "\n  mutation Register($input: RegisterUserInput!) {\n    register(input: $input) {\n      message\n      data {\n        id\n        email\n        name\n      }\n    }\n  }": typeof types.RegisterDocument;
   "\n  query CurrentUser {\n    currentUser {\n      id\n      email\n      name\n    }\n  }\n": typeof types.CurrentUserDocument;
   "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n": typeof types.GetScanStatsDocument;
+  "\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetScanDocument;
   "\n  query GetScans($filters: ScanFiltersInput, $limit: Int, $page: Int) {\n    scans(filters: $filters, limit: $limit, page: $page) {\n      scans {\n        id\n        url\n        status\n        createdAt\n        updatedAt\n      }\n      pagination {\n        total\n        page\n        totalPages\n        limit\n        hasNextPage\n        hasPreviousPage\n      }\n    }\n  }\n": typeof types.GetScansDocument;
   "\n  subscription ScanStatusChanged($scanId: String!) {\n    scanStatusChanged(scanId: $scanId) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.ScanStatusChangedDocument;
 };
@@ -33,6 +34,8 @@ const documents: Documents = {
     types.CurrentUserDocument,
   "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n":
     types.GetScanStatsDocument,
+  "\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n":
+    types.GetScanDocument,
   "\n  query GetScans($filters: ScanFiltersInput, $limit: Int, $page: Int) {\n    scans(filters: $filters, limit: $limit, page: $page) {\n      scans {\n        id\n        url\n        status\n        createdAt\n        updatedAt\n      }\n      pagination {\n        total\n        page\n        totalPages\n        limit\n        hasNextPage\n        hasPreviousPage\n      }\n    }\n  }\n":
     types.GetScansDocument,
   "\n  subscription ScanStatusChanged($scanId: String!) {\n    scanStatusChanged(scanId: $scanId) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n":
@@ -83,6 +86,12 @@ export function gql(
 export function gql(
   source: "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n",
 ): (typeof documents)["\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n",
+): (typeof documents)["\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      createdAt\n      updatedAt\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

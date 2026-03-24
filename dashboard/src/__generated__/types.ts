@@ -274,6 +274,22 @@ export type GetScanStatsQuery = {
   };
 };
 
+export type GetScanQueryVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type GetScanQuery = {
+  __typename?: "Query";
+  scan: {
+    __typename?: "Scan";
+    id: string;
+    url: string;
+    status: ScanStatus;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
 export type GetScansQueryVariables = Exact<{
   filters?: InputMaybe<ScanFiltersInput>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;

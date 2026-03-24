@@ -277,6 +277,22 @@ export type GetScanStatsQuery = {
   };
 };
 
+export type GetScanQueryVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type GetScanQuery = {
+  __typename?: "Query";
+  scan: {
+    __typename?: "Scan";
+    id: string;
+    url: string;
+    status: ScanStatus;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
 export type GetScansQueryVariables = Exact<{
   filters?: InputMaybe<ScanFiltersInput>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -582,6 +598,58 @@ export const GetScanStatsDocument = {
     },
   ],
 } as unknown as DocumentNode<GetScanStatsQuery, GetScanStatsQueryVariables>;
+export const GetScanDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetScan" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "scan" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetScanQuery, GetScanQueryVariables>;
 export const GetScansDocument = {
   kind: "Document",
   definitions: [
