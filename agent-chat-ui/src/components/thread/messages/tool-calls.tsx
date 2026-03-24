@@ -44,7 +44,7 @@ export function ToolCalls({
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-500">
                         {isComplexValue(value) ? (
-                          <code className="rounded bg-gray-50 px-2 py-1 font-mono text-sm break-all">
+                          <code className="rounded bg-gray-50 px-2 py-1  text-sm break-all">
                             {JSON.stringify(value, null, 2)}
                           </code>
                         ) : (
@@ -152,7 +152,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
                             </td>
                             <td className="px-4 py-2 text-sm text-gray-500">
                               {isComplexValue(value) ? (
-                                <code className="rounded bg-gray-50 px-2 py-1 font-mono text-sm break-all">
+                                <code className="rounded bg-gray-50 px-2 py-1  text-sm break-all">
                                   {JSON.stringify(value, null, 2)}
                                 </code>
                               ) : (

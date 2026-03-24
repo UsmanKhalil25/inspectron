@@ -20,7 +20,7 @@ export function BrowserPreview({
         </span>
         <div className="flex w-1/2 items-center gap-1.5 rounded-sm bg-muted/40 px-2 py-0.5">
           <ExternalLink className="h-2.5 w-2.5 text-muted-foreground" />
-          <span className="font-mono text-[10px] text-muted-foreground truncate">
+          <span className=" text-[10px] text-muted-foreground truncate">
             {url}
           </span>
         </div>

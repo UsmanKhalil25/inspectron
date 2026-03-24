@@ -19,7 +19,7 @@ function isUrl(value: any): boolean {
 function renderInterruptStateItem(value: any): React.ReactNode {
   if (isComplexValue(value)) {
     return (
-      <code className="rounded bg-gray-50 px-2 py-1 font-mono text-sm">
+      <code className="rounded bg-gray-50 px-2 py-1  text-sm">
         {JSON.stringify(value, null, 2)}
       </code>
     );

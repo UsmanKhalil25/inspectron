@@ -17,7 +17,7 @@ export function ThreadIdTooltip({ threadId }: { threadId: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <p className="rounded-md bg-gray-100 px-1 py-[2px] font-mono text-[10px] leading-[12px] tracking-tighter">
+          <p className="rounded-md bg-gray-100 px-1 py-[2px]  text-[10px] leading-[12px] tracking-tighter">
             {firstThreeChars}...{lastThreeChars}
           </p>
         </TooltipTrigger>
@@ -52,7 +52,7 @@ export function ThreadIdCopyable({
       tooltip="Copy thread ID"
       className="flex w-fit flex-grow-0 cursor-pointer items-center gap-1 rounded-md border-[1px] border-gray-200 p-1 hover:bg-gray-50/90"
     >
-      <p className="font-mono text-xs">{showUUID ? threadId : "ID"}</p>
+      <p className=" text-xs">{showUUID ? threadId : "ID"}</p>
       <AnimatePresence
         mode="wait"
         initial={false}

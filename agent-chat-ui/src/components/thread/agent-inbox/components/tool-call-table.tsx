@@ -40,7 +40,7 @@ export function ToolCallTable({ toolCall }: { toolCall: ToolCall }) {
                 className="border-t"
               >
                 <td className="w-1/3 px-2 py-1 text-xs font-medium">{key}</td>
-                <td className="px-2 py-1 font-mono text-xs">{valueStr}</td>
+                <td className="px-2 py-1  text-xs">{valueStr}</td>
               </tr>
             );
           })}

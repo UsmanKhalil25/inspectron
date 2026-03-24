@@ -10,10 +10,15 @@ export const metadata: Metadata = {
 
 const SCAN_URL = "https://example.com";
 
-export default function ScanDetailPage({ params }: { params: { id: string } }) {
+export default async function ScanDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
-      <ScanDetailHeader url={SCAN_URL} status="Active" scanId={params.id} />
+      <ScanDetailHeader url={SCAN_URL} status="Active" scanId={id} />
       <div className="flex flex-1 overflow-hidden">
         <BrowserPreview url={SCAN_URL} />
         <AgentActivity url={SCAN_URL} />

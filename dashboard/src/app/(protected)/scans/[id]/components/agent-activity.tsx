@@ -36,12 +36,10 @@ export function AgentActivity({ url }: AgentActivityProps) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Terminal className="h-3 w-3" />
-                <span className="font-mono font-medium text-violet-400">
-                  navigate()
-                </span>
+                <span className=" font-medium text-violet-400">navigate()</span>
               </div>
               <div className="rounded-md border border-violet-500/20 bg-violet-500/5 px-3 py-2">
-                <pre className="font-mono text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                <pre className=" text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
                   {`{ "url": "${url}" }`}
                 </pre>
               </div>
@@ -73,12 +71,12 @@ export function AgentActivity({ url }: AgentActivityProps) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Terminal className="h-3 w-3" />
-                <span className="font-mono font-medium text-violet-400">
+                <span className=" font-medium text-violet-400">
                   check_headers()
                 </span>
               </div>
               <div className="rounded-md border border-violet-500/20 bg-violet-500/5 px-3 py-2">
-                <pre className="font-mono text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                <pre className=" text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
                   {`{ "target": "${url}" }`}
                 </pre>
               </div>

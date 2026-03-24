@@ -30,10 +30,8 @@ export function ScanDetailHeader({
 
       <div className="flex items-center gap-2 min-w-0">
         <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-        <span className="truncate font-mono text-xs text-zinc-200">{url}</span>
-        <span className="shrink-0 font-mono text-[10px] text-zinc-600">
-          #{scanId}
-        </span>
+        <span className="truncate  text-xs text-zinc-200">{url}</span>
+        <span className="shrink-0  text-[10px] text-zinc-600">#{scanId}</span>
       </div>
 
       <div className="flex-1" />
