@@ -1,35 +1,14 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 
-import { click, typeText, scroll, navigate, wait, goBack } from "../tools";
+import { click, typeText, scroll, navigate, wait, goBack, getText } from "../tools";
 import type { MainGraphStateType } from "../state";
-
-const EXIT_TOOL_NAME = "exit";
 
 export async function executeAgentTools(state: MainGraphStateType) {
   const messages = state.messages || [];
   const lastMessage = messages[messages.length - 1] as AIMessage;
 
   if (!lastMessage?.tool_calls?.length) {
-    return { messages: [], taskComplete: false };
-  }
-
-  const hasExitTool = lastMessage.tool_calls.some(
-    (toolCall) => toolCall.name === EXIT_TOOL_NAME,
-  );
-
-  if (hasExitTool) {
-    const exitToolCall = lastMessage.tool_calls.find(
-      (toolCall) => toolCall.name === EXIT_TOOL_NAME,
-    );
-    return {
-      messages: [
-        new ToolMessage({
-          content: "Task marked as complete. The browser will be closed.",
-          tool_call_id: exitToolCall!.id!,
-        }),
-      ],
-      taskComplete: true,
-    };
+    return { messages: [] };
   }
 
   const tools = [
@@ -39,6 +18,7 @@ export async function executeAgentTools(state: MainGraphStateType) {
     navigate(state),
     wait(state),
     goBack(state),
+    getText(state),
   ];
 
   const toolResults: ToolMessage[] = [];
@@ -76,5 +56,5 @@ export async function executeAgentTools(state: MainGraphStateType) {
     }
   }
 
-  return { messages: toolResults, taskComplete: false };
+  return { messages: toolResults };
 }

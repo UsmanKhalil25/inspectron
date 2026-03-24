@@ -5,13 +5,12 @@ import {
   openBrowserNode,
   closeBrowserNode,
   routeAfterInitialPlan,
-  modelInvocation,
-  executeAgentTools,
-  routeAfterModelInvocation,
-  routeAfterTools,
+  mainAgentNode,
+  routeAfterMainAgent,
 } from "./nodes";
 import { MainGraphState } from "./state";
 import { annotationGraph } from "../subgraphs/annotation";
+import { browserAgentGraph } from "../subgraphs/browser-agent";
 
 const checkpointer = new MemorySaver();
 
@@ -19,8 +18,8 @@ export const graph = new StateGraph(MainGraphState)
   .addNode("initial_plan", initialPlanNode)
   .addNode("open_browser", openBrowserNode)
   .addNode("annotation", annotationGraph)
-  .addNode("model_invocation", modelInvocation)
-  .addNode("execute_tools", executeAgentTools)
+  .addNode("main_agent", mainAgentNode)
+  .addNode("browser_agent", browserAgentGraph)
   .addNode("close_browser", closeBrowserNode)
   .addEdge(START, "initial_plan")
   .addConditionalEdges("initial_plan", routeAfterInitialPlan, {
@@ -28,15 +27,12 @@ export const graph = new StateGraph(MainGraphState)
     [END]: END,
   })
   .addEdge("open_browser", "annotation")
-  .addEdge("annotation", "model_invocation")
-  .addConditionalEdges("model_invocation", routeAfterModelInvocation, {
-    execute_tools: "execute_tools",
+  .addEdge("annotation", "main_agent")
+  .addConditionalEdges("main_agent", routeAfterMainAgent, {
+    browser_agent: "browser_agent",
     close_browser: "close_browser",
   })
-  .addConditionalEdges("execute_tools", routeAfterTools, {
-    annotation: "annotation",
-    close_browser: "close_browser",
-  })
+  .addEdge("browser_agent", "annotation")
   .addEdge("close_browser", END)
   .compile({ checkpointer });
 

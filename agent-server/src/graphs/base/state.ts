@@ -1,4 +1,4 @@
-import { Annotation } from "@langchain/langgraph";
+import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 import { BaseMessage } from "@langchain/core/messages";
 import type { Page } from "playwright";
 import { z } from "zod";
@@ -12,7 +12,8 @@ export const MainGraphSchema = z.object({
   interactiveElements: z.array(PageElementSchema).optional(),
   page: z.custom<Page>().optional(),
   currentScreenshotPath: z.string().optional(),
-  taskComplete: z.boolean().optional(),
+  mainAgentAction: z.enum(["continue", "complete"]).optional(),
+  browserInstruction: z.string().optional(),
 });
 
 // Type is derived from schema
@@ -25,7 +26,7 @@ export const MainGraphState = Annotation.Root({
     default: () => "",
   }),
   messages: Annotation<BaseMessage[]>({
-    reducer: (x, y) => x.concat(y),
+    reducer: messagesStateReducer,
     default: () => [],
   }),
   targetUrl: Annotation<string | undefined>({
@@ -44,8 +45,12 @@ export const MainGraphState = Annotation.Root({
     value: (_, y) => y,
     default: () => undefined,
   }),
-  taskComplete: Annotation<boolean>({
-    value: (_, y) => y ?? false,
-    default: () => false,
+  mainAgentAction: Annotation<"continue" | "complete" | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
+  }),
+  browserInstruction: Annotation<string | undefined>({
+    value: (_, y) => y,
+    default: () => undefined,
   }),
 });

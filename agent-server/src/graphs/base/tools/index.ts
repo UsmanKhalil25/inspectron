@@ -4,4 +4,4 @@ export { scroll } from "./scroll";
 export { navigate } from "./navigate";
 export { wait } from "./wait";
 export { goBack } from "./go-back";
-export { exit } from "./exit";
+export { getText } from "./get-text-content";

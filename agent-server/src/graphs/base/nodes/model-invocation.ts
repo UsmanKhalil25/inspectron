@@ -10,7 +10,7 @@ import {
   navigate,
   wait,
   goBack,
-  exit,
+  getText,
 } from "../tools";
 import type { MainGraphStateType } from "../state";
 
@@ -34,7 +34,7 @@ export async function modelInvocation(state: MainGraphStateType) {
     navigate(state),
     wait(state),
     goBack(state),
-    exit,
+    getText(state),
   ];
   const modelWithTools = model.bindTools(tools);
 
@@ -45,7 +45,7 @@ export async function modelInvocation(state: MainGraphStateType) {
       content: [
         {
           type: "text",
-          text: state.userInput || "",
+          text: state.browserInstruction || state.userInput || "",
         },
         {
           type: "image_url",
