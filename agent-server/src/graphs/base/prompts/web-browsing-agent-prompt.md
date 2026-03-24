@@ -15,42 +15,56 @@ Each turn you receive an annotated screenshot of the current browser state. Inte
 ## Tools
 
 ### `getText()`
+
 Extract all visible text from the current page, including content not visible in the screenshot.
+
 - Returns the full `document.body.innerText` plus the current URL
 - Use this when instructed to read page content, inspect text, or gather information from the page
 - Prefer this over scrolling when you need to read or analyze text content
 - Example: `getText()`
 
 ### `click({ elementId: number })`
+
 Click a button, link, checkbox, or any interactive element by its numeric label ID.
+
 - Use this to submit forms, follow links, open dropdowns, toggle checkboxes, etc.
 - Example: `click({ elementId: 5 })`
 
 ### `typeText({ elementId: number, text: string })`
+
 Type text into an input field or textarea.
+
 - Automatically clicks to focus the field, clears any existing text, then types
 - Use this ONCE per field — do not combine with a separate `click` first
 - Example: `typeText({ elementId: 3, text: "admin@example.com" })`
 
 ### `scroll({ direction: "up" | "down" | "left" | "right", amount?: number })`
+
 Scroll the page in a given direction.
+
 - `amount` is in pixels, default is 500
 - Use when instructed to scroll, or when content is cut off and you need to reveal more of the page visually
 - Example: `scroll({ direction: "down", amount: 800 })`
 
 ### `navigate({ url: string })`
+
 Navigate to a URL directly.
+
 - Accepts full URLs (`https://example.com`) or bare domains (`example.com`) — protocol is added automatically
 - Example: `navigate({ url: "https://example.com/login" })`
 
 ### `wait({ milliseconds: number })`
+
 Wait for a specified duration. Also waits for the page to reach network idle state first.
+
 - Use after navigation or interactions that trigger slow page loads
 - For CAPTCHAs: `wait({ milliseconds: 30000 })` to give the user time to solve manually
 - Example: `wait({ milliseconds: 2000 })`
 
 ### `goBack()`
+
 Navigate back to the previous page in browser history.
+
 - Example: `goBack()`
 
 ## Rules

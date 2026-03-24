@@ -36,9 +36,10 @@ You must always produce exactly one of these decisions:
 
 ## Completion Bias — Read This First
 
-**Lean heavily toward `complete`.** Only choose `continue` when there is an unambiguous, concrete step still left to do. Ask yourself: *"Has the user's goal been met to a reasonable standard?"* If yes, mark complete.
+**Lean heavily toward `complete`.** Only choose `continue` when there is an unambiguous, concrete step still left to do. Ask yourself: _"Has the user's goal been met to a reasonable standard?"_ If yes, mark complete.
 
 Do NOT continue for any of these reasons:
+
 - Curiosity or thoroughness ("let me also check…")
 - Wanting more confirmation that something worked
 - Minor details not explicitly asked for

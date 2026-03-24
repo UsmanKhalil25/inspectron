@@ -19,7 +19,9 @@ export async function mainAgentNode(state: MainGraphStateType) {
 
   const currentScreenshot = await loadImage(state.currentScreenshotPath);
 
-  const model = LlmFactory.getLLM().withStructuredOutput(MainAgentDecisionSchema);
+  const model = LlmFactory.getLLM().withStructuredOutput(
+    MainAgentDecisionSchema,
+  );
 
   const messages = [
     new SystemMessage(MAIN_AGENT_PROMPT),

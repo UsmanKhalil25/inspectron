@@ -1,7 +1,11 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 
 import { MainGraphState } from "../../base/state";
-import { modelInvocation, executeAgentTools, routeAfterModelInvocation } from "../../base/nodes";
+import {
+  modelInvocation,
+  executeAgentTools,
+  routeAfterModelInvocation,
+} from "../../base/nodes";
 
 export const browserAgentGraph = new StateGraph(MainGraphState)
   .addNode("model_invocation", modelInvocation)

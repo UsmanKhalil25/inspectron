@@ -1,6 +1,15 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
+import { StructuredTool } from "@langchain/core/tools";
 
-import { click, typeText, scroll, navigate, wait, goBack, getText } from "../tools";
+import {
+  click,
+  typeText,
+  scroll,
+  navigate,
+  wait,
+  goBack,
+  getText,
+} from "../tools";
 import type { MainGraphStateType } from "../state";
 
 export async function executeAgentTools(state: MainGraphStateType) {
@@ -11,7 +20,7 @@ export async function executeAgentTools(state: MainGraphStateType) {
     return { messages: [] };
   }
 
-  const tools = [
+  const tools: StructuredTool[] = [
     click(state),
     typeText(state),
     scroll(state),
@@ -37,7 +46,7 @@ export async function executeAgentTools(state: MainGraphStateType) {
     }
 
     try {
-      const result = await (tool as any).invoke(toolCall.args);
+      const result: unknown = await tool.invoke(toolCall.args);
       toolResults.push(
         new ToolMessage({
           content: String(result),
