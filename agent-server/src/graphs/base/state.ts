@@ -13,7 +13,7 @@ export const MainGraphSchema = z.object({
   nextNode: z
     .enum([
       "browser_agent",
-      "captcha_handler",
+      // "captcha_handler",
       "close_browser",
       "input_handler",
     ])
@@ -54,7 +54,7 @@ export const MainGraphState = Annotation.Root({
   }),
   nextNode: Annotation<
     | "browser_agent"
-    | "captcha_handler"
+    // | "captcha_handler"
     | "close_browser"
     | "input_handler"
     | undefined

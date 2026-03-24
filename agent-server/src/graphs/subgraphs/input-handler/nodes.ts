@@ -1,4 +1,5 @@
 import { interrupt } from "@langchain/langgraph";
+import { AIMessage } from "@langchain/core/messages";
 import type { MainGraphStateType } from "../../base/state";
 import { BrowserManager } from "../../../libs";
 import { Logger } from "../../../libs/utils";
@@ -120,10 +121,16 @@ export async function writeInputNode(state: MainGraphStateType) {
 
   Logger.info("input-handler", `Typed value into element ${elementId}`);
 
+  const fieldLabel = state.inputHandlerInstruction || "input field";
+  const message = new AIMessage({
+    content: `Input provided for ${fieldLabel} (element ${elementId}). The value has been entered into the field. Proceed with the next step.`,
+  });
+
   return {
     inputHandlerValue: undefined,
     inputHandlerElementId: undefined,
     inputHandlerFieldType: undefined,
     inputHandlerInstruction: undefined,
+    messages: [message],
   };
 }

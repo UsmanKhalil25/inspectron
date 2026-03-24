@@ -21,7 +21,18 @@ function ResetButton({ handleReset }: { handleReset: () => void }) {
   );
 }
 
-function ArgsRenderer({ args }: { args: Record<string, unknown> }) {
+function ArgsRenderer({
+  args,
+  argsSchema,
+}: {
+  args: Record<string, unknown>;
+  argsSchema?: Record<string, unknown>;
+}) {
+  const properties = (argsSchema?.properties || {}) as Record<
+    string,
+    { title?: string }
+  >;
+
   return (
     <div className="flex w-full flex-col items-start gap-6">
       {Object.entries(args).map(([key, value]) => {
@@ -30,13 +41,12 @@ function ArgsRenderer({ args }: { args: Record<string, unknown> }) {
             ? value.toString()
             : JSON.stringify(value, null);
 
+        const label = properties[key]?.title || prettifyText(key);
+
         return (
-          <div
-            key={`args-${key}`}
-            className="flex flex-col items-start gap-1"
-          >
+          <div key={`args-${key}`} className="flex flex-col items-start gap-1">
             <p className="text-sm leading-[18px] text-wrap text-gray-600">
-              {prettifyText(key)}
+              {label}
             </p>
             <span className="w-full max-w-full rounded-xl bg-zinc-100 p-3 text-[13px] leading-[18px] text-black">
               <MarkdownText>{stringValue}</MarkdownText>
@@ -75,9 +85,11 @@ function ApproveOnly({
   isLoading,
   actionRequestArgs,
   handleSubmit,
+  argsSchema,
 }: {
   isLoading: boolean;
   actionRequestArgs: Record<string, unknown>;
+  argsSchema?: Record<string, unknown>;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent,
   ) => Promise<void> | void;
@@ -85,7 +97,7 @@ function ApproveOnly({
   return (
     <div className="flex w-full flex-col items-start gap-4 rounded-lg border border-gray-300 p-6">
       {Object.keys(actionRequestArgs).length > 0 && (
-        <ArgsRenderer args={actionRequestArgs} />
+        <ArgsRenderer args={actionRequestArgs} argsSchema={argsSchema} />
       )}
       <Button
         variant="brand"
@@ -106,11 +118,13 @@ function EditActionCard({
   onEditChange,
   handleSubmit,
   actionArgs,
+  argsSchema,
 }: {
   humanResponse: DecisionWithEdits[];
   isLoading: boolean;
   initialValues: Record<string, string>;
   actionArgs: Record<string, unknown>;
+  argsSchema?: Record<string, unknown>;
   onEditChange: (
     text: string | string[],
     response: DecisionWithEdits,
@@ -120,6 +134,10 @@ function EditActionCard({
     e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent,
   ) => Promise<void> | void;
 }) {
+  const properties = (argsSchema?.properties || {}) as Record<
+    string,
+    { title?: string }
+  >;
   const defaultRows = React.useRef<Record<string, number>>({});
   const editResponse = humanResponse.find(
     (response) => response.type === "edit",
@@ -138,6 +156,7 @@ function EditActionCard({
       return (
         <ApproveOnly
           actionRequestArgs={actionArgs}
+          argsSchema={argsSchema}
           isLoading={isLoading}
           handleSubmit={handleSubmit}
         />
@@ -202,15 +221,15 @@ function EditActionCard({
               : Math.max(stringValue.length / 30, 7);
           }
 
+          const label = properties[key]?.title || prettifyText(key);
+
           return (
             <div
               className="flex h-full w-full flex-col items-start gap-1 px-[1px]"
               key={`allow-edit-args--${key}-${idx}`}
             >
               <div className="flex w-full flex-col items-start gap-[6px]">
-                <p className="min-w-fit text-sm font-medium">
-                  {prettifyText(key)}
-                </p>
+                <p className="min-w-fit text-sm font-medium">{label}</p>
                 <Textarea
                   disabled={isLoading}
                   className="h-full w-full max-w-full"
@@ -248,6 +267,7 @@ function RejectActionCard({
   handleSubmit,
   showArgs,
   actionArgs,
+  argsSchema,
 }: {
   humanResponse: DecisionWithEdits[];
   isLoading: boolean;
@@ -257,6 +277,7 @@ function RejectActionCard({
   ) => Promise<void> | void;
   showArgs: boolean;
   actionArgs: Record<string, unknown>;
+  argsSchema?: Record<string, unknown>;
 }) {
   const rejectResponse = humanResponse.find(
     (response) => response.type === "reject",
@@ -280,7 +301,7 @@ function RejectActionCard({
         <ResetButton handleReset={() => onChange("", rejectResponse)} />
       </div>
 
-      {showArgs && <ArgsRenderer args={actionArgs} />}
+      {showArgs && <ArgsRenderer args={actionArgs} argsSchema={argsSchema} />}
 
       <div className="flex w-full flex-col items-start gap-[6px]">
         <p className="min-w-fit text-sm font-medium">Reason</p>
@@ -329,6 +350,7 @@ export function InboxItemInput({
     interruptValue.review_configs?.[0]?.allowed_decisions ?? [];
   const actionRequest = interruptValue.action_requests?.[0];
   const actionArgs = actionRequest?.args ?? {};
+  const argsSchema = interruptValue.review_configs?.[0]?.args_schema;
   const isEditAllowed = allowedDecisions.includes("edit");
   const isRejectAllowed = allowedDecisions.includes("reject");
   const hasArgs = Object.keys(actionArgs).length > 0;
@@ -456,7 +478,9 @@ export function InboxItemInput({
 
   return (
     <div className="flex w-full max-w-full flex-col items-start justify-start gap-2">
-      {showArgsOutsideCards && <ArgsRenderer args={actionArgs} />}
+      {showArgsOutsideCards && (
+        <ArgsRenderer args={actionArgs} argsSchema={argsSchema} />
+      )}
 
       <div className="flex w-full flex-col items-stretch gap-2">
         <EditAndApprove
@@ -464,6 +488,7 @@ export function InboxItemInput({
           isLoading={isLoading}
           initialValues={initialValues}
           actionArgs={actionArgs}
+          argsSchema={argsSchema}
           onEditChange={onEditChange}
           handleSubmit={handleSubmit}
         />
@@ -481,6 +506,7 @@ export function InboxItemInput({
           isLoading={isLoading}
           showArgs={showArgsInReject}
           actionArgs={actionArgs}
+          argsSchema={argsSchema}
           onChange={onRejectChange}
           handleSubmit={handleSubmit}
         />
