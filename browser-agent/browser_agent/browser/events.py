@@ -409,6 +409,15 @@ class TabClosedEvent(BaseEvent):
 	event_timeout: float | None = Field(default_factory=lambda: _get_timeout('TIMEOUT_TabClosedEvent', 3.0))  # seconds
 
 
+class StreamingFrameEvent(BaseEvent):
+	"""A streaming frame event for live browser preview."""
+
+	frame_b64: str
+	timestamp: float
+
+	event_timeout: float | None = Field(default_factory=lambda: _get_timeout('TIMEOUT_StreamingFrameEvent', 5.0))
+
+
 # TODO: emit this when DOM changes significantly, inner frame navigates, form submits, history.pushState(), etc.
 # class TabUpdatedEvent(BaseEvent):
 # 	"""Tab information updated (URL changed, etc.)."""

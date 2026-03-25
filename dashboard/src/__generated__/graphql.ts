@@ -31,6 +31,15 @@ export type Scalars = {
   DateTime: { input: any; output: any };
 };
 
+export type BrowserPreviewFrame = {
+  __typename?: "BrowserPreviewFrame";
+  frame: Scalars["String"]["output"];
+  frameNumber: Scalars["Int"]["output"];
+  latencyMs: Scalars["Int"]["output"];
+  runId: Scalars["ID"]["output"];
+  timestamp: Scalars["Float"]["output"];
+};
+
 export type CreateScanInput = {
   status?: InputMaybe<ScanStatus>;
   url: Scalars["String"]["input"];
@@ -211,8 +220,13 @@ export enum SortOrder {
 
 export type Subscription = {
   __typename?: "Subscription";
+  browserPreviewStream: BrowserPreviewFrame;
   scanEvents: ScanEvent;
   scanStatusChanged: Scan;
+};
+
+export type SubscriptionBrowserPreviewStreamArgs = {
+  runId: Scalars["String"]["input"];
 };
 
 export type SubscriptionScanEventsArgs = {
@@ -376,6 +390,22 @@ export type GetScansQuery = {
       hasNextPage: boolean;
       hasPreviousPage: boolean;
     };
+  };
+};
+
+export type BrowserPreviewStreamSubscriptionVariables = Exact<{
+  runId: Scalars["String"]["input"];
+}>;
+
+export type BrowserPreviewStreamSubscription = {
+  __typename?: "Subscription";
+  browserPreviewStream: {
+    __typename?: "BrowserPreviewFrame";
+    runId: string;
+    frame: string;
+    timestamp: number;
+    frameNumber: number;
+    latencyMs: number;
   };
 };
 
@@ -920,6 +950,64 @@ export const GetScansDocument = {
     },
   ],
 } as unknown as DocumentNode<GetScansQuery, GetScansQueryVariables>;
+export const BrowserPreviewStreamDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "subscription",
+      name: { kind: "Name", value: "BrowserPreviewStream" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "runId" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "browserPreviewStream" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "runId" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "runId" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "runId" } },
+                { kind: "Field", name: { kind: "Name", value: "frame" } },
+                { kind: "Field", name: { kind: "Name", value: "timestamp" } },
+                { kind: "Field", name: { kind: "Name", value: "frameNumber" } },
+                { kind: "Field", name: { kind: "Name", value: "latencyMs" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  BrowserPreviewStreamSubscription,
+  BrowserPreviewStreamSubscriptionVariables
+>;
 export const ScanEventsDocument = {
   kind: "Document",
   definitions: [

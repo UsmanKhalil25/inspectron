@@ -104,6 +104,14 @@ type ScanEvent {
   data: ScanEventData!
 }
 
+type BrowserPreviewFrame {
+  runId: ID!
+  frame: String!
+  timestamp: Float!
+  frameNumber: Int!
+  latencyMs: Int!
+}
+
 type Query {
   scan(id: String!): Scan!
   scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
@@ -158,4 +166,5 @@ input RegisterUserInput {
 type Subscription {
   scanStatusChanged(scanId: String!): Scan!
   scanEvents(scanId: String!): ScanEvent!
+  browserPreviewStream(runId: String!): BrowserPreviewFrame!
 }

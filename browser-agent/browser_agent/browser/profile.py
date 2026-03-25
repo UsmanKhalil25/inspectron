@@ -683,6 +683,15 @@ class BrowserProfile(BrowserConnectArgs, BrowserLaunchPersistentContextArgs, Bro
 	)
 	record_video_framerate: int = Field(default=30, description='The framerate to use for the video recording.')
 
+	stream_fps: int = Field(
+		default=10,
+		description='Frames per second for live browser preview streaming.',
+	)
+	stream_quality: int = Field(
+		default=85,
+		description='JPEG quality (0-100) for live browser preview streaming.',
+	)
+
 	# TODO: finish implementing extension support in extensions.py
 	# extension_ids_to_preinstall: list[str] = Field(
 	# 	default_factory=list, description='List of Chrome extension IDs to preinstall.'

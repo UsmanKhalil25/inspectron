@@ -12,6 +12,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScansService } from './scans.service';
 import { BrowserAgentService } from './browser-agent.service';
+import { BrowserPreviewStreamService } from './browser-preview-stream.service';
 
 import { CreateScanInput } from './inputs/create-scan.input';
 import { ScanFiltersInput } from './inputs/scan-filters.input';
@@ -21,15 +22,22 @@ import { ScansResponse } from './types/scans-response.type';
 import { Scan } from './types/scan.type';
 import { ScanStats } from './types/scan-stats.type';
 import { ScanEvent } from './types/scan-event.type';
+import { BrowserPreviewFrame } from './types/browser-preview-stream.type';
 
 import { JwtPayload } from 'src/commom/interfaces/jwt-payload.interface';
-import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
+import {
+  PUB_SUB,
+  SCAN_STATUS_CHANGED,
+  SCAN_EVENTS,
+  BROWSER_PREVIEW_STREAM,
+} from './scans.constants';
 
 @Resolver(() => Scan)
 export class ScansResolver {
   constructor(
     private readonly scansService: ScansService,
     private readonly browserAgentService: BrowserAgentService,
+    private readonly browserPreviewStreamService: BrowserPreviewStreamService,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
@@ -102,5 +110,18 @@ export class ScansResolver {
   })
   scanEvents(@Args('scanId') _scanId: string) {
     return this.pubSub.asyncIterableIterator(SCAN_EVENTS);
+  }
+
+  @Subscription(() => BrowserPreviewFrame, {
+    filter: (
+      payload: { browserPreviewStream: { runId: string } },
+      variables: { runId: string },
+    ) => {
+      return payload.browserPreviewStream.runId === variables.runId;
+    },
+  })
+  browserPreviewStream(@Args('runId') runId: string) {
+    this.browserPreviewStreamService.startStream(runId, this.pubSub);
+    return this.pubSub.asyncIterableIterator(BROWSER_PREVIEW_STREAM);
   }
 }

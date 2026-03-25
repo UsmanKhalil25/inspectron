@@ -3,11 +3,12 @@
 import asyncio
 import json
 import os
+import time
 from dataclasses import dataclass, field
 from uuid import uuid4
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -33,6 +34,7 @@ class RunState:
 	events: asyncio.Queue = field(default_factory=asyncio.Queue)
 	result: str | None = None
 	error: str | None = None
+	browser_session: BrowserSession | None = None
 
 
 runs: dict[str, RunState] = {}
@@ -81,10 +83,13 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 		)
 
 	try:
+		browser_session = BrowserSession(headless=True)
+		state.browser_session = browser_session
+
 		agent = Agent(
 			task=f'Navigate to {url}. {task}',
 			llm=get_llm(),
-			browser_session=BrowserSession(headless=True),
+			browser_session=browser_session,
 			register_new_step_callback=register_new_step_callback,
 		)
 		result = await agent.run(max_steps=50)
@@ -139,3 +144,58 @@ async def stream_events(run_id: str):
 				break
 
 	return StreamingResponse(event_generator(), media_type='text/event-stream')
+
+
+@app.websocket('/runs/{run_id}/stream/frames')
+async def stream_frames(websocket: WebSocket, run_id: str):
+	"""WebSocket endpoint for streaming browser frames in real-time."""
+	state = runs.get(run_id)
+	if state is None:
+		await websocket.close(code=404, reason='Run not found')
+		return
+
+	if state.browser_session is None:
+		await websocket.close(code=400, reason='Browser session not ready')
+		return
+
+	await websocket.accept()
+
+	frame_count = 0
+	last_frame_time = time.time()
+
+	try:
+		while True:
+			frame = await state.browser_session.get_streaming_frame(timeout=0.5)
+
+			if frame:
+				current_time = time.time()
+				frame_count += 1
+
+				await websocket.send_json(
+					{
+						'type': 'frame',
+						'data': frame,
+						'timestamp': current_time,
+						'frame_number': frame_count,
+						'latency_ms': int((current_time - last_frame_time) * 1000),
+					}
+				)
+				last_frame_time = current_time
+
+			if state.status in ('done', 'error'):
+				break
+
+	except WebSocketDisconnect:
+		pass
+	except Exception as e:
+		try:
+			await websocket.send_json(
+				{
+					'type': 'error',
+					'message': str(e),
+				}
+			)
+		except Exception:
+			pass
+	finally:
+		await websocket.close()

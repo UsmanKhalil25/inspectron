@@ -9,6 +9,7 @@ import { ScansService } from './scans.service';
 import { ScansResolver } from './scans.resolver';
 import { ScanConsumer } from './scans.consumer';
 import { BrowserAgentService } from './browser-agent.service';
+import { BrowserPreviewStreamService } from './browser-preview-stream.service';
 import { PUB_SUB, createPubSub } from './scans.constants';
 
 @Module({
@@ -24,11 +25,12 @@ import { PUB_SUB, createPubSub } from './scans.constants';
     ScansResolver,
     ScanConsumer,
     BrowserAgentService,
+    BrowserPreviewStreamService,
     {
       provide: PUB_SUB,
       useValue: createPubSub(),
     },
   ],
-  exports: [PUB_SUB, BrowserAgentService],
+  exports: [PUB_SUB, BrowserAgentService, BrowserPreviewStreamService],
 })
 export class ScansModule {}

@@ -28,6 +28,15 @@ export type Scalars = {
   DateTime: { input: any; output: any };
 };
 
+export type BrowserPreviewFrame = {
+  __typename?: "BrowserPreviewFrame";
+  frame: Scalars["String"]["output"];
+  frameNumber: Scalars["Int"]["output"];
+  latencyMs: Scalars["Int"]["output"];
+  runId: Scalars["ID"]["output"];
+  timestamp: Scalars["Float"]["output"];
+};
+
 export type CreateScanInput = {
   status?: InputMaybe<ScanStatus>;
   url: Scalars["String"]["input"];
@@ -208,8 +217,13 @@ export enum SortOrder {
 
 export type Subscription = {
   __typename?: "Subscription";
+  browserPreviewStream: BrowserPreviewFrame;
   scanEvents: ScanEvent;
   scanStatusChanged: Scan;
+};
+
+export type SubscriptionBrowserPreviewStreamArgs = {
+  runId: Scalars["String"]["input"];
 };
 
 export type SubscriptionScanEventsArgs = {
@@ -373,6 +387,22 @@ export type GetScansQuery = {
       hasNextPage: boolean;
       hasPreviousPage: boolean;
     };
+  };
+};
+
+export type BrowserPreviewStreamSubscriptionVariables = Exact<{
+  runId: Scalars["String"]["input"];
+}>;
+
+export type BrowserPreviewStreamSubscription = {
+  __typename?: "Subscription";
+  browserPreviewStream: {
+    __typename?: "BrowserPreviewFrame";
+    runId: string;
+    frame: string;
+    timestamp: number;
+    frameNumber: number;
+    latencyMs: number;
   };
 };
 

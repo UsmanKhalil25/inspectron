@@ -527,8 +527,13 @@ class BrowserSession(BaseModel):
 	_screenshot_watchdog: Any | None = PrivateAttr(default=None)
 	_permissions_watchdog: Any | None = PrivateAttr(default=None)
 	_recording_watchdog: Any | None = PrivateAttr(default=None)
+	_streaming_watchdog: Any | None = PrivateAttr(default=None)
 	_captcha_watchdog: Any | None = PrivateAttr(default=None)
 	_watchdogs_attached: bool = PrivateAttr(default=False)
+
+	# Streaming frame queue for live preview
+	_streaming_frame_queue: asyncio.Queue[str] = PrivateAttr(default_factory=lambda: asyncio.Queue(maxsize=10))
+	_latest_streaming_frame: str | None = PrivateAttr(default=None)
 
 	_cloud_browser_client: CloudBrowserClient = PrivateAttr(default_factory=lambda: CloudBrowserClient())
 	_demo_mode: 'DemoMode | None' = PrivateAttr(default=None)
@@ -628,6 +633,7 @@ class BrowserSession(BaseModel):
 		self._screenshot_watchdog = None
 		self._permissions_watchdog = None
 		self._recording_watchdog = None
+		self._streaming_watchdog = None
 		self._captcha_watchdog = None
 		self._watchdogs_attached = False
 		if self._demo_mode:
@@ -1550,6 +1556,7 @@ class BrowserSession(BaseModel):
 		from browser_agent.browser.watchdogs.screenshot_watchdog import ScreenshotWatchdog
 		from browser_agent.browser.watchdogs.security_watchdog import SecurityWatchdog
 		from browser_agent.browser.watchdogs.storage_state_watchdog import StorageStateWatchdog
+		from browser_agent.browser.watchdogs.streaming_watchdog import StreamingWatchdog
 
 		# Initialize CrashWatchdog
 		# CrashWatchdog.model_rebuild()
@@ -1663,6 +1670,11 @@ class BrowserSession(BaseModel):
 		RecordingWatchdog.model_rebuild()
 		self._recording_watchdog = RecordingWatchdog(event_bus=self.event_bus, browser_session=self)
 		self._recording_watchdog.attach_to_session()
+
+		# Initialize StreamingWatchdog (handles live preview streaming)
+		StreamingWatchdog.model_rebuild()
+		self._streaming_watchdog = StreamingWatchdog(event_bus=self.event_bus, browser_session=self)
+		self._streaming_watchdog.attach_to_session()
 
 		# Initialize HarRecordingWatchdog if record_har_path is configured (handles HTTPS HAR capture)
 		if self.browser_profile.record_har_path:
@@ -2637,6 +2649,40 @@ class BrowserSession(BaseModel):
 
 		except Exception as e:
 			self.logger.warning(f'Failed to remove highlights: {e}')
+
+	def push_streaming_frame(self, frame_b64: str) -> None:
+		"""Push a streaming frame to the queue and update latest frame.
+
+		Args:
+		    frame_b64: Base64-encoded JPEG frame data
+		"""
+		self._latest_streaming_frame = frame_b64
+		try:
+			self._streaming_frame_queue.put_nowait(frame_b64)
+		except asyncio.QueueFull:
+			try:
+				self._streaming_frame_queue.get_nowait()
+				self._streaming_frame_queue.put_nowait(frame_b64)
+			except Exception:
+				pass
+
+	def get_latest_streaming_frame(self) -> str | None:
+		"""Get the most recent streaming frame."""
+		return self._latest_streaming_frame
+
+	async def get_streaming_frame(self, timeout: float = 1.0) -> str | None:
+		"""Get the next streaming frame from the queue.
+
+		Args:
+		    timeout: Maximum time to wait for a frame
+
+		Returns:
+		    Base64-encoded frame or None if timeout
+		"""
+		try:
+			return await asyncio.wait_for(self._streaming_frame_queue.get(), timeout=timeout)
+		except (asyncio.TimeoutError, asyncio.QueueEmpty):
+			return None
 
 	@observe_debug(ignore_input=True, ignore_output=True, name='get_element_coordinates')
 	async def get_element_coordinates(self, backend_node_id: int, cdp_session: CDPSession) -> DOMRect | None:
