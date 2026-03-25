@@ -8,7 +8,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
-import { authConfig, databaseConfig, redisConfig } from './config';
+import { authConfig, databaseConfig, redisConfig, browserAgentConfig } from './config';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -20,7 +20,7 @@ import { BullModule } from '@nestjs/bullmq';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
-			load: [authConfig, databaseConfig, redisConfig],
+			load: [authConfig, databaseConfig, redisConfig, browserAgentConfig],
 		}),
 		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
