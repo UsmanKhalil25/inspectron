@@ -7,12 +7,20 @@ export const SCAN_EVENTS = gql(`
       type
       data {
         step
-        action
-        goal
-        url
-        result
-        message
+        timestamp
+        thinking
+        action {
+          name
+          display
+        }
+        context {
+          url
+          title
+        }
       }
+      result
+      message
+      timestamp
     }
   }
 `);

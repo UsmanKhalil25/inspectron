@@ -8,7 +8,7 @@ import { Scan } from './scans.entity';
 import { ScanAction } from './interfaces/scan-action.interface';
 import { ScanStatus } from './enums/scan-status.enum';
 import { BrowserAgentService } from './browser-agent.service';
-import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
+import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
 
 export interface ScanJobData {
   scanId: string;
@@ -71,7 +71,17 @@ export class ScanConsumer extends WorkerHost {
 
       const onStepEvent = async (action: ScanAction): Promise<void> => {
         scan.actions = [...(scan.actions || []), action];
-        await this.scansRepository.save(scan);
+
+        await Promise.all([
+          this.pubSub.publish(SCAN_EVENTS, {
+            scanEvents: {
+              scanId: scan.id,
+              type: 'step',
+              data: action,
+            },
+          }),
+          this.scansRepository.save(scan),
+        ]);
       };
 
       await this.browserAgentService.streamEvents(scan, runId, onStepEvent);

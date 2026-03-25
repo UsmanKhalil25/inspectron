@@ -12,19 +12,29 @@ export interface BrowserAgentRunResponse {
 export interface BrowserAgentStepEvent {
   type: 'step';
   step: number;
-  action: string;
-  goal: string;
-  url: string;
+  timestamp: number;
+  thinking: string | null;
+  action: {
+    name: string;
+    params: Record<string, any>;
+    display: string;
+  };
+  context: {
+    url: string;
+    title: string;
+  };
 }
 
 export interface BrowserAgentDoneEvent {
   type: 'done';
   result: string;
+  timestamp: number;
 }
 
 export interface BrowserAgentErrorEvent {
   type: 'error';
   message: string;
+  timestamp: number;
 }
 
 export type BrowserAgentEvent =
@@ -134,10 +144,14 @@ export class BrowserAgentService {
     if (event.type === 'step') {
       const action: ScanAction = {
         step: event.step,
-        action: event.action,
-        goal: event.goal,
-        url: event.url,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(event.timestamp * 1000).toISOString(),
+        thinking: event.thinking,
+        action: {
+          name: event.action.name,
+          params: JSON.stringify(event.action.params),
+          display: event.action.display,
+        },
+        context: event.context,
       };
 
       if (onStepEvent) {
@@ -156,9 +170,8 @@ export class BrowserAgentService {
         scanEvents: {
           scanId: scan.id,
           type: 'completed',
-          data: {
-            result: event.result,
-          },
+          result: event.result,
+          timestamp: new Date(event.timestamp * 1000).toISOString(),
         },
       });
     } else if (event.type === 'error') {
@@ -166,9 +179,8 @@ export class BrowserAgentService {
         scanEvents: {
           scanId: scan.id,
           type: 'error',
-          data: {
-            message: event.message,
-          },
+          message: event.message,
+          timestamp: new Date(event.timestamp * 1000).toISOString(),
         },
       });
     }

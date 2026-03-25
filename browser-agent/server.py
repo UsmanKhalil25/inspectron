@@ -71,16 +71,59 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 		step_n: int,
 	) -> None:
 		state.screenshot_b64 = browser_state.screenshot
-		action_name = agent_output.action[0].__class__.__name__ if agent_output.action else 'unknown'
-		await state.events.put(
-			{
-				'type': 'step',
-				'step': step_n,
-				'action': action_name,
-				'goal': agent_output.next_goal or '',
+
+		# Extract action details
+		action_data = agent_output.action[0] if agent_output.action else None
+		action_name = 'unknown'
+		action_params = {}
+		action_display = 'No action'
+
+		if action_data:
+			# Get action name (first key) and params
+			action_dict = action_data.model_dump(exclude_unset=True)
+			if action_dict:
+				action_name = list(action_dict.keys())[0]
+				action_params = action_dict[action_name]
+
+				# Generate human-readable display
+				if action_name == 'click':
+					idx = action_params.get('index', 'unknown')
+					action_display = f'Clicked element #{idx}'
+				elif action_name == 'input':
+					idx = action_params.get('index', 'unknown')
+					text = action_params.get('text', '')
+					action_display = f'Typed "{text}" into element #{idx}'
+				elif action_name == 'go_to_url':
+					url = action_params.get('url', '')
+					action_display = f'Navigated to {url}'
+				elif action_name == 'scroll':
+					direction = 'down' if action_params.get('down', True) else 'up'
+					action_display = f'Scrolled {direction}'
+				elif action_name == 'wait':
+					action_display = 'Waited for page to load'
+				elif action_name == 'go_back':
+					action_display = 'Went back to previous page'
+				else:
+					action_display = f'Performed {action_name}'
+
+		# Build rich event
+		event = {
+			'type': 'step',
+			'step': step_n,
+			'timestamp': time.time(),
+			'thinking': agent_output.thinking,
+			'action': {
+				'name': action_name,
+				'params': action_params,
+				'display': action_display,
+			},
+			'context': {
 				'url': browser_state.url,
-			}
-		)
+				'title': browser_state.title or '',
+			},
+		}
+
+		await state.events.put(event)
 
 	try:
 		browser_session = BrowserSession(headless=True)
@@ -95,11 +138,23 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 		result = await agent.run(max_steps=50)
 		state.result = result.final_result()
 		state.status = 'done'
-		await state.events.put({'type': 'done', 'result': state.result})
+		await state.events.put(
+			{
+				'type': 'done',
+				'result': state.result,
+				'timestamp': time.time(),
+			}
+		)
 	except Exception as exc:
 		state.error = str(exc)
 		state.status = 'error'
-		await state.events.put({'type': 'error', 'message': state.error})
+		await state.events.put(
+			{
+				'type': 'error',
+				'message': state.error,
+				'timestamp': time.time(),
+			}
+		)
 
 
 # ---------------------------------------------------------------------------

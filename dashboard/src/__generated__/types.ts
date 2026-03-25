@@ -28,6 +28,19 @@ export type Scalars = {
   DateTime: { input: any; output: any };
 };
 
+export type ActionContext = {
+  __typename?: "ActionContext";
+  title: Scalars["String"]["output"];
+  url: Scalars["String"]["output"];
+};
+
+export type ActionDetail = {
+  __typename?: "ActionDetail";
+  display: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  params: Scalars["String"]["output"];
+};
+
 export type BrowserPreviewFrame = {
   __typename?: "BrowserPreviewFrame";
   frame: Scalars["String"]["output"];
@@ -142,28 +155,21 @@ export type Scan = {
 
 export type ScanAction = {
   __typename?: "ScanAction";
-  action: Scalars["String"]["output"];
-  goal: Scalars["String"]["output"];
+  action: ActionDetail;
+  context: ActionContext;
   step: Scalars["Int"]["output"];
+  thinking?: Maybe<Scalars["String"]["output"]>;
   timestamp: Scalars["String"]["output"];
-  url: Scalars["String"]["output"];
 };
 
 export type ScanEvent = {
   __typename?: "ScanEvent";
-  data: ScanEventData;
-  scanId: Scalars["ID"]["output"];
-  type: Scalars["String"]["output"];
-};
-
-export type ScanEventData = {
-  __typename?: "ScanEventData";
-  action?: Maybe<Scalars["String"]["output"]>;
-  goal?: Maybe<Scalars["String"]["output"]>;
+  data?: Maybe<ScanAction>;
   message?: Maybe<Scalars["String"]["output"]>;
   result?: Maybe<Scalars["String"]["output"]>;
-  step?: Maybe<Scalars["Float"]["output"]>;
-  url?: Maybe<Scalars["String"]["output"]>;
+  scanId: Scalars["ID"]["output"];
+  timestamp?: Maybe<Scalars["String"]["output"]>;
+  type: Scalars["String"]["output"];
 };
 
 export type ScanFiltersInput = {
@@ -343,10 +349,10 @@ export type GetScanQuery = {
     actions?: Array<{
       __typename?: "ScanAction";
       step: number;
-      action: string;
-      goal: string;
-      url: string;
       timestamp: string;
+      thinking?: string | null;
+      action: { __typename?: "ActionDetail"; name: string; display: string };
+      context: { __typename?: "ActionContext"; url: string; title: string };
     }> | null;
   };
 };
@@ -416,15 +422,17 @@ export type ScanEventsSubscription = {
     __typename?: "ScanEvent";
     scanId: string;
     type: string;
-    data: {
-      __typename?: "ScanEventData";
-      step?: number | null;
-      action?: string | null;
-      goal?: string | null;
-      url?: string | null;
-      result?: string | null;
-      message?: string | null;
-    };
+    result?: string | null;
+    message?: string | null;
+    timestamp?: string | null;
+    data?: {
+      __typename?: "ScanAction";
+      step: number;
+      timestamp: string;
+      thinking?: string | null;
+      action: { __typename?: "ActionDetail"; name: string; display: string };
+      context: { __typename?: "ActionContext"; url: string; title: string };
+    } | null;
   };
 };
 

@@ -9,10 +9,16 @@ export const SCAN = gql(`
       runId
       actions {
         step
-        action
-        goal
-        url
         timestamp
+        thinking
+        action {
+          name
+          display
+        }
+        context {
+          url
+          title
+        }
       }
       createdAt
       updatedAt

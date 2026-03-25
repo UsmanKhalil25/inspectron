@@ -2,7 +2,7 @@
 
 import { useSubscription, useQuery } from "@apollo/client";
 import { useState, useEffect } from "react";
-import { Bot, Terminal, Loader2 } from "lucide-react";
+import { Bot, Terminal, Loader2, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SCAN_EVENTS } from "@/graphql/subscriptions/scan-events";
 import { SCAN } from "@/graphql/queries/scan";
@@ -10,6 +10,21 @@ import { SCAN } from "@/graphql/queries/scan";
 interface AgentActivityProps {
   scanId: string;
   isScanning?: boolean;
+}
+
+interface ScanAction {
+  step: number;
+  timestamp: string;
+  thinking: string | null;
+  action: {
+    name: string;
+    params: string;
+    display: string;
+  };
+  context: {
+    url: string;
+    title: string;
+  };
 }
 
 export function AgentActivity({
@@ -27,13 +42,7 @@ export function AgentActivity({
   const [streamedEvents, setStreamedEvents] = useState<
     Array<{
       type: "step";
-      data: {
-        step?: number;
-        action?: string;
-        goal?: string;
-        url?: string;
-        timestamp?: string;
-      };
+      data: ScanAction;
     }>
   >([]);
 
@@ -42,19 +51,13 @@ export function AgentActivity({
       const newEvent = subscriptionData.scanEvents;
       if (newEvent.type === "step") {
         setStreamedEvents((prev) => {
-          const step = (newEvent.data as { step?: number }).step;
+          const step = (newEvent.data as ScanAction).step;
           if (step && !prev.some((e) => e.data.step === step)) {
             return [
               ...prev,
               {
                 type: "step" as const,
-                data: newEvent.data as {
-                  step?: number;
-                  action?: string;
-                  goal?: string;
-                  url?: string;
-                  timestamp?: string;
-                },
+                data: newEvent.data as ScanAction,
               },
             ];
           }
@@ -64,17 +67,11 @@ export function AgentActivity({
     }
   }, [subscriptionData]);
 
-  const historicalActions = scanData?.scan?.actions || [];
+  const historicalActions = (scanData?.scan?.actions as ScanAction[]) || [];
 
   const events: Array<{
     type: "step";
-    data: {
-      step?: number;
-      action?: string;
-      goal?: string;
-      url?: string;
-      timestamp?: string;
-    };
+    data: ScanAction;
   }> = [
     ...historicalActions.map((action) => ({
       type: "step" as const,
@@ -134,48 +131,83 @@ export function AgentActivity({
   );
 }
 
-type NormalizedEvent = {
-  type: "step";
-  data: {
-    step?: number;
-    action?: string;
-    goal?: string;
-    url?: string;
-    timestamp?: string;
-  };
-};
-
-function EventItem({ event }: { event: NormalizedEvent }) {
+function EventItem({ event }: { event: { type: "step"; data: ScanAction } }) {
   if (event.type === "step") {
+    const action = event.data;
     return (
       <>
+        {/* Thinking (collapsible) */}
+        {action.thinking && <ThinkingSection thinking={action.thinking} />}
+
+        {/* Action display */}
         <div className="flex gap-3">
           <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
             <Bot className="h-3 w-3 text-primary" />
           </div>
           <p className="text-sm leading-relaxed text-foreground/90">
-            {event.data.goal || `Executing ${event.data.action || "action"}...`}
+            {action.action.display}
           </p>
         </div>
 
+        {/* Action details */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Terminal className="h-3 w-3" />
             <span className="font-medium text-violet-400">
-              {event.data.action || "action"}()
+              {action.action.name}()
             </span>
           </div>
-          {event.data.url && (
-            <div className="rounded-md border border-violet-500/20 bg-violet-500/5 px-3 py-2">
-              <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {JSON.stringify({ url: event.data.url }, null, 2)}
-              </pre>
-            </div>
-          )}
+          <div className="rounded-md border border-violet-500/20 bg-violet-500/5 px-3 py-2">
+            <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              {JSON.stringify(
+                {
+                  url: action.context.url,
+                  title: action.context.title,
+                  params: action.action.params
+                    ? JSON.parse(action.action.params)
+                    : null,
+                },
+                null,
+                2,
+              )}
+            </pre>
+          </div>
         </div>
       </>
     );
   }
 
   return null;
+}
+
+function ThinkingSection({ thinking }: { thinking: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="text-sm">
+      <button
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <ChevronRight
+          className={`h-4 w-4 transition-transform duration-200 ${
+            isExpanded ? "rotate-90" : ""
+          }`}
+        />
+        <span>Thinking</span>
+      </button>
+
+      <div
+        className={`grid transition-all duration-200 ${
+          isExpanded
+            ? "grid-rows-[1fr] opacity-100 mt-2"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden text-gray-600 leading-relaxed">
+          {thinking}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -44,12 +44,23 @@ type PaginationInfo {
   hasPreviousPage: Boolean!
 }
 
+type ActionDetail {
+  name: String!
+  params: String!
+  display: String!
+}
+
+type ActionContext {
+  url: String!
+  title: String!
+}
+
 type ScanAction {
   step: Int!
-  action: String!
-  goal: String!
-  url: String!
   timestamp: String!
+  thinking: String
+  action: ActionDetail!
+  context: ActionContext!
 }
 
 type Scan {
@@ -89,19 +100,13 @@ type ScanStats {
   scansByStatus: ScanStatusStats!
 }
 
-type ScanEventData {
-  step: Float
-  action: String
-  goal: String
-  url: String
-  result: String
-  message: String
-}
-
 type ScanEvent {
   scanId: ID!
   type: String!
-  data: ScanEventData!
+  data: ScanAction
+  result: String
+  message: String
+  timestamp: String
 }
 
 type BrowserPreviewFrame {

@@ -1,25 +1,5 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
-
-@ObjectType()
-export class ScanEventData {
-  @Field({ nullable: true })
-  step?: number;
-
-  @Field({ nullable: true })
-  action?: string;
-
-  @Field({ nullable: true })
-  goal?: string;
-
-  @Field({ nullable: true })
-  url?: string;
-
-  @Field({ nullable: true })
-  result?: string;
-
-  @Field({ nullable: true })
-  message?: string;
-}
+import { ScanAction } from './scan-action.type';
 
 @ObjectType()
 export class ScanEvent {
@@ -29,6 +9,15 @@ export class ScanEvent {
   @Field()
   type: string;
 
-  @Field(() => ScanEventData)
-  data: ScanEventData;
+  @Field(() => ScanAction, { nullable: true })
+  data?: ScanAction;
+
+  @Field({ nullable: true })
+  result?: string;
+
+  @Field({ nullable: true })
+  message?: string;
+
+  @Field({ nullable: true })
+  timestamp?: string;
 }
