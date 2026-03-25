@@ -5,21 +5,24 @@ import { ScanStatus } from '../enums/scan-status.enum';
 
 @ObjectType()
 export class Scan {
-  @Field(() => ID)
-  id: string;
+	@Field(() => ID)
+	id: string;
 
-  @Field()
-  url: string;
+	@Field()
+	url: string;
 
-  @Field(() => ScanStatus)
-  status: ScanStatus;
+	@Field(() => ScanStatus)
+	status: ScanStatus;
 
-  @Field(() => PublicUser)
-  user: PublicUser;
+	@Field(() => String, { nullable: true })
+	runId?: string;
 
-  @Field()
-  createdAt: Date;
+	@Field(() => PublicUser)
+	user: PublicUser;
 
-  @Field()
-  updatedAt: Date;
+	@Field()
+	createdAt: Date;
+
+	@Field()
+	updatedAt: Date;
 }

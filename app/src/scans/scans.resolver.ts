@@ -1,16 +1,17 @@
 import {
-  Query,
-  Mutation,
-  Subscription,
-  Resolver,
-  Context,
-  Args,
+	Query,
+	Mutation,
+	Subscription,
+	Resolver,
+	Context,
+	Args,
 } from '@nestjs/graphql';
 import { UseGuards, Inject } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScansService } from './scans.service';
+import { BrowserAgentService } from './browser-agent.service';
 
 import { CreateScanInput } from './inputs/create-scan.input';
 import { ScanFiltersInput } from './inputs/scan-filters.input';
@@ -19,64 +20,87 @@ import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 import { ScansResponse } from './types/scans-response.type';
 import { Scan } from './types/scan.type';
 import { ScanStats } from './types/scan-stats.type';
+import { ScanEvent } from './types/scan-event.type';
 
 import { JwtPayload } from 'src/commom/interfaces/jwt-payload.interface';
-import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
+import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
 
 @Resolver(() => Scan)
 export class ScansResolver {
-  constructor(
-    private readonly scansService: ScansService,
-    @Inject(PUB_SUB) private readonly pubSub: PubSub,
-  ) {}
+	constructor(
+		private readonly scansService: ScansService,
+		private readonly browserAgentService: BrowserAgentService,
+		@Inject(PUB_SUB) private readonly pubSub: PubSub,
+	) {}
 
-  @Query(() => Scan)
-  @UseGuards(JwtAuthGuard)
-  async scan(
-    @Args('id') id: string,
-    @Context() context: { req: { user: JwtPayload } },
-  ) {
-    const userId = context.req.user.sub;
-    return await this.scansService.findById(id, userId);
-  }
+	@Query(() => Scan)
+	@UseGuards(JwtAuthGuard)
+	async scan(
+		@Args('id') id: string,
+		@Context() context: { req: { user: JwtPayload } },
+	) {
+		const userId = context.req.user.sub;
+		return await this.scansService.findById(id, userId);
+	}
 
-  @Query(() => ScansResponse)
-  @UseGuards(JwtAuthGuard)
-  async scans(
-    @Context() context: { req: { user: JwtPayload } },
-    @Args() paginationArgs: PaginationArgs,
-    @Args('filters', { nullable: true }) filters?: ScanFiltersInput,
-  ) {
-    const userId = context.req.user.sub;
-    return await this.scansService.findMany(userId, paginationArgs, filters);
-  }
+	@Query(() => ScansResponse)
+	@UseGuards(JwtAuthGuard)
+	async scans(
+		@Context() context: { req: { user: JwtPayload } },
+		@Args() paginationArgs: PaginationArgs,
+		@Args('filters', { nullable: true }) filters?: ScanFiltersInput,
+	) {
+		const userId = context.req.user.sub;
+		return await this.scansService.findMany(userId, paginationArgs, filters);
+	}
 
-  @Query(() => ScanStats)
-  @UseGuards(JwtAuthGuard)
-  async scanStats(@Context() context: { req: { user: JwtPayload } }) {
-    const userId = context.req.user.sub;
-    return await this.scansService.getScansStats(userId);
-  }
+	@Query(() => ScanStats)
+	@UseGuards(JwtAuthGuard)
+	async scanStats(@Context() context: { req: { user: JwtPayload } }) {
+		const userId = context.req.user.sub;
+		return await this.scansService.getScansStats(userId);
+	}
 
-  @Mutation(() => Scan)
-  @UseGuards(JwtAuthGuard)
-  async createScan(
-    @Context() context: { req: { user: JwtPayload } },
-    @Args('input') input: CreateScanInput,
-  ) {
-    const userId = context.req.user.sub;
-    return await this.scansService.createScan(input, userId);
-  }
+	@Query(() => String, { nullable: true })
+	@UseGuards(JwtAuthGuard)
+	async scanScreenshot(
+		@Args('runId') runId: string,
+		@Context() context: { req: { user: JwtPayload } },
+	) {
+		return await this.browserAgentService.getScreenshot(runId);
+	}
 
-  @Subscription(() => Scan, {
-    filter: (
-      payload: { scanStatusChanged: { id: string } },
-      variables: { scanId: string },
-    ) => {
-      return payload.scanStatusChanged.id === variables.scanId;
-    },
-  })
-  scanStatusChanged(@Args('scanId') _scanId: string) {
-    return this.pubSub.asyncIterableIterator(SCAN_STATUS_CHANGED);
-  }
+	@Mutation(() => Scan)
+	@UseGuards(JwtAuthGuard)
+	async createScan(
+		@Context() context: { req: { user: JwtPayload } },
+		@Args('input') input: CreateScanInput,
+	) {
+		const userId = context.req.user.sub;
+		return await this.scansService.createScan(input, userId);
+	}
+
+	@Subscription(() => Scan, {
+		filter: (
+			payload: { scanStatusChanged: { id: string } },
+			variables: { scanId: string },
+		) => {
+			return payload.scanStatusChanged.id === variables.scanId;
+		},
+	})
+	scanStatusChanged(@Args('scanId') _scanId: string) {
+		return this.pubSub.asyncIterableIterator(SCAN_STATUS_CHANGED);
+	}
+
+	@Subscription(() => ScanEvent, {
+		filter: (
+			payload: { scanEvents: { scanId: string } },
+			variables: { scanId: string },
+		) => {
+			return payload.scanEvents.scanId === variables.scanId;
+		},
+	})
+	scanEvents(@Args('scanId') _scanId: string) {
+		return this.pubSub.asyncIterableIterator(SCAN_EVENTS);
+	}
 }

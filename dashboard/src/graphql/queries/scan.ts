@@ -6,8 +6,15 @@ export const SCAN = gql(`
       id
       url
       status
+      runId
       createdAt
       updatedAt
     }
+  }
+`);
+
+export const SCAN_SCREENSHOT = gql(`
+  query GetScanScreenshot($runId: String!) {
+    scanScreenshot(runId: $runId)
   }
 `);
