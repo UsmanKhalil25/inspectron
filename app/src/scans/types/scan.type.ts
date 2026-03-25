@@ -2,27 +2,31 @@ import { Field, ObjectType, ID } from '@nestjs/graphql';
 
 import { PublicUser } from 'src/users/types/public-user.type';
 import { ScanStatus } from '../enums/scan-status.enum';
+import { ScanAction } from './scan-action.type';
 
 @ObjectType()
 export class Scan {
-	@Field(() => ID)
-	id: string;
+  @Field(() => ID)
+  id: string;
 
-	@Field()
-	url: string;
+  @Field()
+  url: string;
 
-	@Field(() => ScanStatus)
-	status: ScanStatus;
+  @Field(() => ScanStatus)
+  status: ScanStatus;
 
-	@Field(() => String, { nullable: true })
-	runId?: string;
+  @Field(() => String, { nullable: true })
+  runId?: string;
 
-	@Field(() => PublicUser)
-	user: PublicUser;
+  @Field(() => [ScanAction], { nullable: true })
+  actions?: ScanAction[];
 
-	@Field()
-	createdAt: Date;
+  @Field(() => PublicUser)
+  user: PublicUser;
 
-	@Field()
-	updatedAt: Date;
+  @Field()
+  createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
 }

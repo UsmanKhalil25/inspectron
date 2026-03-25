@@ -5,92 +5,99 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import { Scan } from './scans.entity';
+import { ScanAction } from './interfaces/scan-action.interface';
 import { ScanStatus } from './enums/scan-status.enum';
 import { BrowserAgentService } from './browser-agent.service';
 import { PUB_SUB, SCAN_STATUS_CHANGED } from './scans.constants';
 
 export interface ScanJobData {
-	scanId: string;
-	url: string;
+  scanId: string;
+  url: string;
 }
 
 @Processor('scans')
 export class ScanConsumer extends WorkerHost {
-	private readonly logger = new Logger(ScanConsumer.name);
+  private readonly logger = new Logger(ScanConsumer.name);
 
-	constructor(
-		@InjectRepository(Scan)
-		private readonly scansRepository: Repository<Scan>,
-		@Inject(PUB_SUB)
-		private readonly pubSub: PubSub,
-		private readonly browserAgentService: BrowserAgentService,
-	) {
-		super();
-	}
+  constructor(
+    @InjectRepository(Scan)
+    private readonly scansRepository: Repository<Scan>,
+    @Inject(PUB_SUB)
+    private readonly pubSub: PubSub,
+    private readonly browserAgentService: BrowserAgentService,
+  ) {
+    super();
+  }
 
-	async process(job: Job<ScanJobData>): Promise<void> {
-		const { scanId, url } = job.data;
+  async process(job: Job<ScanJobData>): Promise<void> {
+    const { scanId, url } = job.data;
 
-		this.logger.log(`Processing scan ${scanId} for URL: ${url}`);
+    this.logger.log(`Processing scan ${scanId} for URL: ${url}`);
 
-		try {
-			const scan = await this.scansRepository.findOne({
-				where: { id: scanId },
-			});
+    try {
+      const scan = await this.scansRepository.findOne({
+        where: { id: scanId },
+      });
 
-			if (!scan) {
-				this.logger.error(`Scan ${scanId} not found`);
-				throw new Error(`Scan ${scanId} not found`);
-			}
+      if (!scan) {
+        this.logger.error(`Scan ${scanId} not found`);
+        throw new Error(`Scan ${scanId} not found`);
+      }
 
-			if (scan.status !== ScanStatus.QUEUED) {
-				this.logger.warn(
-					`Scan ${scanId} has status "${scan.status}", expected "${ScanStatus.QUEUED}". Skipping.`,
-				);
-				return;
-			}
+      if (scan.status !== ScanStatus.QUEUED) {
+        this.logger.warn(
+          `Scan ${scanId} has status "${scan.status}", expected "${ScanStatus.QUEUED}". Skipping.`,
+        );
+        return;
+      }
 
-			scan.status = ScanStatus.ACTIVE;
-			await this.scansRepository.save(scan);
-			await this.pubSub.publish(SCAN_STATUS_CHANGED, {
-				[SCAN_STATUS_CHANGED]: scan,
-			});
-			this.logger.log(`Scan ${scanId} status updated to ACTIVE`);
+      scan.status = ScanStatus.ACTIVE;
+      await this.scansRepository.save(scan);
+      await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+        [SCAN_STATUS_CHANGED]: scan,
+      });
+      this.logger.log(`Scan ${scanId} status updated to ACTIVE`);
 
-			this.logger.log(`Starting scan for URL: ${url}`);
+      this.logger.log(`Starting scan for URL: ${url}`);
 
-			const runId = await this.browserAgentService.createRun(
-				url,
-				'Crawl the website. Visit up to 5 pages starting from the homepage. Follow only internal links. Stop after 5 pages.',
-			);
+      const runId = await this.browserAgentService.createRun(
+        url,
+        'Crawl the website. Visit up to 5 pages starting from the homepage. Follow only internal links. Stop after 5 pages.',
+      );
 
-			scan.runId = runId;
-			await this.scansRepository.save(scan);
+      scan.runId = runId;
+      scan.actions = [];
+      await this.scansRepository.save(scan);
 
-			await this.browserAgentService.streamEvents(scan, runId);
+      const onStepEvent = async (action: ScanAction): Promise<void> => {
+        scan.actions = [...(scan.actions || []), action];
+        await this.scansRepository.save(scan);
+      };
 
-			scan.status = ScanStatus.COMPLETED;
-			await this.scansRepository.save(scan);
-			await this.pubSub.publish(SCAN_STATUS_CHANGED, {
-				[SCAN_STATUS_CHANGED]: scan,
-			});
-			this.logger.log(`Scan ${scanId} completed successfully`);
-		} catch (error) {
-			this.logger.error(`Scan ${scanId} failed:`, error);
+      await this.browserAgentService.streamEvents(scan, runId, onStepEvent);
 
-			const scan = await this.scansRepository.findOne({
-				where: { id: scanId },
-			});
+      scan.status = ScanStatus.COMPLETED;
+      await this.scansRepository.save(scan);
+      await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+        [SCAN_STATUS_CHANGED]: scan,
+      });
+      this.logger.log(`Scan ${scanId} completed successfully`);
+    } catch (error) {
+      this.logger.error(`Scan ${scanId} failed:`, error);
 
-			if (scan) {
-				scan.status = ScanStatus.FAILED;
-				await this.scansRepository.save(scan);
-				await this.pubSub.publish(SCAN_STATUS_CHANGED, {
-					[SCAN_STATUS_CHANGED]: scan,
-				});
-			}
+      const scan = await this.scansRepository.findOne({
+        where: { id: scanId },
+      });
 
-			throw error;
-		}
-	}
+      if (scan) {
+        scan.status = ScanStatus.FAILED;
+        await this.scansRepository.save(scan);
+        await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+          [SCAN_STATUS_CHANGED]: scan,
+        });
+      }
+
+      throw error;
+    }
+  }
 }

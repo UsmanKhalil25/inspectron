@@ -44,11 +44,20 @@ type PaginationInfo {
   hasPreviousPage: Boolean!
 }
 
+type ScanAction {
+  step: Int!
+  action: String!
+  goal: String!
+  url: String!
+  timestamp: String!
+}
+
 type Scan {
   id: ID!
   url: String!
   status: ScanStatus!
   runId: String
+  actions: [ScanAction!]
   user: PublicUser!
   createdAt: DateTime!
   updatedAt: DateTime!

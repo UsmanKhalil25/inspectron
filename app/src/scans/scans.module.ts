@@ -12,23 +12,23 @@ import { BrowserAgentService } from './browser-agent.service';
 import { PUB_SUB, createPubSub } from './scans.constants';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([Scan, User]),
-		BullModule.registerQueue({
-			name: 'scans',
-		}),
-		ConfigModule,
-	],
-	providers: [
-		ScansService,
-		ScansResolver,
-		ScanConsumer,
-		BrowserAgentService,
-		{
-			provide: PUB_SUB,
-			useValue: createPubSub(),
-		},
-	],
-	exports: [PUB_SUB, BrowserAgentService],
+  imports: [
+    TypeOrmModule.forFeature([Scan, User]),
+    BullModule.registerQueue({
+      name: 'scans',
+    }),
+    ConfigModule,
+  ],
+  providers: [
+    ScansService,
+    ScansResolver,
+    ScanConsumer,
+    BrowserAgentService,
+    {
+      provide: PUB_SUB,
+      useValue: createPubSub(),
+    },
+  ],
+  exports: [PUB_SUB, BrowserAgentService],
 })
 export class ScansModule {}

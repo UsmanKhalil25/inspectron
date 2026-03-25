@@ -7,6 +7,13 @@ export const SCAN = gql(`
       url
       status
       runId
+      actions {
+        step
+        action
+        goal
+        url
+        timestamp
+      }
       createdAt
       updatedAt
     }
