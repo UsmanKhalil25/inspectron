@@ -32,6 +32,9 @@ export class Scan {
   @Column({ type: 'text', nullable: true })
   runId?: string;
 
+  @Column({ type: 'text', nullable: true })
+  result?: string;
+
   @Column({ type: 'simple-json', nullable: true, default: '[]' })
   actions?: ScanAction[];
 

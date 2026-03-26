@@ -6,6 +6,20 @@ export const SCAN_STATUS_CHANGED = gql(`
       id
       url
       status
+      result
+      actions {
+        step
+        timestamp
+        thinking
+        action {
+          name
+          display
+        }
+        context {
+          url
+          title
+        }
+      }
       createdAt
       updatedAt
     }

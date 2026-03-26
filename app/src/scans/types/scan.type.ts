@@ -18,6 +18,9 @@ export class Scan {
   @Field(() => String, { nullable: true })
   runId?: string;
 
+  @Field(() => String, { nullable: true })
+  result?: string;
+
   @Field(() => [ScanAction], { nullable: true })
   actions?: ScanAction[];
 

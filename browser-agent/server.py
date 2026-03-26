@@ -32,6 +32,7 @@ class RunState:
 	status: str  # "running" | "done" | "error"
 	screenshot_b64: str | None = None
 	events: asyncio.Queue = field(default_factory=asyncio.Queue)
+	message_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
 	result: str | None = None
 	error: str | None = None
 	browser_session: BrowserSession | None = None
@@ -62,15 +63,47 @@ def get_llm():
 # ---------------------------------------------------------------------------
 
 
+LOGIN_KEYWORDS = {'login', 'log in', 'sign in', 'signin', 'password', 'username', 'authenticate', 'credentials'}
+
+
 async def _run_agent(run_id: str, url: str, task: str) -> None:
 	state = runs[run_id]
+	agent_ref: list = [None]
+	asked_for_login = False
 
 	async def register_new_step_callback(
 		browser_state: BrowserStateSummary,
 		agent_output: AgentOutput,
 		step_n: int,
 	) -> None:
+		nonlocal asked_for_login
 		state.screenshot_b64 = browser_state.screenshot
+
+		# Drain pending user messages and inject into agent
+		while not state.message_queue.empty():
+			msg: str = state.message_queue.get_nowait()
+			if agent_ref[0] is not None:
+				agent_ref[0].message_manager.add_new_task(msg)
+			await state.events.put(
+				{
+					'type': 'user_message',
+					'content': msg,
+					'timestamp': time.time(),
+				}
+			)
+
+		# Heuristic: detect login/auth blocker and ask user once
+		if not asked_for_login and agent_output.thinking:
+			thinking_lower = agent_output.thinking.lower()
+			if any(kw in thinking_lower for kw in LOGIN_KEYWORDS):
+				asked_for_login = True
+				await state.events.put(
+					{
+						'type': 'question',
+						'question': 'The agent encountered a login page. Please provide credentials or instructions.',
+						'timestamp': time.time(),
+					}
+				)
 
 	async def register_step_finalized_callback(
 		agent_output: AgentOutput,
@@ -138,6 +171,7 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 			register_new_step_callback=register_new_step_callback,
 			register_step_finalized_callback=register_step_finalized_callback,
 		)
+		agent_ref[0] = agent
 		result = await agent.run(max_steps=50)
 		state.result = result.final_result()
 		state.status = 'done'
@@ -176,6 +210,21 @@ async def create_run(body: RunRequest):
 	runs[run_id] = RunState(status='running')
 	asyncio.create_task(_run_agent(run_id, body.url, body.task))
 	return {'run_id': run_id}
+
+
+class MessageRequest(BaseModel):
+	content: str
+
+
+@app.post('/runs/{run_id}/message', status_code=200)
+async def send_message(run_id: str, body: MessageRequest):
+	state = runs.get(run_id)
+	if state is None:
+		raise HTTPException(status_code=404, detail='Run not found')
+	if state.status != 'running':
+		raise HTTPException(status_code=400, detail='Run is not in running state')
+	await state.message_queue.put(body.content)
+	return {'ok': True}
 
 
 @app.get('/runs/{run_id}/screenshot')

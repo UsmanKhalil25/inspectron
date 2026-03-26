@@ -37,10 +37,24 @@ export interface BrowserAgentErrorEvent {
   timestamp: number;
 }
 
+export interface BrowserAgentUserMessageEvent {
+  type: 'user_message';
+  content: string;
+  timestamp: number;
+}
+
+export interface BrowserAgentQuestionEvent {
+  type: 'question';
+  question: string;
+  timestamp: number;
+}
+
 export type BrowserAgentEvent =
   | BrowserAgentStepEvent
   | BrowserAgentDoneEvent
-  | BrowserAgentErrorEvent;
+  | BrowserAgentErrorEvent
+  | BrowserAgentUserMessageEvent
+  | BrowserAgentQuestionEvent;
 
 @Injectable()
 export class BrowserAgentService {
@@ -84,7 +98,7 @@ export class BrowserAgentService {
     scan: Scan,
     runId: string,
     onStepEvent?: (action: ScanAction) => Promise<void>,
-  ): Promise<void> {
+  ): Promise<{ result?: string; error?: string }> {
     this.logger.log(
       `Streaming browser-agent events for scan ${scan.id}, run ${runId}`,
     );
@@ -107,6 +121,8 @@ export class BrowserAgentService {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let finalResult: string | undefined;
+      let finalError: string | undefined;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -121,6 +137,8 @@ export class BrowserAgentService {
             const eventData = line.slice(6);
             try {
               const event = JSON.parse(eventData) as BrowserAgentEvent;
+              if (event.type === 'done') finalResult = event.result;
+              if (event.type === 'error') finalError = event.message;
               await this.handleEvent(scan, event, onStepEvent);
             } catch {
               this.logger.warn(`Failed to parse event: ${eventData}`);
@@ -128,6 +146,8 @@ export class BrowserAgentService {
           }
         }
       }
+
+      return { result: finalResult, error: finalError };
     } catch (error) {
       this.logger.error(`Error streaming browser-agent events:`, error);
       throw error;
@@ -183,6 +203,39 @@ export class BrowserAgentService {
           timestamp: new Date(event.timestamp * 1000).toISOString(),
         },
       });
+    } else if (event.type === 'user_message') {
+      await this.pubSub.publish(SCAN_EVENTS, {
+        scanEvents: {
+          scanId: scan.id,
+          type: 'user_message',
+          message: event.content,
+          timestamp: new Date(event.timestamp * 1000).toISOString(),
+        },
+      });
+    } else if (event.type === 'question') {
+      await this.pubSub.publish(SCAN_EVENTS, {
+        scanEvents: {
+          scanId: scan.id,
+          type: 'question',
+          message: event.question,
+          timestamp: new Date(event.timestamp * 1000).toISOString(),
+        },
+      });
+    }
+  }
+
+  async sendMessage(runId: string, content: string): Promise<void> {
+    this.logger.log(`Sending message to run ${runId}`);
+    const response = await fetch(`${this.baseUrl}/runs/${runId}/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to send message to browser-agent run: ${response.status} ${errorText}`,
+      );
     }
   }
 

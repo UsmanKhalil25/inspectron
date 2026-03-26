@@ -6,16 +6,16 @@ import {
   Context,
   Args,
 } from '@nestjs/graphql';
-import { UseGuards, Inject } from '@nestjs/common';
+import { UseGuards, Inject, BadRequestException } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScansService } from './scans.service';
 import { BrowserAgentService } from './browser-agent.service';
 import { BrowserPreviewStreamService } from './browser-preview-stream.service';
-
 import { CreateScanInput } from './inputs/create-scan.input';
 import { ScanFiltersInput } from './inputs/scan-filters.input';
+import { SendMessageInput } from './inputs/send-message.input';
 import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 
 import { ScansResponse } from './types/scans-response.type';
@@ -100,6 +100,21 @@ export class ScansResolver {
       [SCAN_STATUS_CHANGED]: scan,
     });
     return scan;
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(JwtAuthGuard)
+  async sendAgentMessage(
+    @Context() context: { req: { user: JwtPayload } },
+    @Args('input') input: SendMessageInput,
+  ) {
+    const userId = context.req.user.sub;
+    const scan = await this.scansService.findById(input.scanId, userId);
+    if (!scan.runId) {
+      throw new BadRequestException('Scan has no active run');
+    }
+    await this.browserAgentService.sendMessage(scan.runId, input.content);
+    return true;
   }
 
   @Subscription(() => Scan, {

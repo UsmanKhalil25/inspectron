@@ -75,6 +75,7 @@ export type Mutation = {
   createScan: Scan;
   login: LoginResponse;
   register: RegisterResponse;
+  sendAgentMessage: Scalars["Boolean"]["output"];
   startScan: Scan;
 };
 
@@ -88,6 +89,10 @@ export type MutationLoginArgs = {
 
 export type MutationRegisterArgs = {
   input: RegisterUserInput;
+};
+
+export type MutationSendAgentMessageArgs = {
+  input: SendMessageInput;
 };
 
 export type MutationStartScanArgs = {
@@ -155,6 +160,7 @@ export type Scan = {
   actions?: Maybe<Array<ScanAction>>;
   createdAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
+  result?: Maybe<Scalars["String"]["output"]>;
   runId?: Maybe<Scalars["String"]["output"]>;
   status: ScanStatus;
   updatedAt: Scalars["DateTime"]["output"];
@@ -223,6 +229,11 @@ export type ScansResponse = {
   __typename?: "ScansResponse";
   pagination: PaginationInfo;
   scans: Array<Scan>;
+};
+
+export type SendMessageInput = {
+  content: Scalars["String"]["input"];
+  scanId: Scalars["String"]["input"];
 };
 
 export enum SortOrder {
@@ -311,6 +322,15 @@ export type RegisterMutation = {
   };
 };
 
+export type SendAgentMessageMutationVariables = Exact<{
+  input: SendMessageInput;
+}>;
+
+export type SendAgentMessageMutation = {
+  __typename?: "Mutation";
+  sendAgentMessage: boolean;
+};
+
 export type StartScanMutationVariables = Exact<{
   id: Scalars["String"]["input"];
 }>;
@@ -362,6 +382,7 @@ export type GetScanQuery = {
     url: string;
     status: ScanStatus;
     runId?: string | null;
+    result?: string | null;
     createdAt: any;
     updatedAt: any;
     actions?: Array<{
@@ -466,8 +487,17 @@ export type ScanStatusChangedSubscription = {
     id: string;
     url: string;
     status: ScanStatus;
+    result?: string | null;
     createdAt: any;
     updatedAt: any;
+    actions?: Array<{
+      __typename?: "ScanAction";
+      step: number;
+      timestamp: string;
+      thinking?: string | null;
+      action: { __typename?: "ActionDetail"; name: string; display: string };
+      context: { __typename?: "ActionContext"; url: string; title: string };
+    }> | null;
   };
 };
 
@@ -652,6 +682,54 @@ export const RegisterDocument = {
     },
   ],
 } as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
+export const SendAgentMessageDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SendAgentMessage" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SendMessageInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "sendAgentMessage" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SendAgentMessageMutation,
+  SendAgentMessageMutationVariables
+>;
 export const StartScanDocument = {
   kind: "Document",
   definitions: [
@@ -822,6 +900,7 @@ export const GetScanDocument = {
                 { kind: "Field", name: { kind: "Name", value: "url" } },
                 { kind: "Field", name: { kind: "Name", value: "status" } },
                 { kind: "Field", name: { kind: "Name", value: "runId" } },
+                { kind: "Field", name: { kind: "Name", value: "result" } },
                 {
                   kind: "Field",
                   name: { kind: "Name", value: "actions" },
@@ -1269,6 +1348,59 @@ export const ScanStatusChangedDocument = {
                 { kind: "Field", name: { kind: "Name", value: "id" } },
                 { kind: "Field", name: { kind: "Name", value: "url" } },
                 { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "result" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "actions" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "step" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "timestamp" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "thinking" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "action" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "display" },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "context" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "url" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "title" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
               ],

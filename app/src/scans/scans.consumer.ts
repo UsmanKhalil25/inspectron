@@ -62,7 +62,7 @@ export class ScanConsumer extends WorkerHost {
 
       const runId = await this.browserAgentService.createRun(
         url,
-        'Crawl the website. Visit up to 5 pages starting from the homepage. Follow only internal links. Stop after 5 pages.',
+        'Crawl the website. Visit up to 2 pages starting from the homepage. Follow only internal links. Stop after 5 pages.',
       );
 
       scan.runId = runId;
@@ -84,9 +84,14 @@ export class ScanConsumer extends WorkerHost {
         ]);
       };
 
-      await this.browserAgentService.streamEvents(scan, runId, onStepEvent);
+      const { result } = await this.browserAgentService.streamEvents(
+        scan,
+        runId,
+        onStepEvent,
+      );
 
       scan.status = ScanStatus.COMPLETED;
+      scan.result = result ?? undefined;
       await this.scansRepository.save(scan);
       await this.pubSub.publish(SCAN_STATUS_CHANGED, {
         [SCAN_STATUS_CHANGED]: scan,

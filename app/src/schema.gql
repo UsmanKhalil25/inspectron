@@ -68,6 +68,7 @@ type Scan {
   url: String!
   status: ScanStatus!
   runId: String
+  result: String
   actions: [ScanAction!]
   user: PublicUser!
   createdAt: DateTime!
@@ -149,6 +150,7 @@ enum SortOrder {
 type Mutation {
   createScan(input: CreateScanInput!): Scan!
   startScan(id: String!): Scan!
+  sendAgentMessage(input: SendMessageInput!): Boolean!
   login(input: LoginUserInput!): LoginResponse!
   register(input: RegisterUserInput!): RegisterResponse!
 }
@@ -156,6 +158,11 @@ type Mutation {
 input CreateScanInput {
   url: String!
   status: ScanStatus
+}
+
+input SendMessageInput {
+  scanId: String!
+  content: String!
 }
 
 input LoginUserInput {
