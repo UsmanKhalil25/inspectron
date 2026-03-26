@@ -2,18 +2,19 @@
 
 import { useSubscription } from "@apollo/client";
 import Image from "next/image";
-import { ExternalLink, Globe, Loader2, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, ExternalLink, Globe, Loader2, Wifi, WifiOff } from "lucide-react";
 import { BROWSER_PREVIEW_STREAM } from "@/graphql/subscriptions/browser-preview-stream";
+import type { GetScanQuery } from "@/__generated__/graphql";
 
 interface BrowserPreviewProps {
-  runId?: string | null;
-  isScanning?: boolean;
+  scan: GetScanQuery["scan"];
 }
 
-export function BrowserPreview({
-  runId,
-  isScanning = true,
-}: BrowserPreviewProps) {
+export function BrowserPreview({ scan }: BrowserPreviewProps) {
+  const isScanning = scan.status === "ACTIVE" || scan.status === "QUEUED";
+  const runId = scan.runId;
+  const url = scan.url;
+
   const { data, loading, error } = useSubscription(BROWSER_PREVIEW_STREAM, {
     variables: { runId: runId || "" },
     skip: !runId || !isScanning,
@@ -101,6 +102,17 @@ export function BrowserPreview({
               <WifiOff className="h-4 w-4 text-muted-foreground/50" />
             )}
           </div>
+        </div>
+      </div>
+
+      {/* URL bar */}
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/20 px-3">
+        <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+        <div className="flex flex-1 items-center gap-1.5 rounded-md bg-muted/40 px-2.5 py-1">
+          <Globe className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+          <span className="flex-1 truncate text-xs text-muted-foreground">
+            {url || "about:blank"}
+          </span>
         </div>
       </div>
 

@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 
-import { ScanDetailImpl } from "./components/scan-detail-impl";
-import { ScanDetailSkeleton } from "./components/scan-detail-skeleton";
+import { ScanDetailImpl, ScanDetailSkeleton } from "./components/scan-detail";
+
 
 export const metadata: Metadata = {
   title: "Scan Details",

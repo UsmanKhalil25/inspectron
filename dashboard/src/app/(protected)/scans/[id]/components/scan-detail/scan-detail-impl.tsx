@@ -3,9 +3,9 @@
 import { useSuspenseQuery, useSubscription } from "@apollo/client";
 import { AlertTriangle } from "lucide-react";
 
-import { ScanDetailHeader } from "./scan-detail-header";
-import { BrowserPreview } from "./browser-preview";
-import { AgentActivity } from "./agent-activity";
+import {ScanDetailHeader} from "../scan-detail-header";
+import { BrowserPreview } from "../browser-preview";
+import { AgentActivity } from "../agent-activity";
 
 import { SCAN } from "@/graphql/queries/scan";
 import { SCAN_STATUS_CHANGED } from "@/graphql/subscriptions/scan-status";
@@ -69,14 +69,12 @@ export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
     );
   }
 
-  const isScanning = scan.status === "ACTIVE" || scan.status === "QUEUED";
-
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
       <ScanDetailHeader url={scan.url} status={scan.status} scanId={scan.id} />
       <div className="flex flex-1 overflow-hidden">
-        <BrowserPreview runId={scan.runId} isScanning={isScanning} />
-        <AgentActivity scanId={scanId} isScanning={isScanning} />
+        <BrowserPreview scan={scan} />
+        <AgentActivity scan={scan} />
       </div>
     </div>
   );

@@ -1,15 +1,14 @@
 "use client";
 
-import { useSubscription, useQuery } from "@apollo/client";
+import { useSubscription } from "@apollo/client";
 import { useState, useEffect } from "react";
 import { Bot, Terminal, Loader2, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SCAN_EVENTS } from "@/graphql/subscriptions/scan-events";
-import { SCAN } from "@/graphql/queries/scan";
+import type { GetScanQuery } from "@/__generated__/graphql";
 
 interface AgentActivityProps {
-  scanId: string;
-  isScanning?: boolean;
+  scan: GetScanQuery["scan"];
 }
 
 interface ScanAction {
@@ -27,16 +26,11 @@ interface ScanAction {
   };
 }
 
-export function AgentActivity({
-  scanId,
-  isScanning = true,
-}: AgentActivityProps) {
-  const { data: subscriptionData } = useSubscription(SCAN_EVENTS, {
-    variables: { scanId },
-  });
+export function AgentActivity({ scan }: AgentActivityProps) {
+  const isScanning = scan.status === "ACTIVE" || scan.status === "QUEUED";
 
-  const { data: scanData } = useQuery(SCAN, {
-    variables: { id: scanId },
+  const { data: subscriptionData } = useSubscription(SCAN_EVENTS, {
+    variables: { scanId: scan.id },
   });
 
   const [streamedEvents, setStreamedEvents] = useState<
@@ -67,7 +61,7 @@ export function AgentActivity({
     }
   }, [subscriptionData]);
 
-  const historicalActions = (scanData?.scan?.actions as ScanAction[]) || [];
+  const historicalActions = (scan.actions as ScanAction[]) || [];
 
   const events: Array<{
     type: "step";
