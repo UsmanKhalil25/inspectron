@@ -72,6 +72,11 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 	) -> None:
 		state.screenshot_b64 = browser_state.screenshot
 
+	async def register_step_finalized_callback(
+		agent_output: AgentOutput,
+		step_n: int,
+		post_action_url: str,
+	) -> None:
 		# Extract action details
 		action_data = agent_output.action[0] if agent_output.action else None
 		action_name = 'unknown'
@@ -79,13 +84,11 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 		action_display = 'No action'
 
 		if action_data:
-			# Get action name (first key) and params
 			action_dict = action_data.model_dump(exclude_unset=True)
 			if action_dict:
 				action_name = list(action_dict.keys())[0]
 				action_params = action_dict[action_name]
 
-				# Generate human-readable display
 				if action_name == 'click':
 					idx = action_params.get('index', 'unknown')
 					action_display = f'Clicked element #{idx}'
@@ -94,8 +97,8 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 					text = action_params.get('text', '')
 					action_display = f'Typed "{text}" into element #{idx}'
 				elif action_name == 'go_to_url':
-					url = action_params.get('url', '')
-					action_display = f'Navigated to {url}'
+					nav_url = action_params.get('url', '')
+					action_display = f'Navigated to {nav_url}'
 				elif action_name == 'scroll':
 					direction = 'down' if action_params.get('down', True) else 'up'
 					action_display = f'Scrolled {direction}'
@@ -106,7 +109,6 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 				else:
 					action_display = f'Performed {action_name}'
 
-		# Build rich event
 		event = {
 			'type': 'step',
 			'step': step_n,
@@ -118,8 +120,8 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 				'display': action_display,
 			},
 			'context': {
-				'url': browser_state.url,
-				'title': browser_state.title or '',
+				'url': post_action_url,
+				'title': '',
 			},
 		}
 
@@ -134,6 +136,7 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 			llm=get_llm(),
 			browser_session=browser_session,
 			register_new_step_callback=register_new_step_callback,
+			register_step_finalized_callback=register_step_finalized_callback,
 		)
 		result = await agent.run(max_steps=50)
 		state.result = result.final_result()
@@ -225,6 +228,7 @@ async def stream_frames(websocket: WebSocket, run_id: str):
 			if frame:
 				current_time = time.time()
 				frame_count += 1
+				current_url = await state.browser_session.get_current_page_url()
 
 				await websocket.send_json(
 					{
@@ -233,6 +237,7 @@ async def stream_frames(websocket: WebSocket, run_id: str):
 						'timestamp': current_time,
 						'frame_number': frame_count,
 						'latency_ms': int((current_time - last_frame_time) * 1000),
+						'url': current_url,
 					}
 				)
 				last_frame_time = current_time

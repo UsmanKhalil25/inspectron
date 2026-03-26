@@ -153,6 +153,9 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			| Callable[['BrowserStateSummary', 'AgentOutput', int], Awaitable[None]]  # Async callback
 			| None
 		) = None,
+		register_step_finalized_callback: (
+			Callable[['AgentOutput', int, str], None] | Callable[['AgentOutput', int, str], Awaitable[None]] | None
+		) = None,
 		register_done_callback: (
 			Callable[['AgentHistoryList'], Awaitable[None]]  # Async Callback
 			| Callable[['AgentHistoryList'], None]  # Sync Callback
@@ -569,6 +572,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 
 		# Callbacks
 		self.register_new_step_callback = register_new_step_callback
+		self.register_step_finalized_callback = register_step_finalized_callback
 		self.register_done_callback = register_done_callback
 		self.register_should_stop_callback = register_should_stop_callback
 		self.register_external_agent_status_raise_error_callback = register_external_agent_status_raise_error_callback
@@ -1386,6 +1390,22 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				browser_state_summary,
 			)
 			self.eventbus.dispatch(step_event)
+
+		# Fire post-action finalized callback with the real current URL
+		if self.register_step_finalized_callback and self.state.last_model_output and self.browser_session:
+			post_action_url = await self.browser_session.get_current_page_url()
+			if inspect.iscoroutinefunction(self.register_step_finalized_callback):
+				await self.register_step_finalized_callback(
+					self.state.last_model_output,
+					self.state.n_steps,
+					post_action_url,
+				)
+			else:
+				self.register_step_finalized_callback(
+					self.state.last_model_output,
+					self.state.n_steps,
+					post_action_url,
+				)
 
 		# Increment step counter after step is fully completed
 		self.state.n_steps += 1

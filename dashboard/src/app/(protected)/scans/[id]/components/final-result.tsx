@@ -23,7 +23,9 @@ export function FinalResult({ result, type, timestamp }: FinalResultProps) {
           <span className="font-medium">Error</span>
           <span className="text-sm text-red-400/60">{formattedTime}</span>
         </div>
-        <div className="text-sm text-red-400/80 whitespace-pre-wrap leading-relaxed">{result}</div>
+        <div className="text-sm text-red-400/80 whitespace-pre-wrap leading-relaxed">
+          {result}
+        </div>
       </div>
     );
   }

@@ -88,6 +88,20 @@ export class ScansResolver {
     return await this.scansService.createScan(input, userId);
   }
 
+  @Mutation(() => Scan)
+  @UseGuards(JwtAuthGuard)
+  async startScan(
+    @Context() context: { req: { user: JwtPayload } },
+    @Args('id') id: string,
+  ) {
+    const userId = context.req.user.sub;
+    const scan = await this.scansService.startScan(id, userId);
+    await this.pubSub.publish(SCAN_STATUS_CHANGED, {
+      [SCAN_STATUS_CHANGED]: scan,
+    });
+    return scan;
+  }
+
   @Subscription(() => Scan, {
     filter: (
       payload: { scanStatusChanged: { id: string } },

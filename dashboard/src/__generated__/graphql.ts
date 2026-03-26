@@ -51,6 +51,7 @@ export type BrowserPreviewFrame = {
   latencyMs: Scalars["Int"]["output"];
   runId: Scalars["ID"]["output"];
   timestamp: Scalars["Float"]["output"];
+  url?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type CreateScanInput = {
@@ -74,6 +75,7 @@ export type Mutation = {
   createScan: Scan;
   login: LoginResponse;
   register: RegisterResponse;
+  startScan: Scan;
 };
 
 export type MutationCreateScanArgs = {
@@ -86,6 +88,10 @@ export type MutationLoginArgs = {
 
 export type MutationRegisterArgs = {
   input: RegisterUserInput;
+};
+
+export type MutationStartScanArgs = {
+  id: Scalars["String"]["input"];
 };
 
 export type PaginationInfo = {
@@ -305,6 +311,15 @@ export type RegisterMutation = {
   };
 };
 
+export type StartScanMutationVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type StartScanMutation = {
+  __typename?: "Mutation";
+  startScan: { __typename?: "Scan"; id: string; status: ScanStatus };
+};
+
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type CurrentUserQuery = {
@@ -412,6 +427,7 @@ export type BrowserPreviewStreamSubscription = {
     timestamp: number;
     frameNumber: number;
     latencyMs: number;
+    url?: string | null;
   };
 };
 
@@ -636,6 +652,55 @@ export const RegisterDocument = {
     },
   ],
 } as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
+export const StartScanDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "StartScan" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "startScan" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<StartScanMutation, StartScanMutationVariables>;
 export const CurrentUserDocument = {
   kind: "Document",
   definitions: [
@@ -1037,6 +1102,7 @@ export const BrowserPreviewStreamDocument = {
                 { kind: "Field", name: { kind: "Name", value: "timestamp" } },
                 { kind: "Field", name: { kind: "Name", value: "frameNumber" } },
                 { kind: "Field", name: { kind: "Name", value: "latencyMs" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
               ],
             },
           },

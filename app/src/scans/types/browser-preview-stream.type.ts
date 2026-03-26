@@ -16,4 +16,7 @@ export class BrowserPreviewFrame {
 
   @Field(() => Int)
   latencyMs: number;
+
+  @Field(() => String, { nullable: true })
+  url?: string;
 }

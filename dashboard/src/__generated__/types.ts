@@ -48,6 +48,7 @@ export type BrowserPreviewFrame = {
   latencyMs: Scalars["Int"]["output"];
   runId: Scalars["ID"]["output"];
   timestamp: Scalars["Float"]["output"];
+  url?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type CreateScanInput = {
@@ -71,6 +72,7 @@ export type Mutation = {
   createScan: Scan;
   login: LoginResponse;
   register: RegisterResponse;
+  startScan: Scan;
 };
 
 export type MutationCreateScanArgs = {
@@ -83,6 +85,10 @@ export type MutationLoginArgs = {
 
 export type MutationRegisterArgs = {
   input: RegisterUserInput;
+};
+
+export type MutationStartScanArgs = {
+  id: Scalars["String"]["input"];
 };
 
 export type PaginationInfo = {
@@ -302,6 +308,15 @@ export type RegisterMutation = {
   };
 };
 
+export type StartScanMutationVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type StartScanMutation = {
+  __typename?: "Mutation";
+  startScan: { __typename?: "Scan"; id: string; status: ScanStatus };
+};
+
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type CurrentUserQuery = {
@@ -409,6 +424,7 @@ export type BrowserPreviewStreamSubscription = {
     timestamp: number;
     frameNumber: number;
     latencyMs: number;
+    url?: string | null;
   };
 };
 

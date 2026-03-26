@@ -265,6 +265,33 @@ export class ScansService {
     return scan;
   }
 
+  async startScan(scanId: string, userId: string): Promise<Scan> {
+    const scan = await this.findById(scanId, userId);
+
+    if (scan.status !== ScanStatus.DRAFT) {
+      throw new BadRequestException(
+        `Only DRAFT scans can be started. Current status: "${scan.status}"`,
+      );
+    }
+
+    scan.status = ScanStatus.QUEUED;
+    await this.scansRepository.save(scan);
+
+    try {
+      await this.scansQueue.add('scan', {
+        scanId: scan.id,
+        url: scan.url,
+      });
+      this.logger.log(`Scan ${scan.id} added to queue`);
+    } catch (error) {
+      this.logger.error(`Failed to add scan ${scan.id} to queue:`, error);
+      scan.status = ScanStatus.FAILED;
+      await this.scansRepository.save(scan);
+    }
+
+    return scan;
+  }
+
   async getScansStats(userId: string): Promise<ScanStats> {
     if (!userId) {
       throw new BadRequestException('User id is required');

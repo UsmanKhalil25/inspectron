@@ -9,6 +9,7 @@ import type { GetScanQuery } from "@/__generated__/graphql";
 
 interface AgentActivityProps {
   scan: GetScanQuery["scan"];
+  fullWidth?: boolean;
 }
 
 interface ScanAction {
@@ -26,7 +27,7 @@ interface ScanAction {
   };
 }
 
-export function AgentActivity({ scan }: AgentActivityProps) {
+export function AgentActivity({ scan, fullWidth = false }: AgentActivityProps) {
   const isScanning = scan.status === "ACTIVE" || scan.status === "QUEUED";
 
   const { data: subscriptionData } = useSubscription(SCAN_EVENTS, {
@@ -75,7 +76,9 @@ export function AgentActivity({ scan }: AgentActivityProps) {
   ];
 
   return (
-    <div className="flex min-h-0 w-[360px] shrink-0 flex-col overflow-hidden xl:w-[420px]">
+    <div
+      className={`flex min-h-0 flex-col overflow-hidden ${fullWidth ? "flex-1 w-full" : "w-[360px] shrink-0 xl:w-[420px]"}`}
+    >
       <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/30 px-4">
         <span className="text-xs font-medium text-muted-foreground">
           Agent Activity

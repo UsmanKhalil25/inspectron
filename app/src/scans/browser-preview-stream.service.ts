@@ -15,6 +15,7 @@ export interface BrowserPreviewFrame {
   timestamp: number;
   frame_number: number;
   latency_ms: number;
+  url?: string;
 }
 
 export interface BrowserPreviewError {
@@ -84,6 +85,7 @@ export class BrowserPreviewStreamService
               timestamp: message.timestamp,
               frameNumber: message.frame_number,
               latencyMs: message.latency_ms,
+              url: message.url,
             },
           });
         } else if (message.type === 'error') {

@@ -115,6 +115,7 @@ type BrowserPreviewFrame {
   timestamp: Float!
   frameNumber: Int!
   latencyMs: Int!
+  url: String
 }
 
 type Query {
@@ -147,6 +148,7 @@ enum SortOrder {
 
 type Mutation {
   createScan(input: CreateScanInput!): Scan!
+  startScan(id: String!): Scan!
   login(input: LoginUserInput!): LoginResponse!
   register(input: RegisterUserInput!): RegisterResponse!
 }

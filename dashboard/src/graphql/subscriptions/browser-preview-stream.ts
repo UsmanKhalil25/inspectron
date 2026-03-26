@@ -8,6 +8,7 @@ export const BROWSER_PREVIEW_STREAM = gql(`
       timestamp
       frameNumber
       latencyMs
+      url
     }
   }
 `);

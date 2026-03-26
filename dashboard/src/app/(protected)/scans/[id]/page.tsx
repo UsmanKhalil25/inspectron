@@ -4,7 +4,6 @@ import { Suspense } from "react";
 
 import { ScanDetailImpl, ScanDetailSkeleton } from "./components/scan-detail";
 
-
 export const metadata: Metadata = {
   title: "Scan Details",
   description: "View scan progress and results",
