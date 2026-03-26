@@ -1,6 +1,7 @@
 "use client";
 
 import { useSuspenseQuery, useSubscription, useMutation } from "@apollo/client";
+import { useMemo } from "react";
 import { AlertTriangle, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,22 +69,19 @@ function DraftState({ scan }: { scan: NonNullable<GetScanQuery["scan"]> }) {
 }
 
 export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
+  const context = useMemo(
+    () => ({ headers: { cookie: cookieHeader } }),
+    [cookieHeader],
+  );
+
   const { data, error } = useSuspenseQuery(SCAN, {
     variables: { id: scanId },
-    context: {
-      headers: {
-        cookie: cookieHeader,
-      },
-    },
+    context,
   });
 
   useSubscription(SCAN_STATUS_CHANGED, {
     variables: { scanId },
-    context: {
-      headers: {
-        cookie: cookieHeader,
-      },
-    },
+    context,
   });
 
   if (error) {

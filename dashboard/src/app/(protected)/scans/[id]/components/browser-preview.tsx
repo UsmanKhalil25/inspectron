@@ -33,7 +33,7 @@ export function BrowserPreview({ scan }: BrowserPreviewProps) {
     if (data?.browserPreviewStream?.url) {
       setCurrentUrl(data.browserPreviewStream.url);
     }
-  }, [data?.browserPreviewStream]);
+  }, [data?.browserPreviewStream?.url]);
 
   const connectionStatus = loading
     ? "connecting"
