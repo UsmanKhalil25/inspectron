@@ -71,7 +71,7 @@ export class BrowserAgentService {
       'http://localhost:8000';
   }
 
-  async createRun(url: string, task: string): Promise<string> {
+  async createRun(url: string, skill: string): Promise<string> {
     this.logger.log(`Creating browser-agent run for URL: ${url}`);
 
     const response = await fetch(`${this.baseUrl}/runs`, {
@@ -79,7 +79,7 @@ export class BrowserAgentService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, task, max_steps: 100 }),
+      body: JSON.stringify({ url, skill, max_steps: 100 }),
     });
 
     if (!response.ok) {

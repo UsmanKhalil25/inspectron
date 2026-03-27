@@ -3,8 +3,10 @@
 import asyncio
 import json
 import os
+import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from uuid import uuid4
 
 from dotenv import load_dotenv
@@ -50,7 +52,7 @@ def get_llm():
 	if os.getenv('OPENAI_API_KEY'):
 		from browser_agent.llm.openai.chat import ChatOpenAI
 
-		return ChatOpenAI(model='gpt-4o')
+		return ChatOpenAI(model='gpt-5.1')
 	if os.getenv('ANTHROPIC_API_KEY'):
 		from browser_agent.llm.anthropic.chat import ChatAnthropic
 
@@ -63,7 +65,7 @@ def get_llm():
 # ---------------------------------------------------------------------------
 
 
-async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100) -> None:
+async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100, system_extension: str | None = None) -> None:
 	state = runs[run_id]
 	agent_ref: list = [None]
 
@@ -147,11 +149,12 @@ async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100) -> 
 		state.browser_session = browser_session
 
 		agent = Agent(
-			task=f'Navigate to {url}. {task}',
+			task=task,
 			llm=get_llm(),
 			browser_session=browser_session,
 			register_new_step_callback=register_new_step_callback,
 			register_step_finalized_callback=register_step_finalized_callback,
+			extend_system_message=system_extension,
 		)
 		agent_ref[0] = agent
 		result = await agent.run(max_steps=max_steps)
@@ -181,17 +184,43 @@ async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100) -> 
 # ---------------------------------------------------------------------------
 
 
+def load_skill(skill_name: str, url: str) -> str:
+	skills_dir = Path(__file__).parent / 'skills'
+	skill_path = (skills_dir / f'{skill_name}.md').resolve()
+	# Guard against path traversal
+	if not str(skill_path).startswith(str(skills_dir.resolve())):
+		raise ValueError(f'Invalid skill name: {skill_name}')
+	if not skill_path.exists():
+		raise FileNotFoundError(f'Skill not found: {skill_name}')
+	content = skill_path.read_text(encoding='utf-8')
+	# Strip YAML frontmatter block (--- ... ---)
+	content = re.sub(r'^---\n.*?\n---\n', '', content, flags=re.DOTALL)
+	return content.replace('{url}', url)
+
+
 class RunRequest(BaseModel):
 	url: str
-	task: str
+	task: str | None = None
+	skill: str | None = None
 	max_steps: int = 100
 
 
 @app.post('/runs', status_code=201)
 async def create_run(body: RunRequest):
+	system_extension: str | None = None
+	if body.skill is not None:
+		try:
+			system_extension = load_skill(body.skill, body.url)
+		except (FileNotFoundError, ValueError) as exc:
+			raise HTTPException(status_code=404, detail=str(exc)) from exc
+		task = f'Perform a security scan of {body.url}.'
+	elif body.task is not None:
+		task = body.task
+	else:
+		raise HTTPException(status_code=422, detail='Either task or skill must be provided')
 	run_id = str(uuid4())
 	runs[run_id] = RunState(status='running')
-	asyncio.create_task(_run_agent(run_id, body.url, body.task, body.max_steps))
+	asyncio.create_task(_run_agent(run_id, body.url, task, body.max_steps, system_extension))
 	return {'run_id': run_id}
 
 

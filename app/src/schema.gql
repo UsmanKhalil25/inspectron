@@ -91,7 +91,7 @@ enum VulnerabilityCategory {
   CSRF
   INFORMATION_DISCLOSURE
   XSS
-  OPEN_REDIRECT
+  SQL_INJECTION
 }
 
 type Scan {

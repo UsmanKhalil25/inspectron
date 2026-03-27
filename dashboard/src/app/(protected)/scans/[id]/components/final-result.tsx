@@ -239,7 +239,6 @@ export function FinalResult({
         }`}
       >
         <div className="overflow-hidden pl-6">
-          {/* Raw agent message */}
           <p
             className={`text-sm leading-relaxed whitespace-pre-wrap ${
               type === "error" ? "text-red-400/80" : "text-foreground/70"
