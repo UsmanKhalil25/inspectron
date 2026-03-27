@@ -10,6 +10,7 @@ import {
 
 import { User } from 'src/users/user.entity';
 import { ScanStatus } from './enums/scan-status.enum';
+import { ScanType } from './enums/scan-type.enum';
 import { ScanAction } from './interfaces/scan-action.interface';
 import { Vulnerability } from './vulnerability.entity';
 
@@ -27,6 +28,13 @@ export class Scan {
     default: ScanStatus.DRAFT,
   })
   status: ScanStatus;
+
+  @Column({
+    type: 'enum',
+    enum: ScanType,
+    default: ScanType.STATIC,
+  })
+  scanType: ScanType;
 
   @Column({ type: 'text', nullable: true })
   threadId?: string;

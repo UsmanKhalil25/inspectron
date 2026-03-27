@@ -2,6 +2,7 @@ import { Field, ObjectType, ID } from '@nestjs/graphql';
 
 import { PublicUser } from 'src/users/types/public-user.type';
 import { ScanStatus } from '../enums/scan-status.enum';
+import { ScanType } from '../enums/scan-type.enum';
 import { ScanAction } from './scan-action.type';
 import { Vulnerability } from './vulnerability.type';
 
@@ -15,6 +16,9 @@ export class Scan {
 
   @Field(() => ScanStatus)
   status: ScanStatus;
+
+  @Field(() => ScanType)
+  scanType: ScanType;
 
   @Field(() => String, { nullable: true })
   runId?: string;

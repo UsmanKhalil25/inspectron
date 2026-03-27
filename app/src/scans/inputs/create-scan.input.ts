@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 
 import { ScanStatus } from '../enums/scan-status.enum';
+import { ScanType } from '../enums/scan-type.enum';
 
 @InputType()
 export class CreateScanInput {
@@ -21,4 +22,9 @@ export class CreateScanInput {
   @IsOptional()
   @IsEnum(ScanStatus)
   status?: ScanStatus;
+
+  @Field(() => ScanType, { nullable: true })
+  @IsOptional()
+  @IsEnum(ScanType)
+  scanType?: ScanType;
 }

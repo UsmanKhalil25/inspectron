@@ -6,6 +6,7 @@ export const SCAN = gql(`
       id
       url
       status
+      scanType
       runId
       result
       actions {

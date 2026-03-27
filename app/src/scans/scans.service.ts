@@ -27,6 +27,7 @@ import { ScanStats } from './types/scan-stats.type';
 import { isValidDateString } from 'src/commom/utils/date.utils';
 import { ScanSortBy } from './enums/scan-sort-by.enum';
 import { ScanStatus } from './enums/scan-status.enum';
+import { ScanType } from './enums/scan-type.enum';
 import { SortOrder } from 'src/commom/enums/sort-order.enum';
 
 const CREATABLE_SCAN_STATUSES = [ScanStatus.DRAFT, ScanStatus.QUEUED];
@@ -214,6 +215,7 @@ export class ScansService {
           const newScan = manager.create(Scan, {
             url: input.url.trim(),
             status: input.status ?? ScanStatus.DRAFT,
+            scanType: input.scanType ?? ScanType.STATIC,
             user,
           });
 

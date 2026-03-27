@@ -6,6 +6,7 @@ export const SCAN_STATUS_CHANGED = gql(`
       id
       url
       status
+      scanType
       result
       actions {
         step

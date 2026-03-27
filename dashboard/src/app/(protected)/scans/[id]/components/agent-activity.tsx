@@ -10,6 +10,8 @@ import {
   Send,
   HelpCircle,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SCAN_EVENTS } from "@/graphql/subscriptions/scan-events";
 import { SEND_AGENT_MESSAGE } from "@/graphql/mutations/send-agent-message";
@@ -438,8 +440,8 @@ function ThinkingSection({ thinking }: { thinking: string }) {
             : "grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div className="overflow-hidden text-gray-600 leading-relaxed">
-          {thinking}
+        <div className="overflow-hidden text-gray-600 leading-relaxed prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{thinking}</ReactMarkdown>
         </div>
       </div>
     </div>

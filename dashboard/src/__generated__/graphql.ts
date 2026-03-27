@@ -55,6 +55,7 @@ export type BrowserPreviewFrame = {
 };
 
 export type CreateScanInput = {
+  scanType?: InputMaybe<ScanType>;
   status?: InputMaybe<ScanStatus>;
   url: Scalars["String"]["input"];
 };
@@ -162,6 +163,7 @@ export type Scan = {
   id: Scalars["ID"]["output"];
   result?: Maybe<Scalars["String"]["output"]>;
   runId?: Maybe<Scalars["String"]["output"]>;
+  scanType: ScanType;
   status: ScanStatus;
   updatedAt: Scalars["DateTime"]["output"];
   url: Scalars["String"]["output"];
@@ -226,6 +228,11 @@ export type ScanStatusStats = {
   queued: Scalars["Int"]["output"];
 };
 
+export enum ScanType {
+  Dynamic = "DYNAMIC",
+  Static = "STATIC",
+}
+
 export type ScansResponse = {
   __typename?: "ScansResponse";
   pagination: PaginationInfo;
@@ -289,8 +296,10 @@ export enum VulnerabilityCategory {
   Cookies = "COOKIES",
   Csrf = "CSRF",
   InformationDisclosure = "INFORMATION_DISCLOSURE",
+  OpenRedirect = "OPEN_REDIRECT",
   SecurityHeaders = "SECURITY_HEADERS",
   SensitiveFiles = "SENSITIVE_FILES",
+  Xss = "XSS",
 }
 
 export enum VulnerabilitySeverity {
@@ -412,6 +421,7 @@ export type GetScanQuery = {
     id: string;
     url: string;
     status: ScanStatus;
+    scanType: ScanType;
     runId?: string | null;
     result?: string | null;
     createdAt: any;
@@ -530,6 +540,7 @@ export type ScanStatusChangedSubscription = {
     id: string;
     url: string;
     status: ScanStatus;
+    scanType: ScanType;
     result?: string | null;
     createdAt: any;
     updatedAt: any;
@@ -954,6 +965,7 @@ export const GetScanDocument = {
                 { kind: "Field", name: { kind: "Name", value: "id" } },
                 { kind: "Field", name: { kind: "Name", value: "url" } },
                 { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "scanType" } },
                 { kind: "Field", name: { kind: "Name", value: "runId" } },
                 { kind: "Field", name: { kind: "Name", value: "result" } },
                 {
@@ -1439,6 +1451,7 @@ export const ScanStatusChangedDocument = {
                 { kind: "Field", name: { kind: "Name", value: "id" } },
                 { kind: "Field", name: { kind: "Name", value: "url" } },
                 { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "scanType" } },
                 { kind: "Field", name: { kind: "Name", value: "result" } },
                 {
                   kind: "Field",

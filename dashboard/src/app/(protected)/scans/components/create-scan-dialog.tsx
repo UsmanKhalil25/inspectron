@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Shield, Zap } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -44,16 +44,37 @@ import { SCANS_SEARCH_PARAMS, DEFAULT_SCANS_PAGE_SIZE } from "../constants";
 
 import { SCANS } from "@/graphql/queries/scans";
 import { CREATE_SCAN } from "@/graphql/mutations/create-scan";
-import type { Scan, CreateScanInput } from "@/__generated__/graphql";
-import { ScanStatus } from "@/__generated__/graphql";
-import { createScanSchema } from "../schemas/create-scan.schema";
+import type { Scan } from "@/__generated__/graphql";
+import { ScanStatus, ScanType } from "@/__generated__/graphql";
+import {
+  createScanSchema,
+  type CreateScanFormData,
+} from "../schemas/create-scan.schema";
 
 const CREATABLE_SCAN_STATUSES: ScanStatus[] = [
   ScanStatus.Queued,
   ScanStatus.Draft,
 ];
 
-type ScanFormData = CreateScanInput;
+const SCAN_TYPE_CONFIG: Record<
+  ScanType,
+  { label: string; description: string; icon: React.ElementType; color: string }
+> = {
+  [ScanType.Static]: {
+    label: "Static",
+    description: "Headers, cookies, sensitive files, CSRF",
+    icon: Shield,
+    color: "text-blue-400",
+  },
+  [ScanType.Dynamic]: {
+    label: "Dynamic",
+    description: "Reflected XSS, open redirects",
+    icon: Zap,
+    color: "text-orange-400",
+  },
+};
+
+type ScanFormData = CreateScanFormData;
 
 interface ScanFormProps {
   onSuccess: () => void;
@@ -73,13 +94,13 @@ function ScanForm({ onSuccess }: ScanFormProps) {
     defaultValues: {
       url: "",
       status: undefined,
+      scanType: ScanType.Static,
     },
   });
 
-  const [createScan, { loading }] = useMutation<
-    Scan,
-    { input: CreateScanInput }
-  >(CREATE_SCAN);
+  const [createScan, { loading }] = useMutation<Scan, { input: ScanFormData }>(
+    CREATE_SCAN,
+  );
 
   const handleSubmit = (data: ScanFormData) => {
     createScan({
@@ -111,6 +132,52 @@ function ScanForm({ onSuccess }: ScanFormProps) {
               <FormLabel>URL</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="https://example.com" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="scanType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Scan Type</FormLabel>
+              <FormControl>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.values(ScanType) as ScanType[]).map((type) => {
+                    const config = SCAN_TYPE_CONFIG[type];
+                    const Icon = config.icon;
+                    const isSelected = field.value === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => field.onChange(type)}
+                        className={`flex items-start gap-2.5 rounded-lg border p-3 text-left transition-colors ${
+                          isSelected
+                            ? "border-primary/50 bg-primary/5"
+                            : "border-border bg-muted/20 hover:bg-muted/40"
+                        }`}
+                      >
+                        <Icon
+                          className={`mt-0.5 h-4 w-4 shrink-0 ${isSelected ? config.color : "text-muted-foreground/50"}`}
+                        />
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span
+                            className={`text-sm font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}
+                          >
+                            {config.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground/60 leading-tight">
+                            {config.description}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

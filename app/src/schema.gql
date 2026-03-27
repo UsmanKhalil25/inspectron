@@ -90,12 +90,15 @@ enum VulnerabilityCategory {
   COOKIES
   CSRF
   INFORMATION_DISCLOSURE
+  XSS
+  OPEN_REDIRECT
 }
 
 type Scan {
   id: ID!
   url: String!
   status: ScanStatus!
+  scanType: ScanType!
   runId: String
   result: String
   actions: [ScanAction!]
@@ -111,6 +114,11 @@ enum ScanStatus {
   ACTIVE
   COMPLETED
   FAILED
+}
+
+enum ScanType {
+  STATIC
+  DYNAMIC
 }
 
 type ScansResponse {
@@ -188,6 +196,7 @@ type Mutation {
 input CreateScanInput {
   url: String!
   status: ScanStatus
+  scanType: ScanType
 }
 
 input SendMessageInput {
