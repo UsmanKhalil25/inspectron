@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 
 import { User } from 'src/users/user.entity';
 import { ScanStatus } from './enums/scan-status.enum';
 import { ScanAction } from './interfaces/scan-action.interface';
+import { Vulnerability } from './vulnerability.entity';
 
 @Entity()
 export class Scan {
@@ -37,6 +39,11 @@ export class Scan {
 
   @Column({ type: 'simple-json', nullable: true, default: '[]' })
   actions?: ScanAction[];
+
+  @OneToMany(() => Vulnerability, (vulnerability) => vulnerability.scan, {
+    cascade: true,
+  })
+  vulnerabilities: Vulnerability[];
 
   @ManyToOne(() => User, (user) => user.scans)
   user: User;

@@ -63,6 +63,35 @@ type ScanAction {
   context: ActionContext!
 }
 
+type Vulnerability {
+  id: ID!
+  findingId: String!
+  title: String!
+  severity: VulnerabilitySeverity!
+  category: VulnerabilityCategory!
+  url: String!
+  description: String!
+  evidence: String!
+  remediation: String!
+  scanId: String!
+}
+
+enum VulnerabilitySeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum VulnerabilityCategory {
+  SECURITY_HEADERS
+  SENSITIVE_FILES
+  COOKIES
+  CSRF
+  INFORMATION_DISCLOSURE
+}
+
 type Scan {
   id: ID!
   url: String!
@@ -70,6 +99,7 @@ type Scan {
   runId: String
   result: String
   actions: [ScanAction!]
+  vulnerabilities: [Vulnerability!]
   user: PublicUser!
   createdAt: DateTime!
   updatedAt: DateTime!

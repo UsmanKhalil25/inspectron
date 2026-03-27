@@ -20,6 +20,17 @@ export const SCAN_STATUS_CHANGED = gql(`
           title
         }
       }
+      vulnerabilities {
+        id
+        findingId
+        title
+        severity
+        category
+        url
+        description
+        evidence
+        remediation
+      }
       createdAt
       updatedAt
     }

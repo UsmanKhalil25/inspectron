@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SCAN_EVENTS } from "@/graphql/subscriptions/scan-events";
 import { SEND_AGENT_MESSAGE } from "@/graphql/mutations/send-agent-message";
-import { FinalResult } from "./final-result";
+import { FinalResult, type VulnerabilityItem } from "./final-result";
 import type { GetScanQuery } from "@/__generated__/graphql";
 
 interface AgentActivityProps {
@@ -264,7 +264,15 @@ export function AgentActivity({ scan, fullWidth = false }: AgentActivityProps) {
             )}
 
             {events.map((event, index) => (
-              <EventItem key={index} event={event} />
+              <EventItem
+                key={index}
+                event={event}
+                vulnerabilities={
+                  isTerminal && event.type === "completed"
+                    ? (scan.vulnerabilities as VulnerabilityItem[] | null)
+                    : null
+                }
+              />
             ))}
 
             {isScanning && events.length > 0 && (
@@ -312,7 +320,13 @@ export function AgentActivity({ scan, fullWidth = false }: AgentActivityProps) {
   );
 }
 
-function EventItem({ event }: { event: StreamedEvent }) {
+function EventItem({
+  event,
+  vulnerabilities,
+}: {
+  event: StreamedEvent;
+  vulnerabilities?: VulnerabilityItem[] | null;
+}) {
   if (event.type === "step") {
     const action = event.data;
     return (
@@ -361,6 +375,7 @@ function EventItem({ event }: { event: StreamedEvent }) {
         result={event.result}
         type="completed"
         timestamp={event.timestamp}
+        vulnerabilities={vulnerabilities}
       />
     );
   }

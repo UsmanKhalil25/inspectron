@@ -37,6 +37,7 @@ from browser_agent.observability import observe_debug
 from browser_agent.tools.registry.service import Registry
 from browser_agent.tools.utils import get_click_description
 from browser_agent.tools.views import (
+	CheckSensitiveEndpointAction,
 	ClickElementAction,
 	ClickElementActionIndexOnly,
 	CloseTabAction,
@@ -44,6 +45,7 @@ from browser_agent.tools.views import (
 	ExtractAction,
 	FindElementsAction,
 	GetDropdownOptionsAction,
+	GetResponseHeadersAction,
 	InputTextAction,
 	NavigateAction,
 	NoParamsAction,
@@ -1797,6 +1799,75 @@ Validated Code (after quote fixing):
 				error_msg = f'Failed to execute JavaScript: {type(e).__name__}: {e}'
 				logger.debug(f'JavaScript code that failed: {code[:200]}...')
 				return ActionResult(error=error_msg)
+
+		@self.registry.action(
+			'Fetch the HTTP response headers for the current page URL. Returns a JSON object mapping header names to values. '
+			'Use this to check for missing or misconfigured security headers such as Content-Security-Policy, '
+			'Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy. '
+			'Also flag information-disclosure headers like Server and X-Powered-By if present.',
+			param_model=GetResponseHeadersAction,
+		)
+		async def get_response_headers(params: GetResponseHeadersAction, browser_session: BrowserSession):
+			script = """(async () => {
+	try {
+		const r = await fetch(window.location.href, {method: 'HEAD'});
+		const h = {};
+		r.headers.forEach((v, k) => { h[k] = v; });
+		return JSON.stringify(h);
+	} catch(e) {
+		return JSON.stringify({_error: e.message});
+	}
+})()"""
+			try:
+				cdp_session = await browser_session.get_or_create_cdp_session()
+				result = await cdp_session.cdp_client.send.Runtime.evaluate(
+					params={'expression': script, 'returnByValue': True, 'awaitPromise': True},
+					session_id=cdp_session.session_id,
+				)
+				if result.get('exceptionDetails'):
+					error_text = result['exceptionDetails'].get('text', 'Unknown error')
+					return ActionResult(error=f'Failed to fetch response headers: {error_text}')
+				value = result.get('result', {}).get('value', '{}')
+				return ActionResult(
+					extracted_content=f'HTTP response headers (JSON): {value}',
+					long_term_memory=f'HTTP response headers: {value}',
+				)
+			except Exception as e:
+				return ActionResult(error=f'Failed to get response headers: {type(e).__name__}: {e}')
+
+		@self.registry.action(
+			'Probe a path relative to the current origin and return its HTTP status code, without navigating away from the current page. '
+			'Use this to check for exposed sensitive files such as /.git/HEAD, /.env, /phpinfo.php, /backup.sql, /wp-config.php, etc. '
+			'Returns JSON with "status" (HTTP status code) and "accessible" (true if status < 400).',
+			param_model=CheckSensitiveEndpointAction,
+		)
+		async def check_sensitive_endpoint(params: CheckSensitiveEndpointAction, browser_session: BrowserSession):
+			safe_path = json.dumps(params.path)
+			script = f"""(async () => {{
+	try {{
+		const url = new URL({safe_path}, window.location.origin);
+		const r = await fetch(url.toString(), {{method: 'HEAD', redirect: 'manual'}});
+		return JSON.stringify({{status: r.status, accessible: r.status < 400}});
+	}} catch(e) {{
+		return JSON.stringify({{status: 0, accessible: false, error: e.message}});
+	}}
+}})()"""
+			try:
+				cdp_session = await browser_session.get_or_create_cdp_session()
+				result = await cdp_session.cdp_client.send.Runtime.evaluate(
+					params={'expression': script, 'returnByValue': True, 'awaitPromise': True},
+					session_id=cdp_session.session_id,
+				)
+				if result.get('exceptionDetails'):
+					error_text = result['exceptionDetails'].get('text', 'Unknown error')
+					return ActionResult(error=f'Failed to probe endpoint: {error_text}')
+				value = result.get('result', {}).get('value', '{}')
+				return ActionResult(
+					extracted_content=f'Endpoint check for {params.path}: {value}',
+					long_term_memory=f'Sensitive endpoint {params.path}: {value}',
+				)
+			except Exception as e:
+				return ActionResult(error=f'Failed to check sensitive endpoint: {type(e).__name__}: {e}')
 
 	def _validate_and_fix_javascript(self, code: str) -> str:
 		"""Validate and fix common JavaScript issues before execution"""

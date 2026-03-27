@@ -21,6 +21,17 @@ export const SCAN = gql(`
           title
         }
       }
+      vulnerabilities {
+        id
+        findingId
+        title
+        severity
+        category
+        url
+        description
+        evidence
+        remediation
+      }
       createdAt
       updatedAt
     }

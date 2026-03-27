@@ -3,6 +3,7 @@ import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { PublicUser } from 'src/users/types/public-user.type';
 import { ScanStatus } from '../enums/scan-status.enum';
 import { ScanAction } from './scan-action.type';
+import { Vulnerability } from './vulnerability.type';
 
 @ObjectType()
 export class Scan {
@@ -23,6 +24,9 @@ export class Scan {
 
   @Field(() => [ScanAction], { nullable: true })
   actions?: ScanAction[];
+
+  @Field(() => [Vulnerability], { nullable: true })
+  vulnerabilities?: Vulnerability[];
 
   @Field(() => PublicUser)
   user: PublicUser;

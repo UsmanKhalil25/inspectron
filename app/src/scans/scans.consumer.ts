@@ -5,10 +5,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import { Scan } from './scans.entity';
+import { Vulnerability } from './vulnerability.entity';
 import { ScanAction } from './interfaces/scan-action.interface';
 import { ScanStatus } from './enums/scan-status.enum';
 import { BrowserAgentService } from './browser-agent.service';
 import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
+import { VulnerabilityReportSchema } from './schemas/vulnerability-report.schema';
 
 export interface ScanJobData {
   scanId: string;
@@ -22,6 +24,8 @@ export class ScanConsumer extends WorkerHost {
   constructor(
     @InjectRepository(Scan)
     private readonly scansRepository: Repository<Scan>,
+    @InjectRepository(Vulnerability)
+    private readonly vulnerabilityRepository: Repository<Vulnerability>,
     @Inject(PUB_SUB)
     private readonly pubSub: PubSub,
     private readonly browserAgentService: BrowserAgentService,
@@ -60,10 +64,34 @@ export class ScanConsumer extends WorkerHost {
 
       this.logger.log(`Starting scan for URL: ${url}`);
 
-      const runId = await this.browserAgentService.createRun(
-        url,
-        'Crawl the website. Visit up to 2 pages starting from the homepage. Follow only internal links. Stop after 5 pages.',
-      );
+      const task = `You are performing a static web application security scan on ${url}.
+
+PHASE 1 — DISCOVERY:
+Visit up to 5 internal pages starting from the homepage. For each page visited, record:
+- The full URL
+- All HTML forms: their action URL, HTTP method, and input field names
+- Any URL parameters present
+
+PHASE 2 — STATIC SECURITY CHECKS:
+1. Call get_response_headers() on the homepage.
+   - Flag as findings if MISSING: Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+   - Flag as findings if PRESENT: Server, X-Powered-By (information disclosure)
+
+2. Call check_sensitive_endpoint() for each of these paths:
+   /.git/HEAD, /.env, /.env.local, /robots.txt, /.htaccess, /phpinfo.php, /admin, /backup.sql, /wp-config.php, /.DS_Store
+
+3. Call evaluate() with script "document.cookie" on each page that has a session. Any visible cookie value means HttpOnly flag is NOT set.
+
+4. For all forms found in Phase 1:
+   - Call evaluate() to check if each form has a hidden input with a name containing "csrf", "token", or "_token"
+   - Call evaluate() to check if password inputs have autocomplete="off" or autocomplete="new-password"
+
+Do NOT call done until both phases are fully complete.
+
+Return ONLY a JSON vulnerability report with this exact format (no other text):
+{"summary":{"critical":0,"high":0,"medium":0,"low":0,"info":0},"findings":[{"id":"VULN-001","title":"...","severity":"critical|high|medium|low|info","category":"security-headers|sensitive-files|cookies|csrf|information-disclosure","url":"...","description":"...","evidence":"...","remediation":"..."}],"scanned_urls":["..."],"scan_timestamp":"..."}`;
+
+      const runId = await this.browserAgentService.createRun(url, task);
 
       scan.runId = runId;
       scan.actions = [];
@@ -93,8 +121,19 @@ export class ScanConsumer extends WorkerHost {
       scan.status = ScanStatus.COMPLETED;
       scan.result = result ?? undefined;
       await this.scansRepository.save(scan);
+
+      if (result) {
+        await this.saveVulnerabilities(scan, result);
+      }
+
+      // Reload with vulnerabilities so the subscription payload includes them
+      const completedScan = await this.scansRepository.findOne({
+        where: { id: scan.id },
+        relations: ['vulnerabilities'],
+      });
+
       await this.pubSub.publish(SCAN_STATUS_CHANGED, {
-        [SCAN_STATUS_CHANGED]: scan,
+        [SCAN_STATUS_CHANGED]: completedScan ?? scan,
       });
       this.logger.log(`Scan ${scanId} completed successfully`);
     } catch (error) {
@@ -113,6 +152,36 @@ export class ScanConsumer extends WorkerHost {
       }
 
       throw error;
+    }
+  }
+
+  private async saveVulnerabilities(scan: Scan, result: string): Promise<void> {
+    try {
+      const report = VulnerabilityReportSchema.parse(result);
+
+      const vulnerabilities = report.findings.map((finding) =>
+        this.vulnerabilityRepository.create({
+          findingId: finding.id,
+          title: finding.title,
+          severity: finding.severity,
+          category: finding.category,
+          url: finding.url,
+          description: finding.description,
+          evidence: finding.evidence,
+          remediation: finding.remediation,
+          scanId: scan.id,
+        }),
+      );
+
+      await this.vulnerabilityRepository.save(vulnerabilities);
+      this.logger.log(
+        `Saved ${vulnerabilities.length} vulnerabilities for scan ${scan.id}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to parse/save vulnerabilities for scan ${scan.id}:`,
+        error,
+      );
     }
   }
 }

@@ -79,7 +79,7 @@ export class BrowserAgentService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, task }),
+      body: JSON.stringify({ url, task, max_steps: 100 }),
     });
 
     if (!response.ok) {

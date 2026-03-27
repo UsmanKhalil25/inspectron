@@ -166,6 +166,7 @@ export type Scan = {
   updatedAt: Scalars["DateTime"]["output"];
   url: Scalars["String"]["output"];
   user: PublicUser;
+  vulnerabilities?: Maybe<Array<Vulnerability>>;
 };
 
 export type ScanAction = {
@@ -269,6 +270,36 @@ export type User = {
   name: Scalars["String"]["output"];
   updatedAt: Scalars["DateTime"]["output"];
 };
+
+export type Vulnerability = {
+  __typename?: "Vulnerability";
+  category: VulnerabilityCategory;
+  description: Scalars["String"]["output"];
+  evidence: Scalars["String"]["output"];
+  findingId: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  remediation: Scalars["String"]["output"];
+  scanId: Scalars["String"]["output"];
+  severity: VulnerabilitySeverity;
+  title: Scalars["String"]["output"];
+  url: Scalars["String"]["output"];
+};
+
+export enum VulnerabilityCategory {
+  Cookies = "COOKIES",
+  Csrf = "CSRF",
+  InformationDisclosure = "INFORMATION_DISCLOSURE",
+  SecurityHeaders = "SECURITY_HEADERS",
+  SensitiveFiles = "SENSITIVE_FILES",
+}
+
+export enum VulnerabilitySeverity {
+  Critical = "CRITICAL",
+  High = "HIGH",
+  Info = "INFO",
+  Low = "LOW",
+  Medium = "MEDIUM",
+}
 
 export type CreateScanMutationVariables = Exact<{
   input: CreateScanInput;
@@ -393,6 +424,18 @@ export type GetScanQuery = {
       action: { __typename?: "ActionDetail"; name: string; display: string };
       context: { __typename?: "ActionContext"; url: string; title: string };
     }> | null;
+    vulnerabilities?: Array<{
+      __typename?: "Vulnerability";
+      id: string;
+      findingId: string;
+      title: string;
+      severity: VulnerabilitySeverity;
+      category: VulnerabilityCategory;
+      url: string;
+      description: string;
+      evidence: string;
+      remediation: string;
+    }> | null;
   };
 };
 
@@ -497,6 +540,18 @@ export type ScanStatusChangedSubscription = {
       thinking?: string | null;
       action: { __typename?: "ActionDetail"; name: string; display: string };
       context: { __typename?: "ActionContext"; url: string; title: string };
+    }> | null;
+    vulnerabilities?: Array<{
+      __typename?: "Vulnerability";
+      id: string;
+      findingId: string;
+      title: string;
+      severity: VulnerabilitySeverity;
+      category: VulnerabilityCategory;
+      url: string;
+      description: string;
+      evidence: string;
+      remediation: string;
     }> | null;
   };
 };
@@ -953,6 +1008,42 @@ export const GetScanDocument = {
                     ],
                   },
                 },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "vulnerabilities" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "findingId" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "title" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "severity" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "category" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "evidence" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "remediation" },
+                      },
+                    ],
+                  },
+                },
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
               ],
@@ -1397,6 +1488,42 @@ export const ScanStatusChangedDocument = {
                             },
                           ],
                         },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "vulnerabilities" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "findingId" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "title" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "severity" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "category" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "evidence" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "remediation" },
                       },
                     ],
                   },

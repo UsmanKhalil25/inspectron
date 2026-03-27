@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { User } from 'src/users/user.entity';
 import { Scan } from './scans.entity';
+import { Vulnerability } from './vulnerability.entity';
 import { ScansService } from './scans.service';
 import { ScansResolver } from './scans.resolver';
 import { ScanConsumer } from './scans.consumer';
@@ -14,7 +15,7 @@ import { PUB_SUB, createPubSub } from './scans.constants';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Scan, User]),
+    TypeOrmModule.forFeature([Scan, User, Vulnerability]),
     BullModule.registerQueue({
       name: 'scans',
     }),

@@ -66,7 +66,7 @@ export class ScansService {
           id: scanId,
           user: { id: userId },
         },
-        relations: ['user'],
+        relations: ['user', 'vulnerabilities'],
       });
 
       if (!scan) {

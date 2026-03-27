@@ -63,20 +63,15 @@ def get_llm():
 # ---------------------------------------------------------------------------
 
 
-LOGIN_KEYWORDS = {'login', 'log in', 'sign in', 'signin', 'password', 'username', 'authenticate', 'credentials'}
-
-
-async def _run_agent(run_id: str, url: str, task: str) -> None:
+async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100) -> None:
 	state = runs[run_id]
 	agent_ref: list = [None]
-	asked_for_login = False
 
 	async def register_new_step_callback(
 		browser_state: BrowserStateSummary,
 		agent_output: AgentOutput,
 		step_n: int,
 	) -> None:
-		nonlocal asked_for_login
 		state.screenshot_b64 = browser_state.screenshot
 
 		# Drain pending user messages and inject into agent
@@ -91,19 +86,6 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 					'timestamp': time.time(),
 				}
 			)
-
-		# Heuristic: detect login/auth blocker and ask user once
-		if not asked_for_login and agent_output.thinking:
-			thinking_lower = agent_output.thinking.lower()
-			if any(kw in thinking_lower for kw in LOGIN_KEYWORDS):
-				asked_for_login = True
-				await state.events.put(
-					{
-						'type': 'question',
-						'question': 'The agent encountered a login page. Please provide credentials or instructions.',
-						'timestamp': time.time(),
-					}
-				)
 
 	async def register_step_finalized_callback(
 		agent_output: AgentOutput,
@@ -172,7 +154,7 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 			register_step_finalized_callback=register_step_finalized_callback,
 		)
 		agent_ref[0] = agent
-		result = await agent.run(max_steps=50)
+		result = await agent.run(max_steps=max_steps)
 		state.result = result.final_result()
 		state.status = 'done'
 		await state.events.put(
@@ -202,13 +184,14 @@ async def _run_agent(run_id: str, url: str, task: str) -> None:
 class RunRequest(BaseModel):
 	url: str
 	task: str
+	max_steps: int = 100
 
 
 @app.post('/runs', status_code=201)
 async def create_run(body: RunRequest):
 	run_id = str(uuid4())
 	runs[run_id] = RunState(status='running')
-	asyncio.create_task(_run_agent(run_id, body.url, body.task))
+	asyncio.create_task(_run_agent(run_id, body.url, body.task, body.max_steps))
 	return {'run_id': run_id}
 
 

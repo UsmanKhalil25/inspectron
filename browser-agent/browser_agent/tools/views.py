@@ -179,3 +179,11 @@ class GetDropdownOptionsAction(BaseModel):
 class SelectDropdownOptionAction(BaseModel):
 	index: int
 	text: str = Field(description='exact text/value')
+
+
+class GetResponseHeadersAction(NoParamsAction):
+	pass
+
+
+class CheckSensitiveEndpointAction(BaseModel):
+	path: str = Field(description='Path relative to current origin to probe, e.g. "/.git/HEAD" or "/.env"')
