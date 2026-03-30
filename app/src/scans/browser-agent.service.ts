@@ -79,7 +79,12 @@ export class BrowserAgentService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, skill, max_steps: 100 }),
+      body: JSON.stringify({
+        assistant_id: 'agent',
+        url,
+        skill,
+        max_steps: 100,
+      }),
     });
 
     if (!response.ok) {
