@@ -9,6 +9,11 @@ export const SCAN = gql(`
       scanType
       runId
       result
+      project {
+        id
+        name
+        url
+      }
       actions {
         step
         timestamp

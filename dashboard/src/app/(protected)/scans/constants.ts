@@ -20,6 +20,7 @@ export const SCANS_SEARCH_PARAMS = [
   { key: "status", map: SCANS_STATUS_MAP, skipValue: "all" },
   { key: "sortBy", map: SCANS_SORT_BY },
   { key: "sortOrder", map: SORT_ORDER_MAP },
+  { key: "projectId" },
 ] as const;
 
 export const VALID_SCANS_STATUSES = Object.keys(SCANS_STATUS_MAP);

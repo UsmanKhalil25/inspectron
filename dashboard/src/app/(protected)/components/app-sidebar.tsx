@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ScanSearch, BarChart3, Settings } from "lucide-react";
+import {
+  Home,
+  ScanSearch,
+  FolderKanban,
+  BarChart3,
+  Settings,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -29,6 +35,11 @@ const NAV_ITEMS = [
     isActive: true,
   },
   {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderKanban,
+  },
+  {
     title: "Scans",
     url: "/scans",
     icon: ScanSearch,
@@ -49,8 +60,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const currentPath = usePathname();
 
   const isActive = (url: string) => {
-    const path = url;
-    return currentPath === path;
+    return currentPath === url || currentPath.startsWith(url + "/");
   };
 
   return (

@@ -1,11 +1,12 @@
 "use client";
 
 import { Plus, Shield, Zap } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@apollo/client";
+import { useMutation, useSuspenseQuery } from "@apollo/client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 
 import {
@@ -40,9 +41,8 @@ import { SCAN_STATUS_COLORS } from "@/common/constants/scan-status-colors.consta
 
 import { useMapFilters } from "@/hooks/use-map-filters";
 
-import { SCANS_SEARCH_PARAMS, DEFAULT_SCANS_PAGE_SIZE } from "../constants";
-
 import { SCANS } from "@/graphql/queries/scans";
+import { PROJECTS } from "@/graphql/queries/projects";
 import { CREATE_SCAN } from "@/graphql/mutations/create-scan";
 import type { Scan } from "@/__generated__/graphql";
 import { ScanStatus, ScanType } from "@/__generated__/graphql";
@@ -74,7 +74,7 @@ const SCAN_TYPE_CONFIG: Record<
   },
 };
 
-type ScanFormData = CreateScanFormData;
+type ScanFormData = CreateScanFormData & { projectId: string };
 
 interface ScanFormProps {
   onSuccess: () => void;
@@ -84,19 +84,41 @@ function ScanForm({ onSuccess }: ScanFormProps) {
   const searchParams = useSearchParams();
 
   const searchFilters = useMapFilters({
-    pageSize: DEFAULT_SCANS_PAGE_SIZE,
-    params: SCANS_SEARCH_PARAMS,
+    pageSize: 10,
+    params: [],
     searchParams,
   });
 
+  const { data: projectsData } = useSuspenseQuery(PROJECTS, {
+    variables: { limit: 100, page: 1 },
+  });
+
+  const projects = projectsData?.projects?.projects || [];
+
   const form = useForm<ScanFormData>({
-    resolver: zodResolver(createScanSchema),
+    resolver: zodResolver(
+      createScanSchema.extend({
+        projectId: z.string().min(1, "Project is required"),
+      }),
+    ),
     defaultValues: {
+      projectId: "",
       url: "",
       status: undefined,
       scanType: ScanType.Static,
     },
   });
+
+  const selectedProjectId = form.watch("projectId");
+  const selectedProject = projects.find(
+    (p: { id: string }) => p.id === selectedProjectId,
+  );
+
+  useEffect(() => {
+    if (selectedProject && !form.getValues("url")) {
+      form.setValue("url", selectedProject.url);
+    }
+  }, [selectedProjectId, selectedProject, form]);
 
   const [createScan, { loading }] = useMutation<Scan, { input: ScanFormData }>(
     CREATE_SCAN,
@@ -104,7 +126,14 @@ function ScanForm({ onSuccess }: ScanFormProps) {
 
   const handleSubmit = (data: ScanFormData) => {
     createScan({
-      variables: { input: data },
+      variables: {
+        input: {
+          projectId: data.projectId,
+          url: data.url || selectedProject?.url,
+          scanType: data.scanType,
+          status: data.status,
+        },
+      },
       refetchQueries: () => [{ query: SCANS, variables: searchFilters }],
       onCompleted: () => {
         toast.success("Scan created successfully");
@@ -126,12 +155,42 @@ function ScanForm({ onSuccess }: ScanFormProps) {
       <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-4">
         <FormField
           control={form.control}
+          name="projectId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Project</FormLabel>
+              <FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map(
+                      (project: { id: string; name: string; url: string }) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="url"
           render={({ field }) => (
             <FormItem>
               <FormLabel>URL</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="https://example.com" />
+                <Input
+                  {...field}
+                  placeholder={selectedProject?.url || "https://example.com"}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -253,7 +312,9 @@ function CreateScanDialog() {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create Scan</DialogTitle>
-          <DialogDescription>Enter the URL you want to scan.</DialogDescription>
+          <DialogDescription>
+            Select a project and enter the URL you want to scan.
+          </DialogDescription>
         </DialogHeader>
 
         <ScanForm onSuccess={handleSuccess} />

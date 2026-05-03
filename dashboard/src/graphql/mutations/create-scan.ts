@@ -6,6 +6,11 @@ export const CREATE_SCAN = gql(`
       id
       url
       status
+      project {
+        id
+        name
+        url
+      }
       createdAt
       updatedAt
     }

@@ -19,11 +19,17 @@ import {
 
 import { Scan } from './scans.entity';
 import { User } from 'src/users/user.entity';
+import { Project } from 'src/projects/project.entity';
 import { CreateScanInput } from './inputs/create-scan.input';
 import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 import { ScanFiltersInput } from './inputs/scan-filters.input';
 import { ScansResponse } from './types/scans-response.type';
 import { ScanStats } from './types/scan-stats.type';
+import { VulnerabilityStats } from './types/vulnerability-stats.type';
+import { VulnerabilitySeverityStats } from './types/vulnerability-severity-stats.type';
+import { VulnerabilityCategoryStats } from './types/vulnerability-category-stats.type';
+import { VulnerabilitySeverity } from './enums/vulnerability-severity.enum';
+import { VulnerabilityCategory } from './enums/vulnerability-category.enum';
 import { isValidDateString } from 'src/commom/utils/date.utils';
 import { ScanSortBy } from './enums/scan-sort-by.enum';
 import { ScanStatus } from './enums/scan-status.enum';
@@ -42,6 +48,9 @@ export class ScansService {
 
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectRepository(Project)
+    private readonly projectsRepository: Repository<Project>,
 
     @InjectQueue('scans')
     private readonly scansQueue: Queue,
@@ -67,7 +76,7 @@ export class ScansService {
           id: scanId,
           user: { id: userId },
         },
-        relations: ['user', 'vulnerabilities'],
+        relations: ['user', 'vulnerabilities', 'project'],
       });
 
       if (!scan) {
@@ -114,7 +123,8 @@ export class ScansService {
     };
 
     if (filters) {
-      const { search, status, createdAfter, createdBefore } = filters;
+      const { search, status, projectId, createdAfter, createdBefore } =
+        filters;
 
       if (search) {
         where.url = ILike(`%${search}%`);
@@ -122,6 +132,10 @@ export class ScansService {
 
       if (status) {
         where.status = status;
+      }
+
+      if (projectId) {
+        where.project = { id: projectId };
       }
 
       if (createdAfter && !isValidDateString(createdAfter)) {
@@ -166,7 +180,7 @@ export class ScansService {
 
     const [scans, total] = await this.scansRepository.findAndCount({
       where,
-      relations: ['user'],
+      relations: ['user', 'project'],
       order,
       skip,
       take: limit,
@@ -194,7 +208,28 @@ export class ScansService {
       throw new BadRequestException('User id is required');
     }
 
-    if (!input.url?.trim()) {
+    if (!input.projectId) {
+      throw new BadRequestException('Project id is required');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const project = await this.projectsRepository.findOne({
+      where: { id: input.projectId, user: { id: userId } },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        `Project with ID ${input.projectId} not found or you don't have permission to access it`,
+      );
+    }
+
+    const scanUrl = input.url?.trim() || project.url;
+
+    if (!scanUrl) {
       throw new BadRequestException('Scan URL is required');
     }
 
@@ -204,26 +239,22 @@ export class ScansService {
       );
     }
 
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
     const scan = await this.scansRepository.manager.transaction(
       async (manager) => {
         try {
           const newScan = manager.create(Scan, {
-            url: input.url.trim(),
+            url: scanUrl,
             status: input.status ?? ScanStatus.DRAFT,
             scanType: input.scanType ?? ScanType.STATIC,
             user,
+            project,
           });
 
           const savedScan = await manager.save(Scan, newScan);
 
           const scanWithRelations = await manager.findOne(Scan, {
             where: { id: savedScan.id },
-            relations: ['user'],
+            relations: ['user', 'project'],
           });
 
           if (!scanWithRelations) {
@@ -338,6 +369,73 @@ export class ScansService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to retrieve scan statistics',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  async getVulnerabilityStats(userId: string): Promise<VulnerabilityStats> {
+    if (!userId) {
+      throw new BadRequestException('User id is required');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      const severityResults = await this.scansRepository
+        .createQueryBuilder('scan')
+        .innerJoin('scan.vulnerabilities', 'vuln')
+        .innerJoin('scan.user', 'u', 'u.id = :userId', { userId })
+        .select(['vuln.severity AS "severity"', 'COUNT(vuln.id) AS "count"'])
+        .groupBy('vuln.severity')
+        .getRawMany<{ severity: VulnerabilitySeverity; count: string }>();
+
+      const categoryResults = await this.scansRepository
+        .createQueryBuilder('scan')
+        .innerJoin('scan.vulnerabilities', 'vuln')
+        .innerJoin('scan.user', 'u', 'u.id = :userId', { userId })
+        .select(['vuln.category AS "category"', 'COUNT(vuln.id) AS "count"'])
+        .groupBy('vuln.category')
+        .getRawMany<{ category: VulnerabilityCategory; count: string }>();
+
+      const totalResult = await this.scansRepository
+        .createQueryBuilder('scan')
+        .innerJoin('scan.vulnerabilities', 'vuln')
+        .innerJoin('scan.user', 'u', 'u.id = :userId', { userId })
+        .select('COUNT(vuln.id)', 'total')
+        .getRawOne<{ total: string }>();
+
+      const bySeverity: VulnerabilitySeverityStats[] = Object.values(
+        VulnerabilitySeverity,
+      ).map((severity) => {
+        const found = severityResults.find((r) => r.severity === severity);
+        return {
+          severity,
+          count: found ? Number(found.count) : 0,
+        };
+      });
+
+      const byCategory: VulnerabilityCategoryStats[] = Object.values(
+        VulnerabilityCategory,
+      ).map((category) => {
+        const found = categoryResults.find((r) => r.category === category);
+        return {
+          category,
+          count: found ? Number(found.count) : 0,
+        };
+      });
+
+      return {
+        total: Number(totalResult?.total) || 0,
+        bySeverity,
+        byCategory,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve vulnerability statistics',
         error instanceof Error ? error.message : String(error),
       );
     }

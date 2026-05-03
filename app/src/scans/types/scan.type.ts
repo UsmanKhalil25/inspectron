@@ -1,6 +1,7 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 
 import { PublicUser } from 'src/users/types/public-user.type';
+import { Project } from 'src/projects/types/project.type';
 import { ScanStatus } from '../enums/scan-status.enum';
 import { ScanType } from '../enums/scan-type.enum';
 import { ScanAction } from './scan-action.type';
@@ -34,6 +35,9 @@ export class Scan {
 
   @Field(() => PublicUser)
   user: PublicUser;
+
+  @Field(() => Project)
+  project: Project;
 
   @Field()
   createdAt: Date;

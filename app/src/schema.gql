@@ -44,6 +44,18 @@ type PaginationInfo {
   hasPreviousPage: Boolean!
 }
 
+type Project {
+  id: ID!
+  name: String!
+  url: String!
+  description: String
+  user: PublicUser!
+  scanCount: Int!
+  lastScanStatus: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type ActionDetail {
   name: String!
   params: String!
@@ -104,6 +116,7 @@ type Scan {
   actions: [ScanAction!]
   vulnerabilities: [Vulnerability!]
   user: PublicUser!
+  project: Project!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -139,6 +152,22 @@ type ScanStats {
   scansByStatus: ScanStatusStats!
 }
 
+type VulnerabilitySeverityStats {
+  severity: VulnerabilitySeverity!
+  count: Int!
+}
+
+type VulnerabilityCategoryStats {
+  category: VulnerabilityCategory!
+  count: Int!
+}
+
+type VulnerabilityStats {
+  total: Int!
+  bySeverity: [VulnerabilitySeverityStats!]!
+  byCategory: [VulnerabilityCategoryStats!]!
+}
+
 type ScanEvent {
   scanId: ID!
   type: String!
@@ -157,17 +186,55 @@ type BrowserPreviewFrame {
   url: String
 }
 
+type ProjectsResponse {
+  projects: [Project!]!
+  pagination: PaginationInfo!
+}
+
+type ProjectVulnerabilityStats {
+  projectId: ID!
+  projectName: String!
+  critical: Int!
+  high: Int!
+  medium: Int!
+  low: Int!
+  info: Int!
+  total: Int!
+}
+
 type Query {
+  project(id: String!): Project!
+  projects(page: Int = 1, limit: Int = 20, filters: ProjectFiltersInput): ProjectsResponse!
+  projectVulnerabilityStats: [ProjectVulnerabilityStats!]!
   scan(id: String!): Scan!
   scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
   scanStats: ScanStats!
+  vulnerabilityStats: VulnerabilityStats!
   scanScreenshot(runId: String!): String
   currentUser: User
+}
+
+input ProjectFiltersInput {
+  search: String
+  sortBy: ProjectSortBy = CREATED_AT
+  sortOrder: SortOrder = DESC
+}
+
+enum ProjectSortBy {
+  CREATED_AT
+  UPDATED_AT
+  NAME
+}
+
+enum SortOrder {
+  ASC
+  DESC
 }
 
 input ScanFiltersInput {
   search: String
   status: ScanStatus
+  projectId: String
   createdAfter: String
   createdBefore: String
   sortBy: ScanSortBy = CREATED_AT
@@ -180,12 +247,10 @@ enum ScanSortBy {
   URL
 }
 
-enum SortOrder {
-  ASC
-  DESC
-}
-
 type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  updateProject(id: String!, input: UpdateProjectInput!): Project!
+  deleteProject(id: String!): Boolean!
   createScan(input: CreateScanInput!): Scan!
   startScan(id: String!): Scan!
   sendAgentMessage(input: SendMessageInput!): Boolean!
@@ -193,8 +258,21 @@ type Mutation {
   register(input: RegisterUserInput!): RegisterResponse!
 }
 
-input CreateScanInput {
+input CreateProjectInput {
+  name: String!
   url: String!
+  description: String
+}
+
+input UpdateProjectInput {
+  name: String
+  url: String
+  description: String
+}
+
+input CreateScanInput {
+  projectId: String!
+  url: String
   status: ScanStatus
   scanType: ScanType
 }

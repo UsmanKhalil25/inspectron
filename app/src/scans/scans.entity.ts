@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 
 import { User } from 'src/users/user.entity';
+import { Project } from 'src/projects/project.entity';
 import { ScanStatus } from './enums/scan-status.enum';
 import { ScanType } from './enums/scan-type.enum';
 import { ScanAction } from './interfaces/scan-action.interface';
@@ -55,6 +56,9 @@ export class Scan {
 
   @ManyToOne(() => User, (user) => user.scans)
   user: User;
+
+  @ManyToOne(() => Project, (project) => project.scans, { onDelete: 'CASCADE' })
+  project: Project;
 
   @CreateDateColumn()
   createdAt: Date;

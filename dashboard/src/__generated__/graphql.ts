@@ -54,10 +54,17 @@ export type BrowserPreviewFrame = {
   url?: Maybe<Scalars["String"]["output"]>;
 };
 
+export type CreateProjectInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  url: Scalars["String"]["input"];
+};
+
 export type CreateScanInput = {
+  projectId: Scalars["String"]["input"];
   scanType?: InputMaybe<ScanType>;
   status?: InputMaybe<ScanStatus>;
-  url: Scalars["String"]["input"];
+  url?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type LoginResponse = {
@@ -73,15 +80,26 @@ export type LoginUserInput = {
 
 export type Mutation = {
   __typename?: "Mutation";
+  createProject: Project;
   createScan: Scan;
+  deleteProject: Scalars["Boolean"]["output"];
   login: LoginResponse;
   register: RegisterResponse;
   sendAgentMessage: Scalars["Boolean"]["output"];
   startScan: Scan;
+  updateProject: Project;
+};
+
+export type MutationCreateProjectArgs = {
+  input: CreateProjectInput;
 };
 
 export type MutationCreateScanArgs = {
   input: CreateScanInput;
+};
+
+export type MutationDeleteProjectArgs = {
+  id: Scalars["String"]["input"];
 };
 
 export type MutationLoginArgs = {
@@ -100,6 +118,11 @@ export type MutationStartScanArgs = {
   id: Scalars["String"]["input"];
 };
 
+export type MutationUpdateProjectArgs = {
+  id: Scalars["String"]["input"];
+  input: UpdateProjectInput;
+};
+
 export type PaginationInfo = {
   __typename?: "PaginationInfo";
   hasNextPage: Scalars["Boolean"]["output"];
@@ -108,6 +131,49 @@ export type PaginationInfo = {
   page: Scalars["Int"]["output"];
   total: Scalars["Int"]["output"];
   totalPages: Scalars["Int"]["output"];
+};
+
+export type Project = {
+  __typename?: "Project";
+  createdAt: Scalars["DateTime"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  lastScanStatus?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  scanCount: Scalars["Int"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
+  url: Scalars["String"]["output"];
+  user: PublicUser;
+};
+
+export type ProjectFiltersInput = {
+  search?: InputMaybe<Scalars["String"]["input"]>;
+  sortBy?: InputMaybe<ProjectSortBy>;
+  sortOrder?: InputMaybe<SortOrder>;
+};
+
+export enum ProjectSortBy {
+  CreatedAt = "CREATED_AT",
+  Name = "NAME",
+  UpdatedAt = "UPDATED_AT",
+}
+
+export type ProjectVulnerabilityStats = {
+  __typename?: "ProjectVulnerabilityStats";
+  critical: Scalars["Int"]["output"];
+  high: Scalars["Int"]["output"];
+  info: Scalars["Int"]["output"];
+  low: Scalars["Int"]["output"];
+  medium: Scalars["Int"]["output"];
+  projectId: Scalars["ID"]["output"];
+  projectName: Scalars["String"]["output"];
+  total: Scalars["Int"]["output"];
+};
+
+export type ProjectsResponse = {
+  __typename?: "ProjectsResponse";
+  pagination: PaginationInfo;
+  projects: Array<Project>;
 };
 
 export type PublicUser = {
@@ -123,10 +189,24 @@ export type PublicUser = {
 export type Query = {
   __typename?: "Query";
   currentUser?: Maybe<User>;
+  project: Project;
+  projectVulnerabilityStats: Array<ProjectVulnerabilityStats>;
+  projects: ProjectsResponse;
   scan: Scan;
   scanScreenshot?: Maybe<Scalars["String"]["output"]>;
   scanStats: ScanStats;
   scans: ScansResponse;
+  vulnerabilityStats: VulnerabilityStats;
+};
+
+export type QueryProjectArgs = {
+  id: Scalars["String"]["input"];
+};
+
+export type QueryProjectsArgs = {
+  filters?: InputMaybe<ProjectFiltersInput>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type QueryScanArgs = {
@@ -161,6 +241,7 @@ export type Scan = {
   actions?: Maybe<Array<ScanAction>>;
   createdAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
+  project: Project;
   result?: Maybe<Scalars["String"]["output"]>;
   runId?: Maybe<Scalars["String"]["output"]>;
   scanType: ScanType;
@@ -193,6 +274,7 @@ export type ScanEvent = {
 export type ScanFiltersInput = {
   createdAfter?: InputMaybe<Scalars["String"]["input"]>;
   createdBefore?: InputMaybe<Scalars["String"]["input"]>;
+  projectId?: InputMaybe<Scalars["String"]["input"]>;
   search?: InputMaybe<Scalars["String"]["input"]>;
   sortBy?: InputMaybe<ScanSortBy>;
   sortOrder?: InputMaybe<SortOrder>;
@@ -268,6 +350,12 @@ export type SubscriptionScanStatusChangedArgs = {
   scanId: Scalars["String"]["input"];
 };
 
+export type UpdateProjectInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  url?: InputMaybe<Scalars["String"]["input"]>;
+};
+
 export type User = {
   __typename?: "User";
   createdAt: Scalars["DateTime"]["output"];
@@ -296,11 +384,17 @@ export enum VulnerabilityCategory {
   Cookies = "COOKIES",
   Csrf = "CSRF",
   InformationDisclosure = "INFORMATION_DISCLOSURE",
-  OpenRedirect = "OPEN_REDIRECT",
   SecurityHeaders = "SECURITY_HEADERS",
   SensitiveFiles = "SENSITIVE_FILES",
+  SqlInjection = "SQL_INJECTION",
   Xss = "XSS",
 }
+
+export type VulnerabilityCategoryStats = {
+  __typename?: "VulnerabilityCategoryStats";
+  category: VulnerabilityCategory;
+  count: Scalars["Int"]["output"];
+};
 
 export enum VulnerabilitySeverity {
   Critical = "CRITICAL",
@@ -309,6 +403,38 @@ export enum VulnerabilitySeverity {
   Low = "LOW",
   Medium = "MEDIUM",
 }
+
+export type VulnerabilitySeverityStats = {
+  __typename?: "VulnerabilitySeverityStats";
+  count: Scalars["Int"]["output"];
+  severity: VulnerabilitySeverity;
+};
+
+export type VulnerabilityStats = {
+  __typename?: "VulnerabilityStats";
+  byCategory: Array<VulnerabilityCategoryStats>;
+  bySeverity: Array<VulnerabilitySeverityStats>;
+  total: Scalars["Int"]["output"];
+};
+
+export type CreateProjectMutationVariables = Exact<{
+  input: CreateProjectInput;
+}>;
+
+export type CreateProjectMutation = {
+  __typename?: "Mutation";
+  createProject: {
+    __typename?: "Project";
+    id: string;
+    name: string;
+    url: string;
+    description?: string | null;
+    scanCount: number;
+    lastScanStatus?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
 
 export type CreateScanMutationVariables = Exact<{
   input: CreateScanInput;
@@ -323,7 +449,17 @@ export type CreateScanMutation = {
     status: ScanStatus;
     createdAt: any;
     updatedAt: any;
+    project: { __typename?: "Project"; id: string; name: string; url: string };
   };
+};
+
+export type DeleteProjectMutationVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type DeleteProjectMutation = {
+  __typename?: "Mutation";
+  deleteProject: boolean;
 };
 
 export type LoginMutationVariables = Exact<{
@@ -380,6 +516,26 @@ export type StartScanMutation = {
   startScan: { __typename?: "Scan"; id: string; status: ScanStatus };
 };
 
+export type UpdateProjectMutationVariables = Exact<{
+  id: Scalars["String"]["input"];
+  input: UpdateProjectInput;
+}>;
+
+export type UpdateProjectMutation = {
+  __typename?: "Mutation";
+  updateProject: {
+    __typename?: "Project";
+    id: string;
+    name: string;
+    url: string;
+    description?: string | null;
+    scanCount: number;
+    lastScanStatus?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type CurrentUserQuery = {
@@ -390,6 +546,77 @@ export type CurrentUserQuery = {
     email: string;
     name: string;
   } | null;
+};
+
+export type GetProjectVulnerabilityStatsQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type GetProjectVulnerabilityStatsQuery = {
+  __typename?: "Query";
+  projectVulnerabilityStats: Array<{
+    __typename?: "ProjectVulnerabilityStats";
+    projectId: string;
+    projectName: string;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
+    total: number;
+  }>;
+};
+
+export type GetProjectQueryVariables = Exact<{
+  id: Scalars["String"]["input"];
+}>;
+
+export type GetProjectQuery = {
+  __typename?: "Query";
+  project: {
+    __typename?: "Project";
+    id: string;
+    name: string;
+    url: string;
+    description?: string | null;
+    scanCount: number;
+    lastScanStatus?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type GetProjectsQueryVariables = Exact<{
+  filters?: InputMaybe<ProjectFiltersInput>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
+}>;
+
+export type GetProjectsQuery = {
+  __typename?: "Query";
+  projects: {
+    __typename?: "ProjectsResponse";
+    projects: Array<{
+      __typename?: "Project";
+      id: string;
+      name: string;
+      url: string;
+      description?: string | null;
+      scanCount: number;
+      lastScanStatus?: string | null;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "PaginationInfo";
+      total: number;
+      page: number;
+      totalPages: number;
+      limit: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  };
 };
 
 export type GetScanStatsQueryVariables = Exact<{ [key: string]: never }>;
@@ -426,6 +653,7 @@ export type GetScanQuery = {
     result?: string | null;
     createdAt: any;
     updatedAt: any;
+    project: { __typename?: "Project"; id: string; name: string; url: string };
     actions?: Array<{
       __typename?: "ScanAction";
       step: number;
@@ -475,6 +703,12 @@ export type GetScansQuery = {
       status: ScanStatus;
       createdAt: any;
       updatedAt: any;
+      project: {
+        __typename?: "Project";
+        id: string;
+        name: string;
+        url: string;
+      };
     }>;
     pagination: {
       __typename?: "PaginationInfo";
@@ -485,6 +719,28 @@ export type GetScansQuery = {
       hasNextPage: boolean;
       hasPreviousPage: boolean;
     };
+  };
+};
+
+export type GetVulnerabilityStatsQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type GetVulnerabilityStatsQuery = {
+  __typename?: "Query";
+  vulnerabilityStats: {
+    __typename?: "VulnerabilityStats";
+    total: number;
+    bySeverity: Array<{
+      __typename?: "VulnerabilitySeverityStats";
+      severity: VulnerabilitySeverity;
+      count: number;
+    }>;
+    byCategory: Array<{
+      __typename?: "VulnerabilityCategoryStats";
+      category: VulnerabilityCategory;
+      count: number;
+    }>;
   };
 };
 
@@ -567,6 +823,70 @@ export type ScanStatusChangedSubscription = {
   };
 };
 
+export const CreateProjectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateProject" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateProjectInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createProject" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "scanCount" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "lastScanStatus" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateProjectMutation,
+  CreateProjectMutationVariables
+>;
 export const CreateScanDocument = {
   kind: "Document",
   definitions: [
@@ -612,6 +932,18 @@ export const CreateScanDocument = {
                 { kind: "Field", name: { kind: "Name", value: "id" } },
                 { kind: "Field", name: { kind: "Name", value: "url" } },
                 { kind: "Field", name: { kind: "Name", value: "status" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "project" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                    ],
+                  },
+                },
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
               ],
@@ -622,6 +954,51 @@ export const CreateScanDocument = {
     },
   ],
 } as unknown as DocumentNode<CreateScanMutation, CreateScanMutationVariables>;
+export const DeleteProjectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "DeleteProject" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteProject" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DeleteProjectMutation,
+  DeleteProjectMutationVariables
+>;
 export const LoginDocument = {
   kind: "Document",
   definitions: [
@@ -845,6 +1222,89 @@ export const StartScanDocument = {
     },
   ],
 } as unknown as DocumentNode<StartScanMutation, StartScanMutationVariables>;
+export const UpdateProjectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateProject" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateProjectInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateProject" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "scanCount" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "lastScanStatus" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateProjectMutation,
+  UpdateProjectMutationVariables
+>;
 export const CurrentUserDocument = {
   kind: "Document",
   definitions: [
@@ -872,6 +1332,231 @@ export const CurrentUserDocument = {
     },
   ],
 } as unknown as DocumentNode<CurrentUserQuery, CurrentUserQueryVariables>;
+export const GetProjectVulnerabilityStatsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetProjectVulnerabilityStats" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "projectVulnerabilityStats" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "projectId" } },
+                { kind: "Field", name: { kind: "Name", value: "projectName" } },
+                { kind: "Field", name: { kind: "Name", value: "critical" } },
+                { kind: "Field", name: { kind: "Name", value: "high" } },
+                { kind: "Field", name: { kind: "Name", value: "medium" } },
+                { kind: "Field", name: { kind: "Name", value: "low" } },
+                { kind: "Field", name: { kind: "Name", value: "info" } },
+                { kind: "Field", name: { kind: "Name", value: "total" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetProjectVulnerabilityStatsQuery,
+  GetProjectVulnerabilityStatsQueryVariables
+>;
+export const GetProjectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetProject" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "project" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+                { kind: "Field", name: { kind: "Name", value: "url" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+                { kind: "Field", name: { kind: "Name", value: "scanCount" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "lastScanStatus" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetProjectQuery, GetProjectQueryVariables>;
+export const GetProjectsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetProjects" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "filters" },
+          },
+          type: {
+            kind: "NamedType",
+            name: { kind: "Name", value: "ProjectFiltersInput" },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "limit" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "page" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "projects" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "filters" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "filters" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "limit" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "limit" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "page" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "page" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "projects" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "scanCount" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lastScanStatus" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createdAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updatedAt" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pagination" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "total" } },
+                      { kind: "Field", name: { kind: "Name", value: "page" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "totalPages" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "limit" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasNextPage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasPreviousPage" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetProjectsQuery, GetProjectsQueryVariables>;
 export const GetScanStatsDocument = {
   kind: "Document",
   definitions: [
@@ -968,6 +1653,18 @@ export const GetScanDocument = {
                 { kind: "Field", name: { kind: "Name", value: "scanType" } },
                 { kind: "Field", name: { kind: "Name", value: "runId" } },
                 { kind: "Field", name: { kind: "Name", value: "result" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "project" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                    ],
+                  },
+                },
                 {
                   kind: "Field",
                   name: { kind: "Name", value: "actions" },
@@ -1202,6 +1899,27 @@ export const GetScansDocument = {
                         kind: "Field",
                         name: { kind: "Name", value: "updatedAt" },
                       },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "project" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "url" },
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -1237,6 +1955,62 @@ export const GetScansDocument = {
     },
   ],
 } as unknown as DocumentNode<GetScansQuery, GetScansQueryVariables>;
+export const GetVulnerabilityStatsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetVulnerabilityStats" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "vulnerabilityStats" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "total" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "bySeverity" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "severity" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "count" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "byCategory" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "category" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "count" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetVulnerabilityStatsQuery,
+  GetVulnerabilityStatsQueryVariables
+>;
 export const BrowserPreviewStreamDocument = {
   kind: "Document",
   definitions: [

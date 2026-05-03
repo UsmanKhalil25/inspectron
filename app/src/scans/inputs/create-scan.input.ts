@@ -15,8 +15,12 @@ export class CreateScanInput {
   @Field()
   @IsString()
   @IsNotEmpty()
+  projectId: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
   @IsUrl()
-  url: string;
+  url?: string;
 
   @Field(() => ScanStatus, { nullable: true })
   @IsOptional()

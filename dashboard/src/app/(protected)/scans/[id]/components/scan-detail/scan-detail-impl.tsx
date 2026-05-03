@@ -105,7 +105,12 @@ export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
-      <ScanDetailHeader url={scan.url} status={scan.status} scanId={scan.id} />
+      <ScanDetailHeader
+        url={scan.url}
+        status={scan.status}
+        scanId={scan.id}
+        project={scan.project}
+      />
       <div className="flex flex-1 overflow-hidden">
         {isDraft ? (
           <DraftState scan={scan} />

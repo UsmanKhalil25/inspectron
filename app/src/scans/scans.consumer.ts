@@ -1,4 +1,5 @@
 import { jsonrepair } from 'jsonrepair';
+import { z } from 'zod';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -12,7 +13,10 @@ import { ScanStatus } from './enums/scan-status.enum';
 import { ScanType } from './enums/scan-type.enum';
 import { BrowserAgentService } from './browser-agent.service';
 import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
-import { VulnerabilityReportSchema } from './schemas/vulnerability-report.schema';
+import {
+  VulnerabilityReportSchema,
+  VulnerabilityFindingSchema,
+} from './schemas/vulnerability-report.schema';
 
 export interface ScanJobData {
   scanId: string;
@@ -106,7 +110,7 @@ export class ScanConsumer extends WorkerHost {
       // Reload with vulnerabilities so the subscription payload includes them
       const completedScan = await this.scansRepository.findOne({
         where: { id: scan.id },
-        relations: ['vulnerabilities'],
+        relations: ['vulnerabilities', 'project'],
       });
 
       await this.pubSub.publish(SCAN_STATUS_CHANGED, {
@@ -140,7 +144,37 @@ export class ScanConsumer extends WorkerHost {
       } catch {
         parsedResult = JSON.parse(jsonrepair(result));
       }
-      const report = VulnerabilityReportSchema.parse(parsedResult);
+
+      let report: z.infer<typeof VulnerabilityReportSchema>;
+      if (Array.isArray(parsedResult)) {
+        const findings = VulnerabilityFindingSchema.array().parse(parsedResult);
+        const summary = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+        for (const f of findings) {
+          if (f.severity in summary)
+            summary[f.severity as keyof typeof summary]++;
+        }
+        report = {
+          summary,
+          findings,
+          scanned_urls: [],
+          scan_timestamp: new Date().toISOString(),
+        };
+      } else if (typeof parsedResult === 'object' && parsedResult !== null) {
+        const obj = parsedResult as Record<string, unknown>;
+        if (
+          !('findings' in obj) &&
+          typeof obj.result === 'object' &&
+          obj.result !== null
+        ) {
+          parsedResult = obj.result;
+        }
+        report = VulnerabilityReportSchema.parse(parsedResult);
+      } else {
+        this.logger.error(
+          `Unexpected scan result type for scan ${scan.id}: ${typeof parsedResult}`,
+        );
+        return;
+      }
 
       const vulnerabilities = report.findings.map((finding) =>
         this.vulnerabilityRepository.create({
@@ -164,6 +198,9 @@ export class ScanConsumer extends WorkerHost {
       this.logger.error(
         `Failed to parse/save vulnerabilities for scan ${scan.id}:`,
         error,
+      );
+      this.logger.debug(
+        `Raw scan result for ${scan.id}: ${result?.substring(0, 500)}`,
       );
     }
   }

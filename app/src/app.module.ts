@@ -18,6 +18,7 @@ import {
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ScansModule } from './scans/scans.module';
+import { ProjectsModule } from './projects/projects.module';
 
 import { AuthTokenMiddleware } from './commom/middlewares';
 import { BullModule } from '@nestjs/bullmq';
@@ -49,7 +50,7 @@ import { BullModule } from '@nestjs/bullmq';
         playground: false,
         plugins: [ApolloServerPluginLandingPageLocalDefault()],
         autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
-        include: [AuthModule, UsersModule, ScansModule],
+        include: [AuthModule, UsersModule, ScansModule, ProjectsModule],
         cors: {
           origin: configService.get<string>('app.corsOrigin'),
           credentials: true,
@@ -79,6 +80,7 @@ import { BullModule } from '@nestjs/bullmq';
     AuthModule,
     UsersModule,
     ScansModule,
+    ProjectsModule,
   ],
 })
 export class AppModule {

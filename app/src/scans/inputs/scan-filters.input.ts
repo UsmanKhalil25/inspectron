@@ -25,6 +25,13 @@ export class ScanFiltersInput {
     nullable: true,
   })
   @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @Field(() => String, {
+    nullable: true,
+  })
+  @IsOptional()
   @IsDateString()
   createdAfter?: string;
 

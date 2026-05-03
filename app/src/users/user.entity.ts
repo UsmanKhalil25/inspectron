@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 
 import { Scan } from 'src/scans/scans.entity';
+import { Project } from 'src/projects/project.entity';
 
 @Entity()
 export class User {
@@ -28,6 +29,9 @@ export class User {
 
   @OneToMany(() => Scan, (scan) => scan.user)
   scans: Scan[];
+
+  @OneToMany(() => Project, (project) => project.user)
+  projects: Project[];
 
   @CreateDateColumn()
   createdAt: Date;

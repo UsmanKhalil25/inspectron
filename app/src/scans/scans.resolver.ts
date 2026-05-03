@@ -21,6 +21,7 @@ import { PaginationArgs } from 'src/commom/inputs/pagination-args.input';
 import { ScansResponse } from './types/scans-response.type';
 import { Scan } from './types/scan.type';
 import { ScanStats } from './types/scan-stats.type';
+import { VulnerabilityStats } from './types/vulnerability-stats.type';
 import { ScanEvent } from './types/scan-event.type';
 import { BrowserPreviewFrame } from './types/browser-preview-stream.type';
 
@@ -67,6 +68,13 @@ export class ScansResolver {
   async scanStats(@Context() context: { req: { user: JwtPayload } }) {
     const userId = context.req.user.sub;
     return await this.scansService.getScansStats(userId);
+  }
+
+  @Query(() => VulnerabilityStats)
+  @UseGuards(JwtAuthGuard)
+  async vulnerabilityStats(@Context() context: { req: { user: JwtPayload } }) {
+    const userId = context.req.user.sub;
+    return await this.scansService.getVulnerabilityStats(userId);
   }
 
   @Query(() => String, { nullable: true })

@@ -9,6 +9,11 @@ export const SCANS = gql(`
         status
         createdAt
         updatedAt
+        project {
+          id
+          name
+          url
+        }
       }
       pagination {
         total

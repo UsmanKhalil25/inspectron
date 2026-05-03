@@ -1,14 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import {
-  Bot,
-  Eye,
-  FileText,
-  Globe,
-  Radar,
-  Workflow,
-} from "lucide-react";
+import { Bot, Eye, FileText, Globe, Radar, Workflow } from "lucide-react";
 
 import {
   Card,

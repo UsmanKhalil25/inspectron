@@ -39,8 +39,8 @@ export function HeroSection() {
         transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
         className="mt-6 max-w-2xl text-center text-base leading-relaxed text-muted-foreground sm:text-lg"
       >
-        Agent-driven vulnerability scanning with real-time browser preview.
-        Find security flaws before attackers do — with zero configuration.
+        Agent-driven vulnerability scanning with real-time browser preview. Find
+        security flaws before attackers do — with zero configuration.
       </motion.p>
 
       <motion.div

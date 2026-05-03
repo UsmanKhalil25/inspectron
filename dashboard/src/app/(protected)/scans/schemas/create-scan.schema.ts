@@ -6,7 +6,9 @@ export const createScanSchema = z.object({
     .string()
     .trim()
     .url("Please enter a valid URL")
-    .min(1, "URL is required"),
+    .min(1, "URL is required")
+    .optional()
+    .or(z.literal("")),
 
   scanType: z
     .enum(Object.values(ScanType) as [ScanType, ...ScanType[]])

@@ -7,6 +7,11 @@ interface ScanDetailHeaderProps {
   url: string;
   status: string;
   scanId: string;
+  project?: {
+    id: string;
+    name: string;
+    url: string;
+  } | null;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -52,10 +57,11 @@ export function ScanDetailHeader({
   url,
   status,
   scanId,
+  project,
 }: ScanDetailHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4">
-      <Link href="/scans">
+      <Link href={project ? `/projects/${project.id}` : "/scans"}>
         <Button
           variant="ghost"
           size="icon"
@@ -67,10 +73,21 @@ export function ScanDetailHeader({
 
       <div className="h-4 w-px bg-zinc-800" />
 
+      {project && (
+        <>
+          <Link href={`/projects/${project.id}`}>
+            <span className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer">
+              {project.name}
+            </span>
+          </Link>
+          <div className="h-4 w-px bg-zinc-800" />
+        </>
+      )}
+
       <div className="flex items-center gap-2 min-w-0">
         <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-        <span className="truncate  text-xs text-zinc-200">{url}</span>
-        <span className="shrink-0  text-[10px] text-zinc-600">#{scanId}</span>
+        <span className="truncate text-xs text-zinc-200">{url}</span>
+        <span className="shrink-0 text-[10px] text-zinc-600">#{scanId}</span>
       </div>
 
       <div className="flex-1" />
