@@ -27,6 +27,7 @@ type Documents = {
   "\n  query GetProject($id: String!) {\n    project(id: $id) {\n      id\n      name\n      url\n      description\n      scanCount\n      lastScanStatus\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetProjectDocument;
   "\n  query GetProjects($filters: ProjectFiltersInput, $limit: Int, $page: Int) {\n    projects(filters: $filters, limit: $limit, page: $page) {\n      projects {\n        id\n        name\n        url\n        description\n        scanCount\n        lastScanStatus\n        createdAt\n        updatedAt\n      }\n      pagination {\n        total\n        page\n        totalPages\n        limit\n        hasNextPage\n        hasPreviousPage\n      }\n    }\n  }\n": typeof types.GetProjectsDocument;
   "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n": typeof types.GetScanStatsDocument;
+  "\n  query GetScanTrendStats($days: Int = 30) {\n    scanTrendStats(days: $days) {\n      date\n      scans\n      vulnerabilities\n    }\n  }\n": typeof types.GetScanTrendStatsDocument;
   "\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      scanType\n      runId\n      result\n      project {\n        id\n        name\n        url\n      }\n      actions {\n        step\n        timestamp\n        thinking\n        action {\n          name\n          display\n        }\n        context {\n          url\n          title\n        }\n      }\n      vulnerabilities {\n        id\n        findingId\n        title\n        severity\n        category\n        url\n        description\n        evidence\n        remediation\n      }\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetScanDocument;
   "\n  query GetScanScreenshot($runId: String!) {\n    scanScreenshot(runId: $runId)\n  }\n": typeof types.GetScanScreenshotDocument;
   "\n  query GetScans($filters: ScanFiltersInput, $limit: Int, $page: Int) {\n    scans(filters: $filters, limit: $limit, page: $page) {\n      scans {\n        id\n        url\n        status\n        createdAt\n        updatedAt\n        project {\n          id\n          name\n          url\n        }\n      }\n      pagination {\n        total\n        page\n        totalPages\n        limit\n        hasNextPage\n        hasPreviousPage\n      }\n    }\n  }\n": typeof types.GetScansDocument;
@@ -62,6 +63,8 @@ const documents: Documents = {
     types.GetProjectsDocument,
   "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n":
     types.GetScanStatsDocument,
+  "\n  query GetScanTrendStats($days: Int = 30) {\n    scanTrendStats(days: $days) {\n      date\n      scans\n      vulnerabilities\n    }\n  }\n":
+    types.GetScanTrendStatsDocument,
   "\n  query GetScan($id: String!) {\n    scan(id: $id) {\n      id\n      url\n      status\n      scanType\n      runId\n      result\n      project {\n        id\n        name\n        url\n      }\n      actions {\n        step\n        timestamp\n        thinking\n        action {\n          name\n          display\n        }\n        context {\n          url\n          title\n        }\n      }\n      vulnerabilities {\n        id\n        findingId\n        title\n        severity\n        category\n        url\n        description\n        evidence\n        remediation\n      }\n      createdAt\n      updatedAt\n    }\n  }\n":
     types.GetScanDocument,
   "\n  query GetScanScreenshot($runId: String!) {\n    scanScreenshot(runId: $runId)\n  }\n":
@@ -170,6 +173,12 @@ export function gql(
 export function gql(
   source: "\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n",
 ): (typeof documents)["\n  query GetScanStats {\n    scanStats {\n      totalScans\n      scansByStatus {\n        draft\n        queued\n        active\n        completed\n        failed\n      }\n    }\n  }\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n  query GetScanTrendStats($days: Int = 30) {\n    scanTrendStats(days: $days) {\n      date\n      scans\n      vulnerabilities\n    }\n  }\n",
+): (typeof documents)["\n  query GetScanTrendStats($days: Int = 30) {\n    scanTrendStats(days: $days) {\n      date\n      scans\n      vulnerabilities\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

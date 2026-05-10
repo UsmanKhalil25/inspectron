@@ -195,6 +195,7 @@ export type Query = {
   scan: Scan;
   scanScreenshot?: Maybe<Scalars["String"]["output"]>;
   scanStats: ScanStats;
+  scanTrendStats: Array<ScanTrendStats>;
   scans: ScansResponse;
   vulnerabilityStats: VulnerabilityStats;
 };
@@ -215,6 +216,10 @@ export type QueryScanArgs = {
 
 export type QueryScanScreenshotArgs = {
   runId: Scalars["String"]["input"];
+};
+
+export type QueryScanTrendStatsArgs = {
+  days?: Scalars["Int"]["input"];
 };
 
 export type QueryScansArgs = {
@@ -308,6 +313,13 @@ export type ScanStatusStats = {
   draft: Scalars["Int"]["output"];
   failed: Scalars["Int"]["output"];
   queued: Scalars["Int"]["output"];
+};
+
+export type ScanTrendStats = {
+  __typename?: "ScanTrendStats";
+  date: Scalars["String"]["output"];
+  scans: Scalars["Float"]["output"];
+  vulnerabilities: Scalars["Float"]["output"];
 };
 
 export enum ScanType {
@@ -635,6 +647,20 @@ export type GetScanStatsQuery = {
       failed: number;
     };
   };
+};
+
+export type GetScanTrendStatsQueryVariables = Exact<{
+  days?: InputMaybe<Scalars["Int"]["input"]>;
+}>;
+
+export type GetScanTrendStatsQuery = {
+  __typename?: "Query";
+  scanTrendStats: Array<{
+    __typename?: "ScanTrendStats";
+    date: string;
+    scans: number;
+    vulnerabilities: number;
+  }>;
 };
 
 export type GetScanQueryVariables = Exact<{
@@ -1608,6 +1634,57 @@ export const GetScanStatsDocument = {
     },
   ],
 } as unknown as DocumentNode<GetScanStatsQuery, GetScanStatsQueryVariables>;
+export const GetScanTrendStatsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetScanTrendStats" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "days" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+          defaultValue: { kind: "IntValue", value: "30" },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "scanTrendStats" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "days" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "days" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "date" } },
+                { kind: "Field", name: { kind: "Name", value: "scans" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "vulnerabilities" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetScanTrendStatsQuery,
+  GetScanTrendStatsQueryVariables
+>;
 export const GetScanDocument = {
   kind: "Document",
   definitions: [

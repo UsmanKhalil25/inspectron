@@ -28,6 +28,7 @@ import { ScanStats } from './types/scan-stats.type';
 import { VulnerabilityStats } from './types/vulnerability-stats.type';
 import { VulnerabilitySeverityStats } from './types/vulnerability-severity-stats.type';
 import { VulnerabilityCategoryStats } from './types/vulnerability-category-stats.type';
+import { ScanTrendStats } from './types/scan-trend-stats.type';
 import { VulnerabilitySeverity } from './enums/vulnerability-severity.enum';
 import { VulnerabilityCategory } from './enums/vulnerability-category.enum';
 import { isValidDateString } from 'src/commom/utils/date.utils';
@@ -436,6 +437,93 @@ export class ScansService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to retrieve vulnerability statistics',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  async getScanTrendStats(
+    userId: string,
+    days: number,
+  ): Promise<ScanTrendStats[]> {
+    if (!userId) {
+      throw new BadRequestException('User id is required');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      startDate.setHours(0, 0, 0, 0);
+
+      const scanResults = await this.scansRepository
+        .createQueryBuilder('scan')
+        .select(['DATE(scan.createdAt) AS "date"', 'COUNT(*) AS "scans"'])
+        .where('scan.userId = :userId', { userId })
+        .andWhere('scan.createdAt >= :startDate', { startDate })
+        .groupBy('DATE(scan.createdAt)')
+        .orderBy('DATE(scan.createdAt)', 'ASC')
+        .getRawMany<{ date: string; scans: string }>();
+
+      const vulnResults = await this.scansRepository
+        .createQueryBuilder('scan')
+        .innerJoin('scan.vulnerabilities', 'vuln')
+        .select([
+          'DATE(scan.createdAt) AS "date"',
+          'COUNT(vuln.id) AS "vulnerabilities"',
+        ])
+        .where('scan.userId = :userId', { userId })
+        .andWhere('scan.createdAt >= :startDate', { startDate })
+        .groupBy('DATE(scan.createdAt)')
+        .orderBy('DATE(scan.createdAt)', 'ASC')
+        .getRawMany<{ date: string; vulnerabilities: string }>();
+
+      const resultMap = new Map<
+        string,
+        { scans: number; vulnerabilities: number }
+      >();
+
+      for (const row of scanResults) {
+        resultMap.set(row.date, {
+          scans: Number(row.scans),
+          vulnerabilities: 0,
+        });
+      }
+
+      for (const row of vulnResults) {
+        const existing = resultMap.get(row.date);
+        if (existing) {
+          existing.vulnerabilities = Number(row.vulnerabilities);
+        } else {
+          resultMap.set(row.date, {
+            scans: 0,
+            vulnerabilities: Number(row.vulnerabilities),
+          });
+        }
+      }
+
+      const trend: ScanTrendStats[] = [];
+      for (let i = 0; i < days; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - (days - 1 - i));
+        d.setHours(0, 0, 0, 0);
+        const dateStr = d.toISOString().split('T')[0];
+        const data = resultMap.get(dateStr);
+        trend.push({
+          date: dateStr,
+          scans: data?.scans ?? 0,
+          vulnerabilities: data?.vulnerabilities ?? 0,
+        });
+      }
+
+      return trend;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve scan trend statistics',
         error instanceof Error ? error.message : String(error),
       );
     }

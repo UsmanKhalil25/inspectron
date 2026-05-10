@@ -1,10 +1,8 @@
 import { PageHeader } from "@/components/ui/page-header";
 
-import { DashboardStats } from "./components/dashboard-stats";
-import { DashboardCharts } from "./components/dashboard-charts";
-import { DashboardCategoryChart } from "./components/dashboard-category-chart";
-import { DashboardProjectChart } from "./components/dashboard-project-chart";
-import { DashboardRecentScans } from "./components/dashboard-recent-scans";
+import { ProjectVulnerabilitiesBarChart } from "./components/dashboard-charts/project-vulnerabilities-bar-chart";
+import { VulnerabilitySeverityRadarChart } from "./components/dashboard-charts/vulnerability-severity-radar-chart";
+import { ScanTrendLineChart } from "./components/dashboard-charts/scan-trend-line-chart";
 
 export const metadata = {
   title: "Dashboard",
@@ -18,16 +16,13 @@ export default function DashboardPage() {
         title="Dashboard"
         description="Overview of your security scanning projects and vulnerabilities."
       />
-
-      <DashboardStats />
-
-      <DashboardCharts />
-
-      <DashboardCategoryChart />
-
-      <DashboardProjectChart />
-
-      <DashboardRecentScans />
+      <ProjectVulnerabilitiesBarChart />
+      <div className="grid gap-6 md:grid-cols-3">
+        <VulnerabilitySeverityRadarChart />
+        <div className="md:col-span-2">
+          <ScanTrendLineChart />
+        </div>
+      </div>
     </main>
   );
 }

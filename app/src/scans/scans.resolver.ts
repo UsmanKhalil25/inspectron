@@ -5,6 +5,7 @@ import {
   Resolver,
   Context,
   Args,
+  Int,
 } from '@nestjs/graphql';
 import { UseGuards, Inject, BadRequestException } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
@@ -24,6 +25,7 @@ import { ScanStats } from './types/scan-stats.type';
 import { VulnerabilityStats } from './types/vulnerability-stats.type';
 import { ScanEvent } from './types/scan-event.type';
 import { BrowserPreviewFrame } from './types/browser-preview-stream.type';
+import { ScanTrendStats } from './types/scan-trend-stats.type';
 
 import { JwtPayload } from 'src/commom/interfaces/jwt-payload.interface';
 import {
@@ -75,6 +77,16 @@ export class ScansResolver {
   async vulnerabilityStats(@Context() context: { req: { user: JwtPayload } }) {
     const userId = context.req.user.sub;
     return await this.scansService.getVulnerabilityStats(userId);
+  }
+
+  @Query(() => [ScanTrendStats])
+  @UseGuards(JwtAuthGuard)
+  async scanTrendStats(
+    @Args('days', { type: () => Int, defaultValue: 30 }) days: number,
+    @Context() context: { req: { user: JwtPayload } },
+  ) {
+    const userId = context.req.user.sub;
+    return await this.scansService.getScanTrendStats(userId, days);
   }
 
   @Query(() => String, { nullable: true })

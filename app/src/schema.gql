@@ -186,6 +186,12 @@ type BrowserPreviewFrame {
   url: String
 }
 
+type ScanTrendStats {
+  date: String!
+  scans: Float!
+  vulnerabilities: Float!
+}
+
 type ProjectsResponse {
   projects: [Project!]!
   pagination: PaginationInfo!
@@ -210,6 +216,7 @@ type Query {
   scans(page: Int = 1, limit: Int = 20, filters: ScanFiltersInput): ScansResponse!
   scanStats: ScanStats!
   vulnerabilityStats: VulnerabilityStats!
+  scanTrendStats(days: Int! = 30): [ScanTrendStats!]!
   scanScreenshot(runId: String!): String
   currentUser: User
 }

@@ -192,6 +192,7 @@ export type Query = {
   scan: Scan;
   scanScreenshot?: Maybe<Scalars["String"]["output"]>;
   scanStats: ScanStats;
+  scanTrendStats: Array<ScanTrendStats>;
   scans: ScansResponse;
   vulnerabilityStats: VulnerabilityStats;
 };
@@ -212,6 +213,10 @@ export type QueryScanArgs = {
 
 export type QueryScanScreenshotArgs = {
   runId: Scalars["String"]["input"];
+};
+
+export type QueryScanTrendStatsArgs = {
+  days?: Scalars["Int"]["input"];
 };
 
 export type QueryScansArgs = {
@@ -305,6 +310,13 @@ export type ScanStatusStats = {
   draft: Scalars["Int"]["output"];
   failed: Scalars["Int"]["output"];
   queued: Scalars["Int"]["output"];
+};
+
+export type ScanTrendStats = {
+  __typename?: "ScanTrendStats";
+  date: Scalars["String"]["output"];
+  scans: Scalars["Float"]["output"];
+  vulnerabilities: Scalars["Float"]["output"];
 };
 
 export enum ScanType {
@@ -632,6 +644,20 @@ export type GetScanStatsQuery = {
       failed: number;
     };
   };
+};
+
+export type GetScanTrendStatsQueryVariables = Exact<{
+  days?: InputMaybe<Scalars["Int"]["input"]>;
+}>;
+
+export type GetScanTrendStatsQuery = {
+  __typename?: "Query";
+  scanTrendStats: Array<{
+    __typename?: "ScanTrendStats";
+    date: string;
+    scans: number;
+    vulnerabilities: number;
+  }>;
 };
 
 export type GetScanQueryVariables = Exact<{
