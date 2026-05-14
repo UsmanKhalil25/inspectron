@@ -1,12 +1,6 @@
 "use client";
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+
+import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,30 +30,6 @@ export function UserNav() {
   };
 
   const DROPDOWN_OPTIONS = [
-    {
-      label: "Upgrade to Pro",
-      icon: <Sparkles />,
-      action: () => console.log("Upgrade to Pro"),
-      group: "top",
-    },
-    {
-      label: "Account",
-      icon: <BadgeCheck />,
-      action: () => console.log("Account"),
-      group: "main",
-    },
-    {
-      label: "Billing",
-      icon: <CreditCard />,
-      action: () => console.log("Billing"),
-      group: "main",
-    },
-    {
-      label: "Notifications",
-      icon: <Bell />,
-      action: () => console.log("Notifications"),
-      group: "main",
-    },
     {
       label: "Log out",
       icon: <LogOut />,

@@ -2,9 +2,12 @@
 
 import asyncio
 import json
+import logging
 import os
 import re
 import time
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
@@ -21,7 +24,41 @@ from browser_agent.agent.views import AgentOutput
 from browser_agent.browser.session import BrowserSession
 from browser_agent.browser.views import BrowserStateSummary
 
-app = FastAPI()
+logger = logging.getLogger(__name__)
+
+MAX_CONCURRENT_RUNS = int(os.getenv('MAX_CONCURRENT_RUNS', '5'))
+RUN_TTL_SECONDS = int(os.getenv('RUN_TTL_SECONDS', '300'))
+
+run_semaphore = asyncio.Semaphore(MAX_CONCURRENT_RUNS)
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle
+# ---------------------------------------------------------------------------
+
+
+async def _cleanup_completed_runs() -> None:
+	while True:
+		await asyncio.sleep(60)
+		now = time.time()
+		expired = [
+			run_id
+			for run_id, state in runs.items()
+			if state.status in ('done', 'error') and (now - state.completed_at) > RUN_TTL_SECONDS
+		]
+		for run_id in expired:
+			runs.pop(run_id, None)
+			logger.info(f'Cleaned up expired run {run_id}')
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
+	cleanup_task = asyncio.create_task(_cleanup_completed_runs())
+	yield
+	cleanup_task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 # ---------------------------------------------------------------------------
@@ -31,13 +68,14 @@ app = FastAPI()
 
 @dataclass
 class RunState:
-	status: str  # "running" | "done" | "error"
+	status: str  # "queued" | "running" | "done" | "error"
 	screenshot_b64: str | None = None
 	events: asyncio.Queue = field(default_factory=asyncio.Queue)
 	message_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
 	result: str | None = None
 	error: str | None = None
 	browser_session: BrowserSession | None = None
+	completed_at: float = 0.0
 
 
 runs: dict[str, RunState] = {}
@@ -67,116 +105,122 @@ def get_llm():
 
 async def _run_agent(run_id: str, url: str, task: str, max_steps: int = 100, system_extension: str | None = None) -> None:
 	state = runs[run_id]
-	agent_ref: list = [None]
+	async with run_semaphore:
+		state.status = 'running'
+		agent_ref: list = [None]
 
-	async def register_new_step_callback(
-		browser_state: BrowserStateSummary,
-		agent_output: AgentOutput,
-		step_n: int,
-	) -> None:
-		state.screenshot_b64 = browser_state.screenshot
+		async def register_new_step_callback(
+			browser_state: BrowserStateSummary,
+			agent_output: AgentOutput,
+			step_n: int,
+		) -> None:
+			state.screenshot_b64 = browser_state.screenshot
 
-		# Drain pending user messages and inject into agent
-		while not state.message_queue.empty():
-			msg: str = state.message_queue.get_nowait()
-			if agent_ref[0] is not None:
-				agent_ref[0].message_manager.add_new_task(msg)
+			# Drain pending user messages and inject into agent
+			while not state.message_queue.empty():
+				msg: str = state.message_queue.get_nowait()
+				if agent_ref[0] is not None:
+					agent_ref[0].message_manager.add_new_task(msg)
+				await state.events.put(
+					{
+						'type': 'user_message',
+						'content': msg,
+						'timestamp': time.time(),
+					}
+				)
+
+		async def register_step_finalized_callback(
+			agent_output: AgentOutput,
+			step_n: int,
+			post_action_url: str,
+		) -> None:
+			# Extract action details
+			action_data = agent_output.action[0] if agent_output.action else None
+			action_name = 'unknown'
+			action_params = {}
+			action_display = 'No action'
+
+			if action_data:
+				action_dict = action_data.model_dump(exclude_unset=True)
+				if action_dict:
+					action_name = list(action_dict.keys())[0]
+					action_params = action_dict[action_name]
+
+					if action_name == 'click':
+						idx = action_params.get('index', 'unknown')
+						action_display = f'Clicked element #{idx}'
+					elif action_name == 'input':
+						idx = action_params.get('index', 'unknown')
+						text = action_params.get('text', '')
+						action_display = f'Typed "{text}" into element #{idx}'
+					elif action_name == 'go_to_url':
+						nav_url = action_params.get('url', '')
+						action_display = f'Navigated to {nav_url}'
+					elif action_name == 'scroll':
+						direction = 'down' if action_params.get('down', True) else 'up'
+						action_display = f'Scrolled {direction}'
+					elif action_name == 'wait':
+						action_display = 'Waited for page to load'
+					elif action_name == 'go_back':
+						action_display = 'Went back to previous page'
+					else:
+						action_display = f'Performed {action_name}'
+
+			event = {
+				'type': 'step',
+				'step': step_n,
+				'timestamp': time.time(),
+				'thinking': agent_output.thinking,
+				'action': {
+					'name': action_name,
+					'params': action_params,
+					'display': action_display,
+				},
+				'context': {
+					'url': post_action_url,
+					'title': '',
+				},
+			}
+
+			await state.events.put(event)
+
+		try:
+			browser_session = BrowserSession(headless=True)
+			state.browser_session = browser_session
+
+			agent = Agent(
+				task=task,
+				llm=get_llm(),
+				browser_session=browser_session,
+				register_new_step_callback=register_new_step_callback,
+				register_step_finalized_callback=register_step_finalized_callback,
+				extend_system_message=system_extension,
+			)
+			agent_ref[0] = agent
+			result = await agent.run(max_steps=max_steps)
+			state.result = result.final_result()
+			state.status = 'done'
+			state.completed_at = time.time()
 			await state.events.put(
 				{
-					'type': 'user_message',
-					'content': msg,
+					'type': 'done',
+					'result': state.result,
 					'timestamp': time.time(),
 				}
 			)
-
-	async def register_step_finalized_callback(
-		agent_output: AgentOutput,
-		step_n: int,
-		post_action_url: str,
-	) -> None:
-		# Extract action details
-		action_data = agent_output.action[0] if agent_output.action else None
-		action_name = 'unknown'
-		action_params = {}
-		action_display = 'No action'
-
-		if action_data:
-			action_dict = action_data.model_dump(exclude_unset=True)
-			if action_dict:
-				action_name = list(action_dict.keys())[0]
-				action_params = action_dict[action_name]
-
-				if action_name == 'click':
-					idx = action_params.get('index', 'unknown')
-					action_display = f'Clicked element #{idx}'
-				elif action_name == 'input':
-					idx = action_params.get('index', 'unknown')
-					text = action_params.get('text', '')
-					action_display = f'Typed "{text}" into element #{idx}'
-				elif action_name == 'go_to_url':
-					nav_url = action_params.get('url', '')
-					action_display = f'Navigated to {nav_url}'
-				elif action_name == 'scroll':
-					direction = 'down' if action_params.get('down', True) else 'up'
-					action_display = f'Scrolled {direction}'
-				elif action_name == 'wait':
-					action_display = 'Waited for page to load'
-				elif action_name == 'go_back':
-					action_display = 'Went back to previous page'
-				else:
-					action_display = f'Performed {action_name}'
-
-		event = {
-			'type': 'step',
-			'step': step_n,
-			'timestamp': time.time(),
-			'thinking': agent_output.thinking,
-			'action': {
-				'name': action_name,
-				'params': action_params,
-				'display': action_display,
-			},
-			'context': {
-				'url': post_action_url,
-				'title': '',
-			},
-		}
-
-		await state.events.put(event)
-
-	try:
-		browser_session = BrowserSession(headless=True)
-		state.browser_session = browser_session
-
-		agent = Agent(
-			task=task,
-			llm=get_llm(),
-			browser_session=browser_session,
-			register_new_step_callback=register_new_step_callback,
-			register_step_finalized_callback=register_step_finalized_callback,
-			extend_system_message=system_extension,
-		)
-		agent_ref[0] = agent
-		result = await agent.run(max_steps=max_steps)
-		state.result = result.final_result()
-		state.status = 'done'
-		await state.events.put(
-			{
-				'type': 'done',
-				'result': state.result,
-				'timestamp': time.time(),
-			}
-		)
-	except Exception as exc:
-		state.error = str(exc)
-		state.status = 'error'
-		await state.events.put(
-			{
-				'type': 'error',
-				'message': state.error,
-				'timestamp': time.time(),
-			}
-		)
+		except Exception as exc:
+			state.error = str(exc)
+			state.status = 'error'
+			state.completed_at = time.time()
+			await state.events.put(
+				{
+					'type': 'error',
+					'message': state.error,
+					'timestamp': time.time(),
+				}
+			)
+		finally:
+			state.browser_session = None
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +249,7 @@ class RunRequest(BaseModel):
 	max_steps: int = 100
 
 
-@app.post('/runs', status_code=201)
+@app.post('/runs', status_code=202)
 async def create_run(body: RunRequest):
 	system_extension: str | None = None
 	if body.skill is not None:
@@ -219,9 +263,27 @@ async def create_run(body: RunRequest):
 	else:
 		raise HTTPException(status_code=422, detail='Either task or skill must be provided')
 	run_id = str(uuid4())
-	runs[run_id] = RunState(status='running')
+	runs[run_id] = RunState(status='queued')
 	asyncio.create_task(_run_agent(run_id, body.url, task, body.max_steps, system_extension))
-	return {'run_id': run_id}
+	return {'run_id': run_id, 'status': 'queued'}
+
+
+@app.get('/runs')
+async def list_runs():
+	return {
+		'max_concurrent': MAX_CONCURRENT_RUNS,
+		'active': sum(1 for s in runs.values() if s.status == 'running'),
+		'queued': sum(1 for s in runs.values() if s.status == 'queued'),
+		'runs': {
+			run_id: {
+				'status': state.status,
+				'has_result': state.result is not None,
+				'has_error': state.error is not None,
+				'completed_at': state.completed_at,
+			}
+			for run_id, state in runs.items()
+		},
+	}
 
 
 class MessageRequest(BaseModel):
@@ -233,8 +295,8 @@ async def send_message(run_id: str, body: MessageRequest):
 	state = runs.get(run_id)
 	if state is None:
 		raise HTTPException(status_code=404, detail='Run not found')
-	if state.status != 'running':
-		raise HTTPException(status_code=400, detail='Run is not in running state')
+	if state.status not in ('running', 'queued'):
+		raise HTTPException(status_code=400, detail='Run is not in running or queued state')
 	await state.message_queue.put(body.content)
 	return {'ok': True}
 

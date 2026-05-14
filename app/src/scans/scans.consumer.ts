@@ -23,7 +23,7 @@ export interface ScanJobData {
   url: string;
 }
 
-@Processor('scans')
+@Processor('scans', { concurrency: 5 })
 export class ScanConsumer extends WorkerHost {
   private readonly logger = new Logger(ScanConsumer.name);
 
