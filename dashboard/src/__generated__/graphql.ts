@@ -133,6 +133,28 @@ export type PaginationInfo = {
   totalPages: Scalars["Int"]["output"];
 };
 
+export type PerformanceMetric = {
+  __typename?: "PerformanceMetric";
+  cls: Scalars["Float"]["output"];
+  diagnostics?: Maybe<Scalars["String"]["output"]>;
+  domContentLoaded: Scalars["Float"]["output"];
+  fcp: Scalars["Float"]["output"];
+  id: Scalars["ID"]["output"];
+  inp: Scalars["Float"]["output"];
+  lcp: Scalars["Float"]["output"];
+  onLoad: Scalars["Float"]["output"];
+  opportunities?: Maybe<Scalars["String"]["output"]>;
+  performanceScore: Scalars["Int"]["output"];
+  resourceCount: Scalars["Int"]["output"];
+  resources?: Maybe<Scalars["String"]["output"]>;
+  scanId: Scalars["String"]["output"];
+  speedIndex: Scalars["Float"]["output"];
+  totalBlockingTime: Scalars["Float"]["output"];
+  totalTransferSize: Scalars["Int"]["output"];
+  ttfb: Scalars["Float"]["output"];
+  url: Scalars["String"]["output"];
+};
+
 export type Project = {
   __typename?: "Project";
   createdAt: Scalars["DateTime"]["output"];
@@ -246,6 +268,7 @@ export type Scan = {
   actions?: Maybe<Array<ScanAction>>;
   createdAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
+  performanceMetrics?: Maybe<Array<PerformanceMetric>>;
   project: Project;
   result?: Maybe<Scalars["String"]["output"]>;
   runId?: Maybe<Scalars["String"]["output"]>;
@@ -324,6 +347,7 @@ export type ScanTrendStats = {
 
 export enum ScanType {
   Dynamic = "DYNAMIC",
+  Performance = "PERFORMANCE",
   Static = "STATIC",
 }
 
@@ -700,6 +724,27 @@ export type GetScanQuery = {
       evidence: string;
       remediation: string;
     }> | null;
+    performanceMetrics?: Array<{
+      __typename?: "PerformanceMetric";
+      id: string;
+      url: string;
+      performanceScore: number;
+      lcp: number;
+      fcp: number;
+      cls: number;
+      inp: number;
+      ttfb: number;
+      speedIndex: number;
+      totalBlockingTime: number;
+      domContentLoaded: number;
+      onLoad: number;
+      totalTransferSize: number;
+      resourceCount: number;
+      resources?: string | null;
+      opportunities?: string | null;
+      diagnostics?: string | null;
+      scanId: string;
+    }> | null;
   };
 };
 
@@ -845,6 +890,27 @@ export type ScanStatusChangedSubscription = {
       description: string;
       evidence: string;
       remediation: string;
+    }> | null;
+    performanceMetrics?: Array<{
+      __typename?: "PerformanceMetric";
+      id: string;
+      url: string;
+      performanceScore: number;
+      lcp: number;
+      fcp: number;
+      cls: number;
+      inp: number;
+      ttfb: number;
+      speedIndex: number;
+      totalBlockingTime: number;
+      domContentLoaded: number;
+      onLoad: number;
+      totalTransferSize: number;
+      resourceCount: number;
+      resources?: string | null;
+      opportunities?: string | null;
+      diagnostics?: string | null;
+      scanId: string;
     }> | null;
   };
 };
@@ -1830,6 +1896,66 @@ export const GetScanDocument = {
                     ],
                   },
                 },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "performanceMetrics" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "performanceScore" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "lcp" } },
+                      { kind: "Field", name: { kind: "Name", value: "fcp" } },
+                      { kind: "Field", name: { kind: "Name", value: "cls" } },
+                      { kind: "Field", name: { kind: "Name", value: "inp" } },
+                      { kind: "Field", name: { kind: "Name", value: "ttfb" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "speedIndex" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "totalBlockingTime" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "domContentLoaded" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "onLoad" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "totalTransferSize" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "resourceCount" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "resources" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "opportunities" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "diagnostics" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "scanId" },
+                      },
+                    ],
+                  },
+                },
                 { kind: "Field", name: { kind: "Name", value: "createdAt" } },
                 { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
               ],
@@ -2388,6 +2514,66 @@ export const ScanStatusChangedDocument = {
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "remediation" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "performanceMetrics" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "url" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "performanceScore" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "lcp" } },
+                      { kind: "Field", name: { kind: "Name", value: "fcp" } },
+                      { kind: "Field", name: { kind: "Name", value: "cls" } },
+                      { kind: "Field", name: { kind: "Name", value: "inp" } },
+                      { kind: "Field", name: { kind: "Name", value: "ttfb" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "speedIndex" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "totalBlockingTime" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "domContentLoaded" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "onLoad" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "totalTransferSize" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "resourceCount" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "resources" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "opportunities" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "diagnostics" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "scanId" },
                       },
                     ],
                   },

@@ -106,6 +106,27 @@ enum VulnerabilityCategory {
   SQL_INJECTION
 }
 
+type PerformanceMetric {
+  id: ID!
+  url: String!
+  performanceScore: Int!
+  lcp: Float!
+  fcp: Float!
+  cls: Float!
+  inp: Float!
+  ttfb: Float!
+  speedIndex: Float!
+  totalBlockingTime: Float!
+  domContentLoaded: Float!
+  onLoad: Float!
+  totalTransferSize: Int!
+  resourceCount: Int!
+  resources: String
+  opportunities: String
+  diagnostics: String
+  scanId: String!
+}
+
 type Scan {
   id: ID!
   url: String!
@@ -115,6 +136,7 @@ type Scan {
   result: String
   actions: [ScanAction!]
   vulnerabilities: [Vulnerability!]
+  performanceMetrics: [PerformanceMetric!]
   user: PublicUser!
   project: Project!
   createdAt: DateTime!
@@ -132,6 +154,7 @@ enum ScanStatus {
 enum ScanType {
   STATIC
   DYNAMIC
+  PERFORMANCE
 }
 
 type ScansResponse {

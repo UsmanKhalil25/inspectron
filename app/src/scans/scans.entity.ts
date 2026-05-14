@@ -14,6 +14,7 @@ import { ScanStatus } from './enums/scan-status.enum';
 import { ScanType } from './enums/scan-type.enum';
 import { ScanAction } from './interfaces/scan-action.interface';
 import { Vulnerability } from './vulnerability.entity';
+import { PerformanceMetric } from './entities/performance-metric.entity';
 
 @Entity()
 export class Scan {
@@ -53,6 +54,9 @@ export class Scan {
     cascade: true,
   })
   vulnerabilities: Vulnerability[];
+
+  @OneToMany(() => PerformanceMetric, (pm) => pm.scan, { cascade: true })
+  performanceMetrics: PerformanceMetric[];
 
   @ManyToOne(() => User, (user) => user.scans)
   user: User;

@@ -8,10 +8,12 @@ import { Repository } from 'typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import { Scan } from './scans.entity';
 import { Vulnerability } from './vulnerability.entity';
+import { PerformanceMetric } from './entities/performance-metric.entity';
 import { ScanAction } from './interfaces/scan-action.interface';
 import { ScanStatus } from './enums/scan-status.enum';
 import { ScanType } from './enums/scan-type.enum';
 import { BrowserAgentService } from './browser-agent.service';
+import { LighthouseService } from './services/lighthouse.service';
 import { PUB_SUB, SCAN_STATUS_CHANGED, SCAN_EVENTS } from './scans.constants';
 import {
   VulnerabilityReportSchema,
@@ -32,9 +34,12 @@ export class ScanConsumer extends WorkerHost {
     private readonly scansRepository: Repository<Scan>,
     @InjectRepository(Vulnerability)
     private readonly vulnerabilityRepository: Repository<Vulnerability>,
+    @InjectRepository(PerformanceMetric)
+    private readonly perfMetricRepository: Repository<PerformanceMetric>,
     @Inject(PUB_SUB)
     private readonly pubSub: PubSub,
     private readonly browserAgentService: BrowserAgentService,
+    private readonly lighthouseService: LighthouseService,
   ) {
     super();
   }
@@ -58,6 +63,11 @@ export class ScanConsumer extends WorkerHost {
         this.logger.warn(
           `Scan ${scanId} has status "${scan.status}", expected "${ScanStatus.QUEUED}". Skipping.`,
         );
+        return;
+      }
+
+      if (scan.scanType === ScanType.PERFORMANCE) {
+        await this.lighthouseService.runAudit(scan);
         return;
       }
 
@@ -107,10 +117,9 @@ export class ScanConsumer extends WorkerHost {
         await this.saveVulnerabilities(scan, result);
       }
 
-      // Reload with vulnerabilities so the subscription payload includes them
       const completedScan = await this.scansRepository.findOne({
         where: { id: scan.id },
-        relations: ['vulnerabilities', 'project'],
+        relations: ['vulnerabilities', 'project', 'performanceMetrics'],
       });
 
       await this.pubSub.publish(SCAN_STATUS_CHANGED, {

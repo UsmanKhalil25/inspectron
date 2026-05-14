@@ -32,6 +32,26 @@ export const SCAN_STATUS_CHANGED = gql(`
         evidence
         remediation
       }
+      performanceMetrics {
+        id
+        url
+        performanceScore
+        lcp
+        fcp
+        cls
+        inp
+        ttfb
+        speedIndex
+        totalBlockingTime
+        domContentLoaded
+        onLoad
+        totalTransferSize
+        resourceCount
+        resources
+        opportunities
+        diagnostics
+        scanId
+      }
       createdAt
       updatedAt
     }

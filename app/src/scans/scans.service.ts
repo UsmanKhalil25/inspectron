@@ -77,7 +77,7 @@ export class ScansService {
           id: scanId,
           user: { id: userId },
         },
-        relations: ['user', 'vulnerabilities', 'project'],
+        relations: ['user', 'vulnerabilities', 'project', 'performanceMetrics'],
       });
 
       if (!scan) {
@@ -181,7 +181,7 @@ export class ScansService {
 
     const [scans, total] = await this.scansRepository.findAndCount({
       where,
-      relations: ['user', 'project'],
+      relations: ['user', 'project', 'performanceMetrics'],
       order,
       skip,
       take: limit,
@@ -255,7 +255,7 @@ export class ScansService {
 
           const scanWithRelations = await manager.findOne(Scan, {
             where: { id: savedScan.id },
-            relations: ['user', 'project'],
+            relations: ['user', 'project', 'performanceMetrics'],
           });
 
           if (!scanWithRelations) {

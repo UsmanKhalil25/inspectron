@@ -6,6 +6,7 @@ import { ScanStatus } from '../enums/scan-status.enum';
 import { ScanType } from '../enums/scan-type.enum';
 import { ScanAction } from './scan-action.type';
 import { Vulnerability } from './vulnerability.type';
+import { PerformanceMetric } from './performance-metric.type';
 
 @ObjectType()
 export class Scan {
@@ -32,6 +33,9 @@ export class Scan {
 
   @Field(() => [Vulnerability], { nullable: true })
   vulnerabilities?: Vulnerability[];
+
+  @Field(() => [PerformanceMetric], { nullable: true })
+  performanceMetrics?: PerformanceMetric[];
 
   @Field(() => PublicUser)
   user: PublicUser;

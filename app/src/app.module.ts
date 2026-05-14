@@ -13,6 +13,7 @@ import {
   databaseConfig,
   redisConfig,
   browserAgentConfig,
+  lighthouseConfig,
 } from './config';
 
 import { AuthModule } from './auth/auth.module';
@@ -26,7 +27,13 @@ import { BullModule } from '@nestjs/bullmq';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [authConfig, databaseConfig, redisConfig, browserAgentConfig],
+      load: [
+        authConfig,
+        databaseConfig,
+        redisConfig,
+        browserAgentConfig,
+        lighthouseConfig,
+      ],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

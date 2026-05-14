@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation, useSuspenseQuery } from "@apollo/client";
 import { toast } from "sonner";
-import { Plus, Shield, Zap } from "lucide-react";
+import { Plus, Shield, Zap, Gauge } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,6 +76,11 @@ const SCAN_TYPE_CONFIG: Record<
     label: "Dynamic",
     description: "Reflected XSS, open redirects",
     icon: Zap,
+  },
+  [ScanType.Performance]: {
+    label: "Performance",
+    description: "Core Web Vitals, load times, resource audit",
+    icon: Gauge,
   },
 };
 
@@ -157,7 +162,7 @@ function CreateScanFromProjectDialog({
           New Scan
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create Scan</DialogTitle>
           <DialogDescription>
@@ -195,7 +200,7 @@ function CreateScanFromProjectDialog({
                 <FormItem>
                   <FormLabel>Scan Type</FormLabel>
                   <FormControl>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {(Object.values(ScanType) as ScanType[]).map((type) => {
                         const config = SCAN_TYPE_CONFIG[type];
                         const Icon = config.icon;
@@ -216,7 +221,9 @@ function CreateScanFromProjectDialog({
                                 isSelected
                                   ? type === ScanType.Static
                                     ? "text-blue-400"
-                                    : "text-orange-400"
+                                    : type === ScanType.Dynamic
+                                      ? "text-orange-400"
+                                      : "text-green-400"
                                   : "text-muted-foreground/50"
                               }`}
                             />

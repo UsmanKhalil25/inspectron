@@ -3,3 +3,4 @@ export * from './auth.config';
 export * from './database.config';
 export * from './redis.config';
 export * from './browser-agent.config';
+export * from './lighthouse.config';

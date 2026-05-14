@@ -130,6 +130,28 @@ export type PaginationInfo = {
   totalPages: Scalars["Int"]["output"];
 };
 
+export type PerformanceMetric = {
+  __typename?: "PerformanceMetric";
+  cls: Scalars["Float"]["output"];
+  diagnostics?: Maybe<Scalars["String"]["output"]>;
+  domContentLoaded: Scalars["Float"]["output"];
+  fcp: Scalars["Float"]["output"];
+  id: Scalars["ID"]["output"];
+  inp: Scalars["Float"]["output"];
+  lcp: Scalars["Float"]["output"];
+  onLoad: Scalars["Float"]["output"];
+  opportunities?: Maybe<Scalars["String"]["output"]>;
+  performanceScore: Scalars["Int"]["output"];
+  resourceCount: Scalars["Int"]["output"];
+  resources?: Maybe<Scalars["String"]["output"]>;
+  scanId: Scalars["String"]["output"];
+  speedIndex: Scalars["Float"]["output"];
+  totalBlockingTime: Scalars["Float"]["output"];
+  totalTransferSize: Scalars["Int"]["output"];
+  ttfb: Scalars["Float"]["output"];
+  url: Scalars["String"]["output"];
+};
+
 export type Project = {
   __typename?: "Project";
   createdAt: Scalars["DateTime"]["output"];
@@ -243,6 +265,7 @@ export type Scan = {
   actions?: Maybe<Array<ScanAction>>;
   createdAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
+  performanceMetrics?: Maybe<Array<PerformanceMetric>>;
   project: Project;
   result?: Maybe<Scalars["String"]["output"]>;
   runId?: Maybe<Scalars["String"]["output"]>;
@@ -321,6 +344,7 @@ export type ScanTrendStats = {
 
 export enum ScanType {
   Dynamic = "DYNAMIC",
+  Performance = "PERFORMANCE",
   Static = "STATIC",
 }
 
@@ -697,6 +721,27 @@ export type GetScanQuery = {
       evidence: string;
       remediation: string;
     }> | null;
+    performanceMetrics?: Array<{
+      __typename?: "PerformanceMetric";
+      id: string;
+      url: string;
+      performanceScore: number;
+      lcp: number;
+      fcp: number;
+      cls: number;
+      inp: number;
+      ttfb: number;
+      speedIndex: number;
+      totalBlockingTime: number;
+      domContentLoaded: number;
+      onLoad: number;
+      totalTransferSize: number;
+      resourceCount: number;
+      resources?: string | null;
+      opportunities?: string | null;
+      diagnostics?: string | null;
+      scanId: string;
+    }> | null;
   };
 };
 
@@ -842,6 +887,27 @@ export type ScanStatusChangedSubscription = {
       description: string;
       evidence: string;
       remediation: string;
+    }> | null;
+    performanceMetrics?: Array<{
+      __typename?: "PerformanceMetric";
+      id: string;
+      url: string;
+      performanceScore: number;
+      lcp: number;
+      fcp: number;
+      cls: number;
+      inp: number;
+      ttfb: number;
+      speedIndex: number;
+      totalBlockingTime: number;
+      domContentLoaded: number;
+      onLoad: number;
+      totalTransferSize: number;
+      resourceCount: number;
+      resources?: string | null;
+      opportunities?: string | null;
+      diagnostics?: string | null;
+      scanId: string;
     }> | null;
   };
 };
