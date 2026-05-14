@@ -467,7 +467,7 @@ export class ScansService {
         .andWhere('scan.createdAt >= :startDate', { startDate })
         .groupBy('DATE(scan.createdAt)')
         .orderBy('DATE(scan.createdAt)', 'ASC')
-        .getRawMany<{ date: string; scans: string }>();
+        .getRawMany<{ date: string | Date; scans: string }>();
 
       const vulnResults = await this.scansRepository
         .createQueryBuilder('scan')
@@ -480,26 +480,35 @@ export class ScansService {
         .andWhere('scan.createdAt >= :startDate', { startDate })
         .groupBy('DATE(scan.createdAt)')
         .orderBy('DATE(scan.createdAt)', 'ASC')
-        .getRawMany<{ date: string; vulnerabilities: string }>();
+        .getRawMany<{ date: string | Date; vulnerabilities: string }>();
 
       const resultMap = new Map<
         string,
         { scans: number; vulnerabilities: number }
       >();
 
+      const formatDateKey = (value: string | Date): string => {
+        if (typeof value === 'string') return value;
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       for (const row of scanResults) {
-        resultMap.set(row.date, {
+        resultMap.set(formatDateKey(row.date), {
           scans: Number(row.scans),
           vulnerabilities: 0,
         });
       }
 
       for (const row of vulnResults) {
-        const existing = resultMap.get(row.date);
+        const dateStr = formatDateKey(row.date);
+        const existing = resultMap.get(dateStr);
         if (existing) {
           existing.vulnerabilities = Number(row.vulnerabilities);
         } else {
-          resultMap.set(row.date, {
+          resultMap.set(dateStr, {
             scans: 0,
             vulnerabilities: Number(row.vulnerabilities),
           });
@@ -511,7 +520,10 @@ export class ScansService {
         const d = new Date();
         d.setDate(d.getDate() - (days - 1 - i));
         d.setHours(0, 0, 0, 0);
-        const dateStr = d.toISOString().split('T')[0];
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         const data = resultMap.get(dateStr);
         trend.push({
           date: dateStr,

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { StatCard } from "@/app/(protected)/scans/components/scans-stats/stat-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SCAN_STATS } from "@/graphql/queries/scan-stats";
 import { VULNERABILITY_STATS } from "@/graphql/queries/vulnerability-stats";
 import { PROJECT_VULNERABILITY_STATS } from "@/graphql/queries/project-vulnerability-stats";
@@ -40,50 +40,75 @@ function DashboardStatsImpl({ cookieHeader }: { cookieHeader: string }) {
     vulnStats?.bySeverity.find((s) => s.severity === VulnerabilitySeverity.High)
       ?.count ?? 0;
 
+  const stats = [
+    {
+      title: "Projects",
+      icon: FolderKanban,
+      value: projectCount,
+      href: "/projects",
+      description: "Total projects",
+    },
+    {
+      title: "Total Scans",
+      icon: ScanSearch,
+      value: scanStats?.totalScans ?? 0,
+      href: "/scans",
+      description: "All-time scans",
+    },
+    {
+      title: "Vulnerabilities",
+      icon: ShieldAlert,
+      value: vulnStats?.total ?? 0,
+      description: "Total found",
+    },
+    {
+      title: "Critical Issues",
+      icon: AlertTriangle,
+      value: criticalCount,
+      subValue: highCount > 0 ? `${highCount} high` : undefined,
+      description: "Need immediate attention",
+    },
+  ];
+
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <Link href="/projects">
-        <StatCard
-          title="Projects"
-          icon={FolderKanban}
-          value={<div className="text-2xl font-bold">{projectCount}</div>}
-        />
-      </Link>
+    <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => {
+        const card = (
+          <Card className="rounded-2xl shadow-sm border hover:border-muted-foreground/20 transition-colors h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-5 pt-5">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="px-5 pb-5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold tracking-tight tabular-nums">
+                  {stat.value.toLocaleString()}
+                </span>
+                {stat.subValue && (
+                  <span className="text-xs text-muted-foreground">
+                    {stat.subValue}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stat.description}
+              </p>
+            </CardContent>
+          </Card>
+        );
 
-      <Link href="/scans">
-        <StatCard
-          title="Total Scans"
-          icon={ScanSearch}
-          value={
-            <div className="text-2xl font-bold">
-              {scanStats?.totalScans ?? 0}
-            </div>
-          }
-        />
-      </Link>
-
-      <StatCard
-        title="Vulnerabilities"
-        icon={ShieldAlert}
-        value={
-          <div className="text-2xl font-bold">{vulnStats?.total ?? 0}</div>
+        if (stat.href) {
+          return (
+            <Link key={stat.title} href={stat.href} className="block">
+              {card}
+            </Link>
+          );
         }
-      />
 
-      <StatCard
-        title="Critical Issues"
-        icon={AlertTriangle}
-        value={
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-destructive">
-              {criticalCount}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {highCount} high
-            </span>
-          </div>
-        }
-      />
+        return <div key={stat.title}>{card}</div>;
+      })}
     </div>
   );
 }

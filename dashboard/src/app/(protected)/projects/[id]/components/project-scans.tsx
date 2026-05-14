@@ -296,7 +296,7 @@ function ScanRow({ scan }: { scan: GetScansQuery["scans"]["scans"][number] }) {
 
   return (
     <tr
-      className="group cursor-pointer hover:bg-muted/50"
+      className="group cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={() => router.push(`/scans/${scan.id}`)}
     >
       <td className="p-4">
@@ -349,7 +349,7 @@ export function ProjectScans({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Scans</h3>
+        <h3 className="text-lg font-semibold tracking-tight">Scans</h3>
         <CreateScanFromProjectDialog
           projectId={projectId}
           projectUrl={projectUrl}
@@ -357,13 +357,13 @@ export function ProjectScans({
       </div>
 
       {scans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-dashed border-border/60 bg-muted/10">
           <div className="w-16 h-16 mb-6 rounded-full bg-muted flex items-center justify-center">
             <Shield className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No scans yet</h3>
-          <p className="text-muted-foreground text-center mb-6 max-w-sm">
-            Start your first scan for this project.
+          <p className="text-muted-foreground text-center mb-6 max-w-sm text-sm">
+            Start your first scan for this project to discover vulnerabilities.
           </p>
         </div>
       ) : (

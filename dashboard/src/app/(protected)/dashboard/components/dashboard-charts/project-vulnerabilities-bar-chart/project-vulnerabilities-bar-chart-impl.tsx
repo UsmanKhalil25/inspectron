@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSuspenseQuery } from "@apollo/client";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { FolderKanban } from "lucide-react";
 
 import {
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -24,23 +26,23 @@ import { PROJECT_VULNERABILITY_STATS } from "@/graphql/queries/project-vulnerabi
 const chartConfig = {
   critical: {
     label: "Critical",
-    color: "var(--destructive)",
+    color: "var(--chart-5)",
   },
   high: {
     label: "High",
-    color: "var(--chart-1)",
+    color: "var(--chart-4)",
   },
   medium: {
     label: "Medium",
-    color: "var(--chart-2)",
+    color: "var(--chart-3)",
   },
   low: {
     label: "Low",
-    color: "var(--chart-3)",
+    color: "var(--chart-2)",
   },
   info: {
     label: "Info",
-    color: "var(--chart-4)",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
@@ -53,6 +55,7 @@ type ChartDataItem = {
   medium: number;
   low: number;
   info: number;
+  total: number;
 };
 
 function EmptyState() {
@@ -83,7 +86,7 @@ function ProjectVulnerabilitiesBarChartImpl({
     return stats
       .slice()
       .sort((a, b) => b.total - a.total)
-      .slice(0, 20)
+      .slice(0, 10)
       .map((item) => ({
         project: item.projectName,
         critical: item.critical,
@@ -91,19 +94,14 @@ function ProjectVulnerabilitiesBarChartImpl({
         medium: item.medium,
         low: item.low,
         info: item.info,
+        total: item.total,
       }));
   }, [data?.projectVulnerabilityStats]);
 
   const hasAnyVulnerabilities = React.useMemo(
-    () =>
-      chartData.some(
-        (item) =>
-          item.critical + item.high + item.medium + item.low + item.info > 0,
-      ),
+    () => chartData.some((item) => item.total > 0),
     [chartData],
   );
-
-  const [activeChart, setActiveChart] = React.useState<SeverityKey>("critical");
 
   const totals = React.useMemo(() => {
     const keys = Object.keys(chartConfig) as SeverityKey[];
@@ -116,15 +114,20 @@ function ProjectVulnerabilitiesBarChartImpl({
     );
   }, [chartData]);
 
+  const grandTotal = React.useMemo(
+    () => chartData.reduce((sum, curr) => sum + curr.total, 0),
+    [chartData],
+  );
+
   if (chartData.length === 0 || !hasAnyVulnerabilities) {
     return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">
-            Vulnerabilities by Project
+      <Card className="rounded-2xl shadow-sm border">
+        <CardHeader className="pb-2 px-5 pt-5">
+          <CardTitle className="text-base font-semibold tracking-tight">
+            Top Vulnerable Projects
           </CardTitle>
-          <CardDescription>
-            Toggle severity levels to compare across projects
+          <CardDescription className="text-sm">
+            Vulnerability breakdown across your most affected projects
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,61 +138,95 @@ function ProjectVulnerabilitiesBarChartImpl({
   }
 
   return (
-    <Card className="rounded-2xl shadow-sm py-0">
-      <CardHeader className="flex flex-col items-stretch border-b p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:py-4">
-          <CardTitle className="text-base font-medium">
-            Vulnerabilities by Project
+    <Card className="rounded-2xl shadow-sm border overflow-hidden">
+      <CardHeader className="flex flex-col items-stretch border-b p-0 sm:flex-row bg-card">
+        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-5 pb-4 sm:py-5">
+          <CardTitle className="text-base font-semibold tracking-tight">
+            Top Vulnerable Projects
           </CardTitle>
-          <CardDescription>
-            Toggle severity levels to compare across projects
+          <CardDescription className="text-sm">
+            Vulnerability breakdown across your most affected projects
           </CardDescription>
         </div>
-        <div className="flex">
+        <div className="flex border-t sm:border-t-0 sm:border-l divide-x overflow-x-auto">
           {(Object.keys(chartConfig) as SeverityKey[]).map((key) => (
-            <button
+            <div
               key={key}
-              data-active={activeChart === key}
-              className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-4 py-3 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-t-0 sm:border-l sm:px-6 sm:py-4"
-              onClick={() => setActiveChart(key)}
+              className="relative z-30 flex flex-1 flex-col justify-center gap-1 px-4 py-4 text-left min-w-[72px]"
             >
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {chartConfig[key].label}
               </span>
-              <span className="text-lg leading-none font-bold sm:text-2xl">
+              <span className="text-lg leading-none font-bold tabular-nums sm:text-xl">
                 {totals[key].toLocaleString()}
               </span>
-            </button>
+            </div>
           ))}
+          <div className="relative z-30 flex flex-1 flex-col justify-center gap-1 px-4 py-4 text-left min-w-[72px] bg-muted/20">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Total
+            </span>
+            <span className="text-lg leading-none font-bold tabular-nums sm:text-xl">
+              {grandTotal.toLocaleString()}
+            </span>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="px-2 sm:p-6">
+      <CardContent className="px-2 pt-6 pb-2 sm:px-6 sm:pb-4">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          className="aspect-auto h-[300px] w-full"
         >
           <BarChart
             accessibilityLayer
             data={chartData}
             margin={{
-              left: 12,
-              right: 12,
+              left: 4,
+              right: 4,
+              top: 8,
+              bottom: 4,
             }}
           >
-            <CartesianGrid vertical={false} />
+            <CartesianGrid
+              vertical={false}
+              stroke="var(--border)"
+              strokeOpacity={0.5}
+            />
             <XAxis
               dataKey="project"
               tickLine={false}
               axisLine={false}
+              tickMargin={10}
+              minTickGap={16}
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+              angle={-30}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
               tickMargin={8}
-              minTickGap={32}
+              fontSize={12}
+              stroke="var(--muted-foreground)"
+              tickFormatter={(value) =>
+                typeof value === "number" ? value.toLocaleString() : value
+              }
             />
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Bar
-              dataKey={activeChart}
-              fill={`var(--color-${activeChart})`}
-              radius={4}
+            <ChartTooltip
+              content={<ChartTooltipContent hideLabel indicator="line" />}
             />
+            <ChartLegend content={<ChartLegendContent />} />
+            {(Object.keys(chartConfig) as SeverityKey[]).map((key) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="a"
+                fill={`var(--color-${key})`}
+                radius={key === "info" ? [8, 8, 0, 0] : [0, 0, 0, 0]}
+              />
+            ))}
           </BarChart>
         </ChartContainer>
       </CardContent>
