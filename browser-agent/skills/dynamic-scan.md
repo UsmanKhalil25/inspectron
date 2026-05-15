@@ -1,6 +1,6 @@
 ---
 name: dynamic-web-security-scan
-description: Active dynamic security scan — registers a test account to gain authenticated access, then tests for reflected XSS and SQL injection across authenticated pages.
+description: Active dynamic security scan — performs site reconnaissance, optionally authenticates, then tests for reflected/dom XSS, SQL injection, CORS misconfigurations, and session management weaknesses.
 ---
 
 # Dynamic Web Application Security Scan
@@ -11,42 +11,30 @@ You are performing a **DYNAMIC** web application security scan on {url}. You wil
 
 ---
 
-## Phase 0 — Authentication (only if needed)
+## Phase 0 — Site Reconnaissance & Optional Authentication
 
-Navigate to {url}. Check whether the page has testable content (forms, URL parameters, search inputs, or internal links to explore). If yes, **skip Phase 0 entirely** and go straight to Phase 1.
-
-Only proceed with authentication if the landing page is a login wall — i.e. the only meaningful content is a login form with no other testable surface.
+Navigate to {url}. Determine what kind of site this is and whether it has a login/registration system.
 
 **Test credentials:** username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
 
-### Step 1 — Try to register
+### Skip authentication entirely if ANY of these are true:
+- The landing page has testable content (forms, search inputs, multiple internal links)
+- No login or registration links exist
+- Registration or login has CAPTCHA (elements with class/id containing `captcha`, `recaptcha`, `hcaptcha`, `turnstile`)
+- Registration requires email verification (text contains "verify your email", "check your inbox", "confirmation link")
+- Registration requires OTP or 2FA (text contains "OTP", "verification code", "two-factor", "authenticator")
+- Login is SSO-only (Google, GitHub, Microsoft buttons with no password field)
+- Registration requires payment or invite (text contains "credit card", "subscription", "invite", "waitlist")
 
-Look for a registration link (paths like `/register`, `/signup`, `/join`, or a link on the login page). If found:
+### If you do authenticate:
+1. Try registration first — scan the page for blockers BEFORE filling the form
+2. If registration blocked by email verification/OTP/CAPTCHA → skip auth and move on
+3. If "account already exists" → try login with same credentials
+4. If login blocked by CAPTCHA or 2FA → skip auth and move on
+5. Never loop back to authentication once skipped
 
-1. Navigate to the registration page
-2. Fill all visible inputs:
-   - Name / username → `inspectron_test`
-   - Email → `inspectron@test.local`
-   - Password → `InspectronTest1!`
-   - Password confirmation → `InspectronTest1!`
-   - Any checkbox (terms, agree) → check it
-   - Any other required text field → `test`
-3. Submit the form
-4. Outcome:
-   - Redirected away from registration → **session active**, skip Step 2
-   - "email already registered" or "username taken" → proceed to Step 2
-   - "verify your email" → note it, proceed to Step 2
-   - Any other error → note it, proceed to Step 2
-
-### Step 2 — Login
-
-Navigate to the login page. Fill in:
-- Username / email → `inspectron_test` (try `inspectron@test.local` if that fails)
-- Password → `InspectronTest1!`
-
-Submit and confirm you are redirected away from the login page.
-
-**If both fail:** move on to Phase 1 from the public pages. Do not loop back to login or registration again.
+**If auth succeeds:** proceed to Phase 1 with access to authenticated pages.
+**If auth skipped or failed:** proceed to Phase 1 from public pages. Record the reason.
 
 ---
 
@@ -122,13 +110,121 @@ For each free-text search input or `?id=` / `?search=` style parameter (max 3):
 
 ---
 
+---
+
+## Phase 4 — DOM-based XSS Testing
+
+Test for client-side XSS that does not require server reflection.
+
+### URL Hash Fragment
+
+1. Navigate to `{url}#<img src=x onerror="window.__domxss_hash=1">`
+2. Call `evaluate()` with:
+   ```
+   JSON.stringify({executed:typeof window.__domxss_hash!=='undefined',reflected:document.documentElement.innerHTML.includes('__domxss_hash=1')})
+   ```
+3. `executed: true` → **CRITICAL DOM XSS**
+4. `executed: false, reflected: true` → **HIGH DOM XSS**
+
+Test at most 2 pages. If CRITICAL on one, skip remaining.
+
+### window.name Propagation
+
+1. Call `evaluate("window.name = '<img src=x onerror=\"window.__domxss_name=1\">'")`
+2. Navigate to {url} (reload)
+3. Call `evaluate()` with:
+   ```
+   JSON.stringify({executed:typeof window.__domxss_name!=='undefined',reflected:document.documentElement.innerHTML.includes('__domxss_name=1')})
+   ```
+4. `executed: true` → **CRITICAL**, `reflected: true` → **HIGH**
+
+Test on at most 2 pages.
+
+### DOM Sink Analysis
+
+Call `evaluate()` to scan inline scripts for dangerous patterns (innerHTML + location, document.write + location, eval + hash). If sinks found but no XSS confirmed above, add an INFO finding noting potential DOM XSS surface.
+
+---
+
+## Phase 5 — CORS Misconfiguration Testing
+
+### Header Check
+
+Call `get_response_headers()` on the homepage and check for CORS headers:
+
+- `Access-Control-Allow-Origin: *` → **MEDIUM**
+- `Access-Control-Allow-Origin: null` → **HIGH** (sandbox bypass)
+- `Access-Control-Allow-Credentials: true` combined with wildcard/null ACAO → **CRITICAL**
+- Overly permissive methods/headers (`*` or PUT/DELETE in ACAM) → **INFO**
+
+### Fetch-Based Inspection
+
+Use `evaluate()` to make a GET fetch to the current URL and inspect response headers. If CORS headers are returned that were not visible via `get_response_headers()`, use those values.
+
+Also use `evaluate()` to make an OPTIONS request and check the preflight response headers.
+
+### Cookie + CORS Cross-Check
+
+Call `evaluate("document.cookie")`. If session cookies exist AND any ACAO is `*` or `null` → escalate severity: `*` → **HIGH**, `null` → **CRITICAL**.
+
+Test CORS headers on at most 3 endpoints total.
+
+---
+
+## Phase 6 — Session Management Testing
+
+If you authenticated successfully in Phase 0, run the full Phase 6. If not authenticated, run only the checks marked as applicable to unauthenticated state.
+
+### Pre/Post Auth Comparison
+
+Compare cookies from before and after login (from Phase 0). If ANY cookie value is identical before and after login → **MEDIUM** (session fixation — the server did not rotate the session identifier).
+
+Call `evaluate("window.location.href")` after login — if the URL contains `jsessionid=`, `phpsessid=`, `sessionid=`, `sid=`, or `token=` in the query string → **HIGH** (session token in URL).
+
+### Cookie Attribute Audit
+
+Use `evaluate("document.cookie")`:
+
+- Any cookie with a session-like name (`session`, `sid`, `token`, `auth`, `connect.sid`, `JSESSIONID`, `PHPSESSID`) visible in output → **HIGH** (missing HttpOnly — readable by JS)
+- On HTTPS pages, any session cookies visible → **HIGH** (likely missing Secure flag)
+- Long-lived cookies (`remember_me`, `persist`, `keep_logged_in`) → **MEDIUM**
+
+### Logout Effectiveness
+
+1. Find and click the logout link
+2. Call `evaluate("document.cookie")` — session cookies should be cleared
+3. Navigate to a protected page (e.g. `/dashboard`, `/profile`, `/account`, `/settings`)
+4. If the page loads with authenticated content → **HIGH** (session not invalidated)
+5. If the logout link is a plain GET without a CSRF token → **LOW** (logout CSRF)
+
+### Password Autocomplete
+
+On login/registration pages, check password fields:
+```
+evaluate("JSON.stringify(Array.from(document.querySelectorAll('input[type=password]')).map(el=>({name:el.name,autocomplete:el.getAttribute('autocomplete')})))")
+```
+Fields missing `autocomplete="off"` or `autocomplete="new-password"` → **LOW**
+
+## Efficiency Guidelines
+
+- If URL parameter "search" is vulnerable on one page, assume all "search" parameters site-wide are vulnerable — test only 2-3 unique parameter names
+- If one text input is vulnerable to XSS, similar inputs in forms with the same action URL are likely vulnerable — test only 2-3 representative forms
+- If one login form is vulnerable to SQL injection, skip other login forms — they share the same backend
+- Skip inputs with identical names and context (e.g., all "email" fields in newsletter forms)
+- DOM XSS hash test: if one page is vulnerable, skip other pages — same client codebase
+- CORS headers: test on at most 3 endpoints; if no CORS headers anywhere, skip further CORS tests
+- Session management: cookie attribute checks on at most 3 pages; logout tested once
+
 ## Allowed Categories
 - xss
 - sql-injection
+- dom-xss
+- cors
+- session-management
 
 ## Completion
 
-Do NOT call done until all phases (0 through 3) are fully complete.
+Do NOT call done until all phases (0 through 6) are fully complete. If you could not authenticate in Phase 0, skip Phase 6.4 (Logout Effectiveness) and Phase 6.1 pre/post comparison but still run Phase 5 and other Phase 6 checks.
 
 ## Output Format
 

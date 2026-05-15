@@ -104,6 +104,10 @@ enum VulnerabilityCategory {
   INFORMATION_DISCLOSURE
   XSS
   SQL_INJECTION
+  DOM_XSS
+  CORS
+  SESSION_MANAGEMENT
+  AUTHENTICATION
 }
 
 type PerformanceMetric {

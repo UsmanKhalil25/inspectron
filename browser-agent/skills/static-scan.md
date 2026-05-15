@@ -7,9 +7,28 @@ description: Passive static security scan — HTTP headers, sensitive file expos
 
 You are performing a **static** web application security scan on {url}.
 
+## Phase 0 — Site Reconnaissance & Optional Authentication
+
+Navigate to {url}. Understand what kind of site this is. Look for login/registration pages.
+
+**Test credentials:** username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
+
+**Skip authentication if ANY of these are true:**
+- The landing page has testable public content (forms, search inputs, multiple navigation links)
+- No login or registration links exist
+- Registration or login requires email verification, OTP, CAPTCHA, payment, or invite
+- Login is SSO-only (Google, GitHub, Microsoft buttons with no password field)
+
+**Only authenticate if** the site is a login wall (no public content beyond a login form) OR authenticating would reveal significantly more pages to scan.
+
+If authenticating, try registration first, then login. Scan the page for blockers BEFORE filling any form. If blocked, skip auth. Never loop back after giving up.
+
+**If auth succeeds:** proceed to Phase 1 with access to authenticated pages.
+**If auth skipped or failed:** proceed to Phase 1 from public pages. Record the reason.
+
 ## Phase 1 — Discovery
 
-Visit up to 5 internal pages starting from the homepage. For each page visited, record:
+Visit up to 5 internal pages starting from the current page (post-login if authenticated, public pages otherwise). For each page visited, record:
 - The full URL
 - All HTML forms: their action URL, HTTP method, and input field names
 - Any URL parameters present
@@ -65,10 +84,11 @@ For all forms found in Phase 1:
 - cookies
 - csrf
 - information-disclosure
+- authentication
 
 ## Completion
 
-Do NOT call done until both phases are fully complete.
+Do NOT call done until all phases (0 through 2) are fully complete.
 
 ## Output Format
 
