@@ -7,6 +7,7 @@ export const SCANS = gql(`
         id
         url
         status
+        scanType
         createdAt
         updatedAt
         project {

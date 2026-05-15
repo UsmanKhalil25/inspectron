@@ -2,18 +2,28 @@
 
 import { useSuspenseQuery, useSubscription, useMutation } from "@apollo/client";
 import { useMemo } from "react";
-import { AlertTriangle, Shield, Gauge, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Shield,
+  Gauge,
+  Loader2,
+  FileText,
+  Activity,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { ScanDetailHeader } from "./scan-detail-header";
 import { BrowserPreview } from "../browser-preview";
 import { AgentActivity } from "../agent-activity";
 import { PerformanceReport } from "../performance-report";
+import { SecurityReport } from "../security-report";
+import type { VulnerabilityItem } from "../security-report";
 
 import { SCAN } from "@/graphql/queries/scan";
 import { SCAN_STATUS_CHANGED } from "@/graphql/subscriptions/scan-status";
 import { START_SCAN } from "@/graphql/mutations/start-scan";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { GetScanQuery } from "@/__generated__/graphql";
 
 interface ScanDetailImplProps {
@@ -65,6 +75,42 @@ function DraftState({ scan }: { scan: NonNullable<GetScanQuery["scan"]> }) {
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Start Scan
       </Button>
+    </div>
+  );
+}
+
+function SecurityScanResults({
+  scan,
+}: {
+  scan: NonNullable<GetScanQuery["scan"]>;
+}) {
+  return (
+    <div className="flex-1 overflow-auto p-6">
+      <Tabs defaultValue="results" className="w-full">
+        <TabsList className="mb-6 bg-muted/50">
+          <TabsTrigger value="results" className="gap-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5" />
+            Results
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-1.5 text-xs">
+            <Activity className="h-3.5 w-3.5" />
+            Activity
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="results" className="mt-0">
+          <SecurityReport
+            vulnerabilities={
+              (scan.vulnerabilities as VulnerabilityItem[]) ?? []
+            }
+            result={scan.result}
+          />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-0">
+          <AgentActivity scan={scan} fullWidth />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -151,7 +197,7 @@ export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
         ) : !isTerminal && isPerformance ? (
           <PerformanceRunningState scan={scan} />
         ) : isTerminal ? (
-          <AgentActivity scan={scan} fullWidth />
+          <SecurityScanResults scan={scan} />
         ) : (
           <>
             <BrowserPreview scan={scan} />

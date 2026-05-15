@@ -772,6 +772,7 @@ export type GetScansQuery = {
       id: string;
       url: string;
       status: ScanStatus;
+      scanType: ScanType;
       createdAt: any;
       updatedAt: any;
       project: {
@@ -2093,6 +2094,10 @@ export const GetScansDocument = {
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "status" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "scanType" },
                       },
                       {
                         kind: "Field",

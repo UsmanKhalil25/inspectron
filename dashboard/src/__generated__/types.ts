@@ -769,6 +769,7 @@ export type GetScansQuery = {
       id: string;
       url: string;
       status: ScanStatus;
+      scanType: ScanType;
       createdAt: any;
       updatedAt: any;
       project: {

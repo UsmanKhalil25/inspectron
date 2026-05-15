@@ -34,10 +34,11 @@ export const SCANS_TABLE_TITLE = "All Scans";
 export const SCANS_TABLE_DESCRIPTION = "Browse and manage your scans";
 
 export const SCANS_TABLE_COLUMN_WIDTHS = {
-  url: "w-[400px]",
-  status: "w-[120px]",
-  createdAt: "w-[150px]",
-  updatedAt: "w-[150px]",
+  url: "w-[320px]",
+  type: "w-[110px]",
+  status: "w-[110px]",
+  createdAt: "w-[140px]",
+  updatedAt: "w-[140px]",
   actions: "w-[70px]",
 } as const;
 
@@ -46,6 +47,11 @@ export const SCANS_TABLE_COLUMNS = [
     key: "url",
     header: "URL",
     className: SCANS_TABLE_COLUMN_WIDTHS.url,
+  },
+  {
+    key: "type",
+    header: "Type",
+    className: SCANS_TABLE_COLUMN_WIDTHS.type,
   },
   {
     key: "status",
