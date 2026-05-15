@@ -9,6 +9,7 @@ import {
   Loader2,
   FileText,
   Activity,
+  FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +26,7 @@ import { START_SCAN } from "@/graphql/mutations/start-scan";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { GetScanQuery } from "@/__generated__/graphql";
+import { useExportPdf } from "../pdf-report";
 
 interface ScanDetailImplProps {
   scanId: string;
@@ -141,6 +143,45 @@ function PerformanceRunningState({
   );
 }
 
+function ExportPdfButton({
+  scan,
+}: {
+  scan: NonNullable<GetScanQuery["scan"]>;
+}) {
+  const { exportPdf, loading } = useExportPdf();
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+      disabled={loading}
+      onClick={() =>
+        exportPdf({
+          scan: {
+            id: scan.id,
+            url: scan.url,
+            status: scan.status,
+            scanType: scan.scanType,
+            createdAt: scan.createdAt,
+            result: scan.result,
+            project: scan.project ? { name: scan.project.name } : null,
+          },
+          vulnerabilities: (scan.vulnerabilities ?? []) as VulnerabilityItem[],
+          performanceMetrics: scan.performanceMetrics ?? [],
+        })
+      }
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <FileDown className="h-3.5 w-3.5" />
+      )}
+      Export PDF
+    </Button>
+  );
+}
+
 export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
   const context = useMemo(
     () => ({ headers: { cookie: cookieHeader } }),
@@ -184,6 +225,7 @@ export function ScanDetailImpl({ scanId, cookieHeader }: ScanDetailImplProps) {
         status={scan.status}
         scanId={scan.id}
         project={scan.project}
+        actions={isTerminal ? <ExportPdfButton scan={scan} /> : undefined}
       />
       <div className="flex flex-1 overflow-hidden">
         {isDraft ? (

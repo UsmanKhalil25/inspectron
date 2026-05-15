@@ -17,7 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
-interface PerformanceMetricData {
+export interface PerformanceMetricData {
   id?: string;
   url?: string;
   performanceScore?: number;

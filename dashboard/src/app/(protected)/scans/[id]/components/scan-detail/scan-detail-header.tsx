@@ -12,6 +12,7 @@ interface ScanDetailHeaderProps {
     name: string;
     url: string;
   } | null;
+  actions?: React.ReactNode;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -58,6 +59,7 @@ export function ScanDetailHeader({
   status,
   scanId,
   project,
+  actions,
 }: ScanDetailHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4">
@@ -91,6 +93,8 @@ export function ScanDetailHeader({
       </div>
 
       <div className="flex-1" />
+
+      {actions}
 
       <StatusBadge status={status} />
 
