@@ -7,7 +7,7 @@ description: Active dynamic security scan — performs site reconnaissance, opti
 
 You are performing a **DYNAMIC** web application security scan on {url}. You will actively inject payloads to detect exploitable vulnerabilities.
 
-**Use these test credentials throughout:** username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
+**Use these test credentials throughout:** username `inspectron_test`, email `inspectron@example.com`, password `InspectronTest1!`
 
 ---
 
@@ -15,7 +15,7 @@ You are performing a **DYNAMIC** web application security scan on {url}. You wil
 
 Navigate to {url}. Determine what kind of site this is and whether it has a login/registration system.
 
-**Test credentials:** username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
+**Test credentials:** username `inspectron_test`, email `inspectron@example.com`, password `InspectronTest1!`
 
 ### Skip authentication entirely if ANY of these are true:
 - The landing page has testable content (forms, search inputs, multiple internal links)

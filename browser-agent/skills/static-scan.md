@@ -11,7 +11,7 @@ You are performing a **static** web application security scan on {url}.
 
 Navigate to {url}. Understand what kind of site this is. Look for login/registration pages.
 
-**Test credentials:** username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
+**Test credentials:** username `inspectron_test`, email `inspectron@example.com`, password `InspectronTest1!`
 
 **Skip authentication if ANY of these are true:**
 - The landing page has testable public content (forms, search inputs, multiple navigation links)

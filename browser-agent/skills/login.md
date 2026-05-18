@@ -9,7 +9,7 @@ description: Explore {url} to understand the site structure, then attempt authen
 
 Understand what kind of site {url} is, determine whether authentication is possible and worthwhile, then attempt to gain access.
 
-Credentials: username `inspectron_test`, email `inspectron@test.local`, password `InspectronTest1!`
+Credentials: username `inspectron_test`, email `inspectron@example.com`, password `InspectronTest1!`
 
 **Golden rule:** Never get stuck. If authentication is blocked by email verification, OTP, CAPTCHA, SSO-only, payment, or invite requirements, skip it immediately, record the reason, and move on. A scan of public pages is better than no scan at all.
 
@@ -80,7 +80,7 @@ Navigate to the registration page. Before filling anything, run these blocker ch
 1. Use `find_elements("input, select, textarea")` to identify all fields
 2. Fill in the form:
    - Name / username fields → `inspectron_test`
-   - Email fields → `inspectron@test.local`
+   - Email fields → `inspectron@example.com`
    - Password fields → `InspectronTest1!`
    - Password confirmation fields → `InspectronTest1!`
    - Any checkbox (terms, agree, privacy, newsletter) → check it
@@ -111,7 +111,7 @@ Navigate to the login page.
 
 1. Use `find_elements("input")` to identify the username/email and password fields
 2. Fill in:
-   - Username / email field → `inspectron_test` (try `inspectron@test.local` if that fails first)
+   - Username / email field → `inspectron_test` (try `inspectron@example.com` if that fails first)
    - Password field → `InspectronTest1!`
 3. Submit
 4. Evaluate the result:
